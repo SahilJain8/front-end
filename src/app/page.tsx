@@ -2,11 +2,13 @@
 'use client';
 
 import { ChatInterface } from "@/components/chat/chat-interface";
-import { Topbar } from "@/components/layout/top-bar";
 import { Button } from '@/components/ui/button';
 import { Pin } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import AppLayout from '@/components/layout/app-layout';
+import { Topbar } from "@/components/layout/top-bar";
+import { ModelSelector } from "@/components/chat/model-selector";
+import { TokenTracker } from "@/components/chat/token-tracker";
 
 interface HomeProps {
     isRightSidebarVisible?: boolean;
@@ -17,7 +19,13 @@ function HomePageContent({ isRightSidebarVisible, setIsRightSidebarVisible }: Ho
 
   return (
       <div className="flex flex-col flex-1 h-full overflow-hidden">
-        <Topbar>
+        <header className="flex items-center justify-between p-2 border-b h-[69px] bg-card shrink-0">
+            <div className="flex items-center gap-4">
+                <ModelSelector />
+                <div className="w-full max-w-sm">
+                    <TokenTracker />
+                </div>
+            </div>
             <div className="flex items-center gap-4">
                 {setIsRightSidebarVisible && isRightSidebarVisible === false && (
                     <Button variant="outline" onClick={() => setIsRightSidebarVisible(true)}>
@@ -26,7 +34,7 @@ function HomePageContent({ isRightSidebarVisible, setIsRightSidebarVisible }: Ho
                     </Button>
                 )}
             </div>
-        </Topbar>
+        </header>
         <ChatInterface />
       </div>
   );
