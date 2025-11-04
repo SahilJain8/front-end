@@ -10,7 +10,8 @@ import {
   Settings,
   Star,
   Users,
-  WandSparkles
+  WandSparkles,
+  PanelLeft,
 } from "lucide-react";
 import {
   Sidebar,
@@ -22,6 +23,7 @@ import {
   SidebarFooter,
   SidebarSeparator,
   SidebarTrigger,
+  useSidebar
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePathname } from "next/navigation";
@@ -45,19 +47,20 @@ const chatBoards = [
 export function LeftSidebar() {
   const pathname = usePathname();
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
+  const { state: sidebarState } = useSidebar();
 
   return (
     <Sidebar>
       <SidebarHeader className="p-4 border-b">
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
-                    <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-                    <path d="M2 7L12 12M22 7L12 12M12 22V12M17 4.5L7 9.5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-                </svg>
-            <h1 className="text-lg font-semibold">Flowting</h1>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
+                      <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                      <path d="M2 7L12 12M22 7L12 12M12 22V12M17 4.5L7 9.5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                  </svg>
+              <h1 className="text-lg font-semibold">Flowting</h1>
             </div>
-            <SidebarTrigger />
+            <SidebarTrigger className="hidden md:flex" />
         </div>
       </SidebarHeader>
 

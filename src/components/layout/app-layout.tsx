@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { LeftSidebar } from "./left-sidebar";
 
 interface AppLayoutProps {
@@ -10,6 +10,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
       <div className="flex min-h-screen bg-card">
         <LeftSidebar />
+        <div className="fixed top-4 left-4 z-20 md:hidden">
+            <SidebarTrigger />
+        </div>
         <main className="flex-1 flex">
           {children}
         </main>
