@@ -11,13 +11,14 @@ import { ChatMessage } from "./chat-message";
 import { InitialPrompts } from "./initial-prompts";
 import type { Message } from "./chat-message";
 import { Input } from "../ui/input";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const userAvatar = { imageUrl: "https://picsum.photos/seed/1/40/40", imageHint: "user avatar" };
-  const aiAvatar = { imageUrl: "https://picsum.photos/seed/2/40/40", imageHint: "ai avatar" };
+  const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
+  const aiAvatar = PlaceHolderImages.find(p => p.id === 'ai-avatar');
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -64,7 +65,7 @@ export function ChatInterface() {
   };
   
   return (
-    <div className="flex flex-col h-full flex-1 bg-card">
+    <div className="flex flex-col flex-1 bg-card overflow-hidden">
       <ScrollArea className="flex-1 p-4">
         <div className="max-w-4xl mx-auto w-full space-y-6">
           {messages.length === 0 ? (

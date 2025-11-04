@@ -23,7 +23,7 @@ export default function Home() {
         />
       }
     >
-      <div className="flex flex-col h-full flex-1">
+      <div className="flex flex-col flex-1 h-full">
         <Topbar>
             {!isRightSidebarVisible && (
                  <Button variant="outline" onClick={() => setIsRightSidebarVisible(true)}>
