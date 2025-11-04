@@ -25,7 +25,7 @@ import { Badge } from "../ui/badge";
 const chatBoards = [
     { name: "Product Analysis Q4", time: "2m", isStarred: true, pinCount: 3 },
     { name: "Product Analysis Q1", time: "2m", isStarred: false, pinCount: 0 },
-    { name: "Competitive Landscape", time: "1 Day", isStarred: true, pinCount: 1 },
+    { name: "Competitive Landscape is shifting towards AI-driven features", time: "1 Day", isStarred: true, pinCount: 1 },
     { name: "Q3 Earnings Call Prep", time: "1 month", isStarred: false, pinCount: 0 },
     { name: "User Feedback Synthesis", time: "1 month", isStarred: false, pinCount: 0 },
     { name: "Marketing Campaign Ideas", time: "1 month", isStarred: true, pinCount: 5 },
@@ -105,7 +105,7 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
                             </div>
                              <div className={cn("ml-2 flex-shrink-0 flex flex-col items-center gap-0.5", isCollapsed && "hidden")}>
                                {board.isStarred && <Star className="w-4 h-4 text-blue-400 fill-blue-400" />}
-                               {board.pinCount > 0 && <Badge variant="default" className="rounded-full h-4 w-4 p-0 flex items-center justify-center bg-blue-400 text-white dark:text-black border-blue-400">{board.pinCount}</Badge>}
+                               {board.pinCount > 0 && <Badge variant="default" className="rounded-full h-3.5 w-3.5 p-0 flex items-center justify-center bg-blue-400 text-white dark:text-black">{board.pinCount}</Badge>}
                             </div>
                     </Button>
                 ))}
