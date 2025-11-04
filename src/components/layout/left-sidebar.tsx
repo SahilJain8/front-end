@@ -47,7 +47,6 @@ const chatBoards = [
 export function LeftSidebar() {
   const pathname = usePathname();
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
-  const { state: sidebarState } = useSidebar();
 
   return (
     <Sidebar>
@@ -101,12 +100,7 @@ export function LeftSidebar() {
         <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search Ctrl+K" className="pl-9 bg-background" />
-        </div>
-
-        <Button variant="default" className="w-full justify-start gap-2">
-            <Plus className="w-4 h-4" />
-            Add Chat Board
-        </Button>
+        </div>>
         
         <div className="space-y-2">
             <h3 className="text-xs font-semibold text-muted-foreground px-2">CHAT BOARDS</h3>
