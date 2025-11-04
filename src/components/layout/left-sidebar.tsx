@@ -27,7 +27,7 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
 
   return (
     <aside className={cn(
-        "bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 ease-in-out border-r border-sidebar-border",
+        "bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 ease-in-out border-r border-sidebar-border relative",
         isCollapsed ? "w-16 items-center" : "w-72"
       )}>
         
@@ -40,7 +40,7 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
                   </svg>
               <h1 className="text-lg font-semibold">Flowting</h1>
             </Link>
-             <Button variant="ghost" size="icon" onClick={onToggle} className="absolute left-0 top-1/2 -translate-y-1/2 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full" style={{ left: isCollapsed ? '4rem' : '18rem', transition: 'left 0.3s ease-in-out' }}>
+             <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full" style={{ right: '-1rem' }}>
                 {isCollapsed ? <ChevronsRight className="h-4 w-4"/> : <ChevronsLeft className="h-4 w-4"/>}
             </Button>
         </div>

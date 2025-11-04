@@ -57,8 +57,8 @@ export function RightSidebar({ isVisible, onClose }: RightSidebarProps) {
         )}>
 
        <div className="p-4 flex justify-end gap-2 border-b">
-            <Button variant="outline" className="rounded-full">Compare models</Button>
-            <Button variant="outline" className="rounded-full">Create Persona</Button>
+            <Button variant="outline" className="rounded-[25px]">Compare models</Button>
+            <Button variant="outline" className="rounded-[25px]">Create Persona</Button>
         </div>
       <div className="p-4 border-b">
         <div className="flex justify-between items-center">
@@ -69,20 +69,20 @@ export function RightSidebar({ isVisible, onClose }: RightSidebarProps) {
         </div>
         <div className="relative mt-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search pins..." className="pl-9 bg-background" />
+          <Input placeholder="Search pins..." className="pl-9 bg-background rounded-[25px]" />
         </div>
         <div className="mt-4 flex gap-2">
-            <Button variant={activeTab === 'Pins' ? 'default' : 'outline'} className="w-full" onClick={() => setActiveTab('Pins')}>
+            <Button variant={activeTab === 'Pins' ? 'default' : 'outline'} className="w-full rounded-[25px]" onClick={() => setActiveTab('Pins')}>
                 <Pin className="mr-2 h-4 w-4" />
                 Pins
             </Button>
-            <Button variant={activeTab === 'Files' ? 'default' : 'outline'} className="w-full" onClick={() => setActiveTab('Files')}>
+            <Button variant={activeTab === 'Files' ? 'default' : 'outline'} className="w-full rounded-[25px]" onClick={() => setActiveTab('Files')}>
                 <Files className="mr-2 h-4 w-4" />
                 Files
             </Button>
         </div>
         <div className="mt-4">
-            <Button variant="outline" className="w-full justify-between">
+            <Button variant="outline" className="w-full justify-between rounded-[25px]">
                 <span>Filter by Chats</span>
                 <ChevronDown className="h-4 w-4" />
             </Button>
@@ -118,7 +118,7 @@ export function RightSidebar({ isVisible, onClose }: RightSidebarProps) {
         </div>
       </ScrollArea>
       <div className="p-4 border-t mt-auto">
-          <Button className="w-full">
+          <Button className="w-full rounded-[25px]">
               Export Pins
           </Button>
       </div>

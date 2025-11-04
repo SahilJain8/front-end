@@ -6,11 +6,22 @@ import {
   Plus,
   Search,
   Star,
+  MoreHorizontal,
+  Archive,
+  Trash2,
+  Share2,
+  Pencil,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const chatBoards = [
     { name: "Product Analysis Q4", time: "2m", isStarred: true, pinCount: 3 },
@@ -37,13 +48,13 @@ export function ChatListSidebar({ isLeftSidebarCollapsed }: ChatListSidebarProps
   return (
     <aside className="w-72 bg-card text-card-foreground flex flex-col border-r">
       <div className="p-4 border-b w-full">
-        <Button variant="outline" className="w-full justify-start gap-2">
+        <Button variant="outline" className="w-full justify-start gap-2 rounded-[25px]">
             <Plus className="w-4 h-4" />
             <span>Add Chat Board</span>
         </Button>
         <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search Ctrl+K" className="pl-9 bg-background" />
+            <Input placeholder="Search Ctrl+K" className="pl-9 bg-background rounded-[25px]" />
         </div>
       </div>
       <div className="space-y-2 p-4 flex-1 overflow-y-auto">
@@ -62,9 +73,24 @@ export function ChatListSidebar({ isLeftSidebarCollapsed }: ChatListSidebarProps
                                   <p className="text-xs text-muted-foreground">{board.time}</p>
                               </div>
                           </div>
-                           <div className="ml-2 flex-shrink-0 flex flex-col items-center gap-0.5">
-                             {board.isStarred && <Star className="w-4 h-4 text-blue-400 fill-blue-400" />}
-                             {board.pinCount > 0 && <Badge variant="default" className="rounded-full h-[18px] w-[18px] text-[10px] p-0 flex items-center justify-center bg-blue-400 text-white dark:text-black">{board.pinCount}</Badge>}
+                           <div className="ml-2 flex-shrink-0 flex items-center gap-1">
+                             <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                               <Star className={cn("w-4 h-4", board.isStarred ? "text-blue-400 fill-blue-400" : "text-muted-foreground")} />
+                             </Button>
+                             {board.pinCount > 0 && <Badge variant="default" className="rounded-full h-5 w-5 text-[10px] p-0 flex items-center justify-center bg-blue-400 text-primary-foreground dark:text-primary-foreground">{board.pinCount}</Badge>}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100">
+                                        <MoreHorizontal className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
+                                    <DropdownMenuItem><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                                    <DropdownMenuItem><Archive className="mr-2 h-4 w-4" />Archive</DropdownMenuItem>
+                                    <DropdownMenuItem><Share2 className="mr-2 h-4 w-4" />Share</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                   </Button>
               ))}
