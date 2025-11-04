@@ -6,17 +6,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Paperclip, Send, Bot, User, Mic, Link as LinkIcon, Library, Plus } from "lucide-react";
+import { Paperclip, Send, Bot, User, Mic, Link as LinkIcon, Library, Plus, ArrowUp } from "lucide-react";
 import { ChatMessage } from "./chat-message";
 import { InitialPrompts } from "./initial-prompts";
 import type { Message } from "./chat-message";
-import { Input } from "../ui/input";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { cn } from "@/lib/utils";
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [isAtTop, setIsAtTop] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
   const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
   const aiAvatar = PlaceHolderImages.find(p => p.id === 'ai-avatar');
 
@@ -28,6 +30,12 @@ export function ChatInterface() {
       textareaRef.current.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
     }
   }, [input]);
+
+  useEffect(() => {
+    if (scrollViewportRef.current) {
+        scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const handleSend = () => {
     if (input.trim() === "") return;
@@ -64,17 +72,39 @@ export function ChatInterface() {
     setInput(prompt);
   };
   
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop } = e.currentTarget;
+    setIsAtTop(scrollTop === 0);
+  };
+
+  const scrollToTop = () => {
+    scrollViewportRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
   return (
     <div className="flex flex-col flex-1 bg-card overflow-hidden">
-      <ScrollArea className="flex-1 p-4">
-        <div className="max-w-4xl mx-auto w-full space-y-6">
-          {messages.length === 0 ? (
-            <InitialPrompts onPromptClick={handlePromptClick} />
-          ) : (
-            messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)
-          )}
+        <div className="flex-1 overflow-y-auto relative">
+            <ScrollArea className="h-full" viewportRef={scrollViewportRef} onScroll={handleScroll}>
+                <div className="max-w-4xl mx-auto w-full space-y-6 p-4">
+                {messages.length === 0 ? (
+                    <InitialPrompts onPromptClick={handlePromptClick} />
+                ) : (
+                    messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)
+                )}
+                </div>
+            </ScrollArea>
+             {!isAtTop && (
+                <Button 
+                    onClick={scrollToTop}
+                    variant="outline" 
+                    size="icon"
+                    className="absolute bottom-4 right-4 rounded-full"
+                >
+                    <ArrowUp className="h-4 w-4" />
+                </Button>
+            )}
         </div>
-      </ScrollArea>
+
 
       <footer className="p-4 border-t border-border/20">
         <div className="max-w-4xl mx-auto w-full space-y-4">
