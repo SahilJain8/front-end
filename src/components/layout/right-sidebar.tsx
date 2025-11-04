@@ -57,8 +57,8 @@ export function RightSidebar({ isVisible, onClose }: RightSidebarProps) {
         )}>
 
        <div className="p-4 flex justify-end gap-2 border-b">
-            <Button variant="outline">Compare models</Button>
-            <Button variant="outline">Create Persona</Button>
+            <Button variant="outline" className="rounded-full">Compare models</Button>
+            <Button variant="outline" className="rounded-full">Create Persona</Button>
         </div>
       <div className="p-4 border-b">
         <div className="flex justify-between items-center">

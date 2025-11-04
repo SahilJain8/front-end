@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import React, { useState } from "react";
 import { LeftSidebar } from "./left-sidebar";
 import { RightSidebar } from "./right-sidebar";
+import { ChatListSidebar } from "./chat-list-sidebar";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -19,6 +20,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             isCollapsed={isLeftSidebarCollapsed}
             onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
           />
+          <ChatListSidebar isLeftSidebarCollapsed={isLeftSidebarCollapsed} />
           <main className="flex-1 flex flex-col">
             {React.cloneElement(children as React.ReactElement, {
                 isRightSidebarVisible,
