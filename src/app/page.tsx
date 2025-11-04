@@ -16,7 +16,7 @@ interface HomeProps {
 function HomePageContent({ isRightSidebarVisible, setIsRightSidebarVisible }: HomeProps) {
 
   return (
-      <div className="flex flex-col flex-1 h-full">
+      <div className="flex flex-col flex-1 h-full overflow-hidden">
         <Topbar>
             {setIsRightSidebarVisible && isRightSidebarVisible === false && (
                  <Button variant="outline" onClick={() => setIsRightSidebarVisible(true)}>
