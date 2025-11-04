@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Pin } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import AppLayout from '@/components/layout/app-layout';
-import { Topbar } from "@/components/layout/top-bar";
 import { ModelSelector } from "@/components/chat/model-selector";
 import { TokenTracker } from "@/components/chat/token-tracker";
 

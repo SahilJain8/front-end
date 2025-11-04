@@ -2,6 +2,7 @@
 'use client';
 import type { ReactNode } from "react";
 import React, { useState } from "react";
+import Link from "next/link";
 import { LeftSidebar } from "./left-sidebar";
 import { RightSidebar } from "./right-sidebar";
 import { ChatListSidebar } from "./chat-list-sidebar";
@@ -15,16 +16,31 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
+interface PageContentProps {
+    isRightSidebarVisible?: boolean;
+    setIsRightSidebarVisible?: React.Dispatch<React.SetStateAction<boolean>>;
+    children: React.ReactNode;
+}
+
+// This wrapper component consumes the props so they aren't passed to the DOM
+function PageContentWrapper({ children }: PageContentProps) {
+    return <>{children}</>;
+}
+
+
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
   const [isRightSidebarVisible, setIsRightSidebarVisible] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const mainContent = React.cloneElement(children as React.ReactElement, {
+  const mainContent = React.cloneElement(
+    (<PageContentWrapper>{children}</PageContentWrapper>) as React.ReactElement, 
+    {
       isRightSidebarVisible,
       setIsRightSidebarVisible
-  });
+    }
+  );
 
   if (isMobile) {
     return (
@@ -41,7 +57,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             isCollapsed={false}
                             onToggle={() => {}}
                         />
-                        <ChatListSidebar />
+                        <ChatListSidebar isLeftSidebarCollapsed={false} />
                     </SheetContent>
                 </Sheet>
                  <Link href="/" className="flex items-center gap-2">
@@ -68,7 +84,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 isCollapsed={isLeftSidebarCollapsed}
                 onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
             />
-            <ChatListSidebar />
+            <ChatListSidebar isLeftSidebarCollapsed={isLeftSidebarCollapsed} />
             <main className="flex-1 flex flex-col min-w-0">
                 {mainContent}
             </main>
@@ -80,4 +96,3 @@ export default function AppLayout({ children }: AppLayoutProps) {
       </div>
   );
 }
-
