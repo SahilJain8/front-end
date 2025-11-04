@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -91,10 +92,7 @@ export function CreatePersonaDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full justify-start gap-2">
-          <Plus className="w-4 h-4" />
-          <span>Add Custom Persona</span>
-        </Button>
+        <Button variant="outline" className="rounded-[25px]">Create Persona</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>

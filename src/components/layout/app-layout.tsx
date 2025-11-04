@@ -20,8 +20,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
             isCollapsed={isLeftSidebarCollapsed}
             onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
           />
-          <ChatListSidebar isLeftSidebarCollapsed={isLeftSidebarCollapsed} />
-          <main className="flex-1 flex flex-col">
+          <ChatListSidebar />
+          <main className="flex-1 flex flex-col min-w-0">
             {React.cloneElement(children as React.ReactElement, {
                 isRightSidebarVisible,
                 setIsRightSidebarVisible

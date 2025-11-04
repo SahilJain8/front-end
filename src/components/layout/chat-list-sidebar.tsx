@@ -36,18 +36,10 @@ const chatBoards = [
     { name: "Website Redesign Brainstorm", time: "3 months", isStarred: false, pinCount: 0 },
 ];
 
-interface ChatListSidebarProps {
-  isLeftSidebarCollapsed: boolean;
-}
 
-export function ChatListSidebar({ isLeftSidebarCollapsed }: ChatListSidebarProps) {
-  
-  if (isLeftSidebarCollapsed) {
-    return null;
-  }
-
+export function ChatListSidebar() {
   return (
-    <aside className="w-72 bg-card text-card-foreground flex flex-col border-r">
+    <aside className="w-72 bg-card text-card-foreground flex-col border-r hidden md:flex">
       <div className="p-4 border-b w-full">
         <Button variant="outline" className="w-full justify-start gap-2 rounded-[25px]">
             <Plus className="w-4 h-4" />
@@ -77,7 +69,7 @@ export function ChatListSidebar({ isLeftSidebarCollapsed }: ChatListSidebarProps
                              <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={(e) => e.stopPropagation()}>
                                <Star className={cn("w-4 h-4", board.isStarred ? "text-blue-400 fill-blue-400" : "text-muted-foreground")} />
                              </Button>
-                             {board.pinCount > 0 && <Badge variant="default" className="rounded-full h-5 w-5 text-[10px] p-0 flex items-center justify-center bg-blue-400 text-primary-foreground dark:text-black">{board.pinCount}</Badge>}
+                             {board.pinCount > 0 && <Badge variant="default" className="rounded-full h-5 w-5 text-[10px] p-0 flex items-center justify-center bg-blue-400 text-white dark:text-black">{board.pinCount}</Badge>}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                     <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100">

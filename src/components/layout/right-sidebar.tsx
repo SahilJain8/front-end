@@ -55,11 +55,6 @@ export function RightSidebar({ isVisible, onClose }: RightSidebarProps) {
     <aside className={cn(
         "border-l bg-card hidden lg:flex flex-col w-96"
         )}>
-
-       <div className="p-4 flex justify-end gap-2 border-b">
-            <Button variant="outline" className="rounded-[25px]">Compare models</Button>
-            <Button variant="outline" className="rounded-[25px]">Create Persona</Button>
-        </div>
       <div className="p-4 border-b">
         <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Pinboard</h2>
