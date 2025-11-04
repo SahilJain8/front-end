@@ -44,11 +44,11 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
 
   return (
     <aside className={cn(
-        "bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 ease-in-out relative",
-        isCollapsed ? "w-16" : "w-72"
+        "bg-sidebar text-sidebar-foreground flex flex-col transition-all duration-300 ease-in-out",
+        isCollapsed ? "w-16 items-center" : "w-72"
       )}>
         
-      <div className={cn("p-4 border-b border-sidebar-border", isCollapsed && "p-2")}>
+      <div className={cn("p-4 border-b border-sidebar-border w-full", isCollapsed && "p-2")}>
         <div className="flex items-center justify-between">
             <div className={cn("flex items-center gap-2", isCollapsed && "hidden")}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
@@ -57,13 +57,13 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
                   </svg>
               <h1 className="text-lg font-semibold">Flowting</h1>
             </div>
-             <Button variant="ghost" size="icon" onClick={onToggle} className="absolute -right-4 top-1/2 -translate-y-1/2 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full">
+             <Button variant="ghost" size="icon" onClick={onToggle} className="absolute left-0 top-1/2 -translate-y-1/2 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full" style={{ left: isCollapsed ? '4rem' : '18rem', transition: 'left 0.3s ease-in-out' }}>
                 {isCollapsed ? <ChevronsRight className="h-4 w-4"/> : <ChevronsLeft className="h-4 w-4"/>}
             </Button>
         </div>
       </div>
 
-      <div className={cn("p-4 space-y-4 flex-1 overflow-y-auto", isCollapsed && "p-2")}>
+      <div className={cn("p-4 space-y-4 flex-1 overflow-y-auto w-full", isCollapsed && "p-2")}>
         <Button variant="outline" className={cn("w-full justify-start gap-2", isCollapsed && "w-auto justify-center")}>
             <Plus className="w-4 h-4" />
             <span className={cn(isCollapsed && "hidden")}>Add Chat Board</span>
@@ -96,7 +96,7 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
                             isCollapsed ? "justify-center w-10 h-10 p-0" : "justify-between"
                           )}
                         >
-                            <div className={cn("flex items-center gap-2", isCollapsed ? "justify-center w-full" : "w-full")}>
+                            <div className={cn("flex items-center gap-2 w-full", isCollapsed ? "justify-center" : "")}>
                                 <MessageSquare className="w-5 h-5 flex-shrink-0" />
                                 <div className={cn("flex-grow flex justify-between items-center overflow-hidden", isCollapsed && "hidden")}>
                                     <div className="flex flex-col items-start overflow-hidden">
@@ -104,8 +104,8 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
                                         <span className="text-xs text-muted-foreground">{board.time}</span>
                                     </div>
                                     <div className={cn("ml-2 flex-shrink-0 flex items-center gap-1.5")}>
-                                       {board.isStarred && <Star className="w-4 h-4 text-muted-foreground group-hover:text-yellow-500 group-hover:fill-yellow-500 transition-colors" />}
-                                       {board.pinCount > 0 && <Badge variant="outline" className="rounded-full h-5 w-5 p-0 flex items-center justify-center">{board.pinCount}</Badge>}
+                                       {board.isStarred && <Star className="w-4 h-4 text-muted-foreground" />}
+                                       {board.pinCount > 0 && <Badge variant="outline" className="rounded-full h-5 w-5 p-0 flex items-center justify-center border-zinc-300 dark:border-zinc-700">{board.pinCount}</Badge>}
                                     </div>
                                 </div>
                             </div>
@@ -115,15 +115,21 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
         </div>
       </div>
 
-      <div className={cn("p-4 border-t border-sidebar-border mt-auto", isCollapsed && "p-2 space-y-2")}>
+      <div className={cn("p-4 border-t border-sidebar-border mt-auto w-full", isCollapsed && "p-2 space-y-2")}>
         <div className={cn("flex items-center", isCollapsed ? "flex-col gap-2" : "justify-between")}>
-          <div className={cn("flex items-center gap-2", isCollapsed && "flex-col")}>
+          <div className={cn("flex items-center gap-2", isCollapsed && "hidden")}>
             <Avatar className="h-8 w-8">
               {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" data-ai-hint={userAvatar.imageHint} />}
               <AvatarFallback>U</AvatarFallback>
             </Avatar>
-            <span className={cn("text-sm font-medium", isCollapsed && "hidden")}>Avnish Poonia</span>
+            <span className={cn("text-sm font-medium")}>Avnish Poonia</span>
           </div>
+           {isCollapsed && (
+             <Avatar className="h-8 w-8">
+              {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" data-ai-hint={userAvatar.imageHint} />}
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
+          )}
           <ThemeSwitcher />
         </div>
          <nav className="space-y-1 mt-2">
