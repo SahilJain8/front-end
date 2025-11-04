@@ -21,12 +21,14 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarSeparator,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePathname } from "next/navigation";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { ThemeSwitcher } from "../theme-switcher";
 
 const chatBoards = [
     { name: "Product Analysis Q4", time: "2m", isNew: true, isStarred: true },
@@ -47,12 +49,15 @@ export function LeftSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4 border-b">
-        <div className="flex items-center gap-2">
-           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
-                <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-                <path d="M2 7L12 12M22 7L12 12M12 22V12M17 4.5L7 9.5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-            </svg>
-          <h1 className="text-lg font-semibold">Flowting</h1>
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
+                    <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                    <path d="M2 7L12 12M22 7L12 12M12 22V12M17 4.5L7 9.5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                </svg>
+            <h1 className="text-lg font-semibold">Flowting</h1>
+            </div>
+            <SidebarTrigger />
         </div>
       </SidebarHeader>
 
@@ -134,6 +139,7 @@ export function LeftSidebar() {
             </Avatar>
             <span className="text-sm font-medium">Avnish Poonia</span>
           </div>
+          <ThemeSwitcher />
         </div>
          <SidebarMenu>
           <SidebarMenuItem>

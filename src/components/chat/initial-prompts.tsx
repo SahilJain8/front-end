@@ -37,7 +37,7 @@ export function InitialPrompts({ onPromptClick }: InitialPromptsProps) {
                 <path d="M2 7L12 12M22 7L12 12M12 22V12M17 4.5L7 9.5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
             </svg>
         </div>
-        <h1 className="text-3xl font-bold">Floating.ai</h1>
+        <h1 className="text-3xl font-bold">Flowting.ai</h1>
       </div>
       <p className="text-muted-foreground max-w-lg mx-auto">
         Hi, I&apos;m Workiva AI. How can I assist you with your report today?
