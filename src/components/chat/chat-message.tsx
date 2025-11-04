@@ -91,10 +91,11 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMe
       <div className="flex flex-col gap-2 max-w-2xl w-full">
         <div
             className={cn(
-            "rounded-lg p-4",
+            "p-4",
             isUser
                 ? "bg-primary text-primary-foreground"
-                : "bg-background"
+                : "bg-background",
+            "rounded-[20px]"
             )}
         >
           {isEditing && isUser ? (

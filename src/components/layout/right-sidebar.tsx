@@ -20,57 +20,13 @@ export interface Pin {
   time: string;
 }
 
-const initialPins: Pin[] = [
-  {
-    id: "pin-1",
-    text: "The Q4 analysis shows a 25% increase user engagement, which is a significant metric for our growth strategy. We should focus on this for the next quarter.",
-    tags: ["Finance Research"],
-    notes: "This is a private note for the Q4 analysis pin.",
-    chat: "Product Analysis Q4",
-    time: "2m",
-  },
-  {
-    id: "pin-2",
-    text: "Competitive landscape is shifting towards AI-driven features. We need to accelerate our roadmap to stay ahead of the curve and capture market share.",
-    tags: ["Market Research"],
-    notes: "",
-    chat: "Competitive Landscape",
-    time: "1 Day",
-  },
-  {
-    id: "pin-3",
-    text: "User feedback indicates a strong desire for a mobile app. This has been a recurring theme in our latest surveys and interviews.",
-    tags: ["User Feedback"],
-    notes: "",
-    chat: "User Feedback Synthesis",
-    time: "1month",
-  },
-  {
-    id: "pin-4",
-    text: "The Q1 analysis shows a 15% decrease in churn. This is great news and a testament to the recent product improvements.",
-    tags: ["User Retention"],
-    notes: "",
-    chat: "Product Analysis Q1",
-    time: "2m",
-  },
-    {
-    id: "pin-5",
-    text: "New marketing slogan brainstorm: 'AI that flows with you.' It's catchy, modern, and speaks to our core value proposition.",
-    tags: ["Marketing"],
-    notes: "",
-    chat: "Marketing Campaign Ideas",
-    time: "3d",
-  },
-];
-
-
 interface RightSidebarProps {
     isCollapsed: boolean;
     pins: Pin[];
     setPins: Dispatch<SetStateAction<Pin[]>>;
 }
 
-const PinItem = ({ pin, index, onUpdatePin }: { pin: Pin, index: number, onUpdatePin: (index: number, updatedPin: Pin) => void }) => {
+const PinItem = ({ pin, onUpdatePin }: { pin: Pin, onUpdatePin: (updatedPin: Pin) => void }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [tagInput, setTagInput] = useState('');
     const [noteInput, setNoteInput] = useState(pin.notes);
@@ -79,20 +35,20 @@ const PinItem = ({ pin, index, onUpdatePin }: { pin: Pin, index: number, onUpdat
         if (event.key === 'Enter' && tagInput.trim()) {
           event.preventDefault();
           const updatedPin = { ...pin, tags: [...pin.tags, tagInput.trim()] };
-          onUpdatePin(index, updatedPin);
+          onUpdatePin(updatedPin);
           setTagInput('');
         }
     };
 
     const removeTag = (tagIndex: number) => {
         const updatedTags = pin.tags.filter((_, i) => i !== tagIndex);
-        onUpdatePin(index, { ...pin, tags: updatedTags });
+        onUpdatePin({ ...pin, tags: updatedTags });
     };
 
     const handleNoteKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            onUpdatePin(index, { ...pin, notes: noteInput });
+            onUpdatePin({ ...pin, notes: noteInput });
             (event.target as HTMLTextAreaElement).blur();
         }
     }
@@ -133,7 +89,7 @@ const PinItem = ({ pin, index, onUpdatePin }: { pin: Pin, index: number, onUpdat
                         value={noteInput}
                         onChange={(e) => setNoteInput(e.target.value)}
                         onKeyDown={handleNoteKeyDown}
-                        onBlur={() => onUpdatePin(index, { ...pin, notes: noteInput })}
+                        onBlur={() => onUpdatePin({ ...pin, notes: noteInput })}
                         style={{ fontSize: '10px' }}
                     />
                 </div>
@@ -147,29 +103,11 @@ const PinItem = ({ pin, index, onUpdatePin }: { pin: Pin, index: number, onUpdat
 };
 
 
-export function RightSidebar({ isCollapsed, pins: propPins, setPins }: RightSidebarProps) {
-  const [localPins, setLocalPins] = useState(initialPins);
+export function RightSidebar({ isCollapsed, pins, setPins }: RightSidebarProps) {
   const [activeTab, setActiveTab] = useState("Pins");
-  
-  // Combine props and local state for display
-  const allPins = [...propPins, ...localPins];
 
-  const handleUpdatePin = (index: number, updatedPin: Pin) => {
-    // This function needs to decide whether to update the prop (via setPins)
-    // or the local state. For simplicity, we'll assume for now that only
-    // pins that originated from props can be updated in the parent.
-    const pinToUpdate = allPins[index];
-    if (propPins.some(p => p.id === pinToUpdate.id)) {
-        const propIndex = propPins.findIndex(p => p.id === pinToUpdate.id);
-        const newPropPins = [...propPins];
-        newPropPins[propIndex] = updatedPin;
-        setPins(newPropPins);
-    } else {
-        const localIndex = localPins.findIndex(p => p.id === pinToUpdate.id);
-        const newLocalPins = [...localPins];
-        newLocalPins[localIndex] = updatedPin;
-        setLocalPins(newLocalPins);
-    }
+  const handleUpdatePin = (updatedPin: Pin) => {
+    setPins(prevPins => prevPins.map(p => p.id === updatedPin.id ? updatedPin : p));
   };
 
 
@@ -187,7 +125,7 @@ export function RightSidebar({ isCollapsed, pins: propPins, setPins }: RightSide
             <>
                 <div className="p-4 border-b">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-lg font-semibold" style={{ fontSize: '16px' }}>Pinboard</h2>
+                        <h2 className="font-semibold" style={{ fontSize: '12px' }}>Pinboard</h2>
                         <Pin className="h-5 w-5" />
                     </div>
                     <div className="relative mt-2">
@@ -213,8 +151,8 @@ export function RightSidebar({ isCollapsed, pins: propPins, setPins }: RightSide
                 </div>
                 <ScrollArea className="flex-1">
                     <div className="p-4 space-y-3">
-                    {allPins.map((pin, index) => (
-                        <PinItem key={pin.id} pin={pin} index={index} onUpdatePin={handleUpdatePin} />
+                    {pins.map((pin) => (
+                        <PinItem key={pin.id} pin={pin} onUpdatePin={handleUpdatePin} />
                     ))}
                     </div>
                 </ScrollArea>
