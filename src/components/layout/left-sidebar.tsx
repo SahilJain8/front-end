@@ -7,9 +7,7 @@ import {
   Users,
   WandSparkles,
   ChevronsLeft,
-  ChevronsRight,
   Settings,
-  Plus
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -28,18 +26,11 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
   return (
       <aside className={cn(
           "bg-sidebar text-sidebar-foreground flex-col transition-all duration-300 ease-in-out border-r border-sidebar-border relative hidden md:flex",
-          isCollapsed ? "w-16 items-center" : "w-64"
+          isCollapsed ? "w-16 items-center" : "w-[195px]"
         )}>
         
-        <div className={cn("p-4 w-full", isCollapsed && "p-2")}>
-            <Button variant="outline" className={cn("w-full justify-center gap-2 rounded-[25px]", isCollapsed && "w-10 h-10 p-0")}>
-                <Plus className="w-4 h-4" />
-                <span className={cn(isCollapsed && "hidden")}>Add Chat Board</span>
-            </Button>
-        </div>
-        
         <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full" style={{ right: '-1rem' }}>
-            {isCollapsed ? <ChevronsRight className="h-4 w-4"/> : <ChevronsLeft className="h-4 w-4"/>}
+            <ChevronsLeft className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")}/>
         </Button>
         
         <div className={cn("p-4 space-y-4 flex-1 overflow-y-auto w-full", isCollapsed && "p-2")}>

@@ -6,13 +6,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Paperclip, Send, Bot, User, Mic, Library, ChevronDown, Link as LinkIcon } from "lucide-react";
+import { Paperclip, Send, Bot, User, Mic, Library, ChevronDown } from "lucide-react";
 import { ChatMessage } from "./chat-message";
 import { InitialPrompts } from "./initial-prompts";
 import type { Message } from "./chat-message";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -23,6 +23,7 @@ export function ChatInterface() {
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
   const aiAvatar = PlaceHolderImages.find(p => p.id === 'ai-avatar');
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -109,7 +110,7 @@ export function ChatInterface() {
             </div>
         </ScrollArea>
         {messages.length > 0 && (
-             <div className="absolute bottom-24 right-4 flex flex-col gap-2 z-10">
+             <div className="absolute bottom-24 right-4 flex-col gap-2 hidden md:flex z-10">
                 {!isAtTop && (
                     <Button 
                         onClick={scrollToTop}
@@ -149,8 +150,8 @@ export function ChatInterface() {
               className="pr-12 text-base resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-2 min-h-[48px]"
               rows={1}
             />
-            <div className="flex items-center justify-between mt-1">
-                <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between mt-1 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                     <Button variant="outline" className="rounded-[25px] bg-background h-8 px-3">
                         <Library className="mr-2 h-4 w-4" />
                         Library
@@ -181,8 +182,8 @@ export function ChatInterface() {
                         <Mic className="h-4 w-4" />
                     </Button>
                 </div>
-                <Button size="lg" onClick={handleSend} disabled={!input.trim()} className="bg-primary text-primary-foreground h-9 rounded-[25px] px-4 flex items-center gap-2">
-                    Send Message
+                <Button size={isMobile ? 'icon' : 'lg'} onClick={handleSend} disabled={!input.trim()} className="bg-primary text-primary-foreground h-9 rounded-[25px] px-4 flex items-center gap-2">
+                    {!isMobile && "Send Message"}
                     <Send className="h-4 w-4" />
                 </Button>
             </div>

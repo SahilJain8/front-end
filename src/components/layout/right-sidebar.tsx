@@ -39,28 +39,25 @@ const initialPins = [
 ];
 
 interface RightSidebarProps {
-    isVisible: boolean;
-    onClose: () => void;
+    isCollapsed: boolean;
 }
 
-export function RightSidebar({ isVisible, onClose }: RightSidebarProps) {
+export function RightSidebar({ isCollapsed }: RightSidebarProps) {
   const [pins, setPins] = useState(initialPins);
   const [activeTab, setActiveTab] = useState("Pins");
 
-  if (!isVisible) {
+  if (isCollapsed) {
     return null;
   }
 
   return (
     <aside className={cn(
-        "border-l bg-card hidden lg:flex flex-col w-96"
+        "border-l bg-card hidden lg:flex flex-col transition-all duration-300 ease-in-out",
+        isCollapsed ? "w-0" : "w-[258px]"
         )}>
       <div className="p-4 border-b">
         <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Pinboard</h2>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="w-5 h-5" />
-            </Button>
         </div>
         <div className="relative mt-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
