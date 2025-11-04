@@ -40,28 +40,28 @@ export function LeftSidebar() {
       <SidebarContent className="p-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <Link href="/" legacyBehavior passHref>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === "/"}
-                tooltip="Chat"
-              >
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === "/"}
+              tooltip="Chat"
+            >
+              <Link href="/">
                 <MessageSquare />
                 <span className="truncate">Chat</span>
-              </SidebarMenuButton>
-            </Link>
+              </Link>
+            </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <Link href="/dashboard" legacyBehavior passHref>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === "/dashboard"}
-                tooltip="Dashboard"
-              >
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === "/dashboard"}
+              tooltip="Dashboard"
+            >
+              <Link href="/dashboard">
                 <LayoutDashboard />
                 <span className="truncate">Dashboard</span>
-              </SidebarMenuButton>
-            </Link>
+              </Link>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
         
