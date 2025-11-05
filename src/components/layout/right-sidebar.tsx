@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState, KeyboardEvent, type Dispatch, type SetStateAction } from "react";
+import { useState, KeyboardEvent, type Dispatch, type SetStateAction, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Pin, Search, X, Files, ChevronDown } from "lucide-react";
+import { Pin, Search, X, Files, ChevronDown, ChevronsLeft } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Textarea } from "../ui/textarea";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ export interface Pin {
 
 interface RightSidebarProps {
     isCollapsed: boolean;
+    onToggle: () => void;
     pins: Pin[];
     setPins: Dispatch<SetStateAction<Pin[]>>;
 }
@@ -55,6 +56,13 @@ const PinItem = ({ pin, onUpdatePin }: { pin: Pin, onUpdatePin: (updatedPin: Pin
             (event.target as HTMLTextAreaElement).blur();
         }
     }
+    
+    const handleNoteBlur = () => {
+        if (noteInput !== pin.notes) {
+            onUpdatePin({ ...pin, notes: noteInput });
+            toast({ title: "Note saved!" });
+        }
+    };
 
     return (
         <Card className="bg-background">
@@ -92,7 +100,7 @@ const PinItem = ({ pin, onUpdatePin }: { pin: Pin, onUpdatePin: (updatedPin: Pin
                         value={noteInput}
                         onChange={(e) => setNoteInput(e.target.value)}
                         onKeyDown={handleNoteKeyDown}
-                        onBlur={() => onUpdatePin({ ...pin, notes: noteInput })}
+                        onBlur={handleNoteBlur}
                         style={{ fontSize: '10px' }}
                     />
                 </div>
@@ -106,7 +114,7 @@ const PinItem = ({ pin, onUpdatePin }: { pin: Pin, onUpdatePin: (updatedPin: Pin
 };
 
 
-export function RightSidebar({ isCollapsed, pins, setPins }: RightSidebarProps) {
+export function RightSidebar({ isCollapsed, onToggle, pins, setPins }: RightSidebarProps) {
   const [activeTab, setActiveTab] = useState("Pins");
 
   const handleUpdatePin = (updatedPin: Pin) => {
@@ -116,24 +124,30 @@ export function RightSidebar({ isCollapsed, pins, setPins }: RightSidebarProps) 
 
   return (
     <aside className={cn(
-        "border-l bg-card hidden lg:flex flex-col transition-all duration-300 ease-in-out",
+        "border-l bg-card hidden lg:flex flex-col transition-all duration-300 ease-in-out relative",
         isCollapsed ? "w-[58px]" : "w-[258px]"
         )}>
         
+        <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 -left-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full">
+            <ChevronsLeft className={cn("h-4 w-4 transition-transform", isCollapsed ? "rotate-180" : "rotate-0")}/>
+        </Button>
+        
         {isCollapsed ? (
-            <div className="flex flex-col items-center py-4">
+            <div className="flex flex-col items-center py-4 space-y-4">
                 <Pin className="h-6 w-6" />
             </div>
         ) : (
-            <>
+            <div className="flex flex-col h-full">
                 <div className="p-4 border-b shrink-0">
                     <div className="flex justify-between items-center">
-                        <h2 className="font-semibold" style={{ fontSize: '12px' }}>Pinboard</h2>
-                        <Pin className="h-5 w-5" />
+                        <div className="flex items-center gap-2">
+                            <Pin className="h-5 w-5" />
+                            <h2 className="font-medium text-base">Pinboard</h2>
+                        </div>
                     </div>
                     <div className="relative mt-2">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search pins..." className="pl-9 bg-background rounded-[25px]" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Search pins..." className="pl-9 bg-background rounded-[25px]" />
                     </div>
                     <div className="mt-4 flex gap-2">
                         <Button variant={activeTab === 'Pins' ? 'default' : 'outline'} className="w-full rounded-[25px]" onClick={() => setActiveTab('Pins')}>
@@ -168,7 +182,7 @@ export function RightSidebar({ isCollapsed, pins, setPins }: RightSidebarProps) 
                         Export Pins
                     </Button>
                 </div>
-            </>
+            </div>
         )}
     </aside>
   );
