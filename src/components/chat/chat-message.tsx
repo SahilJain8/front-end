@@ -49,9 +49,10 @@ interface ChatMessageProps {
   onCopy: (content: string) => void;
   onEdit: (messageId: string, newContent: string) => void;
   onDelete: (messageId: string) => void;
+  onResubmit: (newContent: string, messageId: string) => void;
 }
 
-export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMessageProps) {
+export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete, onResubmit }: ChatMessageProps) {
   const isUser = message.sender === "user";
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
@@ -77,6 +78,12 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMe
     }
     setIsEditing(false);
   };
+  
+  const handleSaveAndResubmit = () => {
+    onResubmit(editedContent, message.id);
+    onEdit(message.id, editedContent); // Update UI immediately
+    setIsEditing(false);
+  }
 
   const handleCancelEdit = () => {
     setEditedContent(message.content);
@@ -135,7 +142,7 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMe
       )}
     >
       {!isUser && message.avatar}
-      <div className="flex flex-col gap-2 max-w-2xl w-full">
+      <div className="flex flex-col gap-2 max-w-4xl w-full">
         <div
             className={cn(
             "p-4 rounded-[20px] break-words",
@@ -152,11 +159,11 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMe
                   onChange={(e) => setEditedContent(e.target.value)}
                   onKeyDown={handleEditKeyDown}
                   className="w-full text-sm bg-background/20 text-primary-foreground focus-visible:ring-ring"
-                  rows={1}
+                  rows={3}
                 />
                 <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="ghost" onClick={handleCancelEdit}><X className="h-4 w-4"/></Button>
-                    <Button size="sm" onClick={handleSaveEdit}><Check className="h-4 w-4"/></Button>
+                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                    <Button size="sm" onClick={handleSaveAndResubmit}>Save & Submit</Button>
                 </div>
             </div>
           ) : message.isLoading ? (

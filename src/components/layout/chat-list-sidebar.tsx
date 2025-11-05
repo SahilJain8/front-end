@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   MessageSquare,
   Plus,
@@ -12,6 +12,7 @@ import {
   Trash2,
   Share2,
   Pencil,
+  Check,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -49,21 +50,32 @@ interface ChatListSidebarProps {
     setChatBoards: React.Dispatch<React.SetStateAction<ChatBoard[]>>;
     activeChatId: number | null;
     setActiveChatId: (id: number) => void;
-    isLeftSidebarCollapsed?: boolean;
+    setChatHistory: React.Dispatch<React.SetStateAction<{[key: number]: any[]}>>;
 }
 
-export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setActiveChatId }: ChatListSidebarProps) {
+export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setActiveChatId, setChatHistory }: ChatListSidebarProps) {
   const [chatToDelete, setChatToDelete] = useState<number | null>(null);
+  const [renamingChatId, setRenamingChatId] = useState<number | null>(null);
+  const [renamingText, setRenamingText] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (renamingChatId && renameInputRef.current) {
+        renameInputRef.current.focus();
+    }
+  }, [renamingChatId]);
 
   const handleAddChat = () => {
+    const newChatId = Date.now();
     const newChat: ChatBoard = {
-        id: Date.now(),
+        id: newChatId,
         name: "New Chat",
         time: "1m",
         isStarred: false,
         pinCount: 0
     };
     setChatBoards(prev => [newChat, ...prev]);
+    setChatHistory(prev => ({...prev, [newChatId]: []}));
     setActiveChatId(newChat.id);
   };
 
@@ -80,11 +92,32 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
   const confirmDelete = () => {
     if (chatToDelete) {
         setChatBoards(prev => prev.filter(board => board.id !== chatToDelete));
+        setChatHistory(prev => {
+            const newHistory = {...prev};
+            delete newHistory[chatToDelete];
+            return newHistory;
+        });
+
         if (activeChatId === chatToDelete) {
             const newActiveChat = chatBoards.find(b => b.id !== chatToDelete);
             setActiveChatId(newActiveChat ? newActiveChat.id : 0);
         }
         setChatToDelete(null);
+    }
+  };
+  
+  const handleRenameClick = (board: ChatBoard) => {
+    setRenamingChatId(board.id);
+    setRenamingText(board.name);
+  };
+
+  const handleRenameSave = () => {
+    if (renamingChatId) {
+        setChatBoards(prev => prev.map(board =>
+            board.id === renamingChatId ? { ...board, name: renamingText } : board
+        ));
+        setRenamingChatId(null);
+        setRenamingText("");
     }
   };
 
@@ -118,8 +151,24 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
                             <div className="flex items-center gap-2 overflow-hidden flex-1 pl-2">
                                 <MessageSquare className="w-5 h-5 flex-shrink-0" />
                                 <div className="flex-grow text-left overflow-hidden">
-                                    <p className="truncate w-full">{board.name}</p>
-                                    <p className="text-xs text-muted-foreground">{board.time}</p>
+                                {renamingChatId === board.id ? (
+                                    <div className="flex items-center gap-1">
+                                        <Input 
+                                            ref={renameInputRef}
+                                            value={renamingText}
+                                            onChange={(e) => setRenamingText(e.target.value)}
+                                            onBlur={handleRenameSave}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleRenameSave()}
+                                            className="h-7 text-sm"
+                                        />
+                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleRenameSave}><Check className="h-4 w-4" /></Button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <p className="truncate w-full">{board.name}</p>
+                                        <p className="text-xs text-muted-foreground">{board.time}</p>
+                                    </>
+                                )}
                                 </div>
                             </div>
                              <div className="ml-2 flex-shrink-0 flex items-center gap-1 pr-1">
@@ -134,7 +183,7 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
                                       </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                      <DropdownMenuItem><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleRenameClick(board) }}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteClick(board.id); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                                       <DropdownMenuItem><Archive className="mr-2 h-4 w-4" />Archive</DropdownMenuItem>
                                       <DropdownMenuItem><Share2 className="mr-2 h-4 w-4" />Share</DropdownMenuItem>

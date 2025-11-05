@@ -9,15 +9,18 @@ import AppLayout from '@/components/layout/app-layout';
 import { ModelSelector } from "@/components/chat/model-selector";
 import { TokenTracker } from "@/components/chat/token-tracker";
 import type { Pin as PinType } from "@/components/layout/right-sidebar";
+import type { Message } from "@/components/chat/chat-message";
 
 interface HomeProps {
     isRightSidebarVisible?: boolean;
     setIsRightSidebarVisible?: Dispatch<SetStateAction<boolean>>;
     onPinMessage?: (pin: PinType) => void;
     onUnpinMessage?: (pinId: string) => void;
+    messages?: Message[];
+    setMessages?: (messages: Message[]) => void;
 }
 
-function HomePageContent({ isRightSidebarVisible, setIsRightSidebarVisible, onPinMessage, onUnpinMessage }: HomeProps) {
+function HomePageContent({ isRightSidebarVisible, setIsRightSidebarVisible, onPinMessage, onUnpinMessage, messages, setMessages }: HomeProps) {
 
   return (
       <div className="flex flex-col flex-1 h-full overflow-hidden">
@@ -37,7 +40,7 @@ function HomePageContent({ isRightSidebarVisible, setIsRightSidebarVisible, onPi
                 )}
             </div>
         </header>
-        <ChatInterface onPinMessage={onPinMessage} onUnpinMessage={onUnpinMessage} />
+        <ChatInterface onPinMessage={onPinMessage} onUnpinMessage={onUnpinMessage} messages={messages} setMessages={setMessages} />
       </div>
   );
 }

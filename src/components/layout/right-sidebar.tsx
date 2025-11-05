@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState, KeyboardEvent, type Dispatch, type SetStateAction, useEffect } from "react";
+import { useState, KeyboardEvent, type Dispatch, type SetStateAction, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Pin, Search, X, Files, ChevronsRight } from "lucide-react";
+import { Pin, Search, X, Files, ChevronsRight, Pencil, Check } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Textarea } from "../ui/textarea";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,15 @@ const PinItem = ({ pin, onUpdatePin, onRemoveTag }: { pin: Pin, onUpdatePin: (up
     const [isExpanded, setIsExpanded] = useState(false);
     const [tagInput, setTagInput] = useState('');
     const [noteInput, setNoteInput] = useState(pin.notes);
+    const [isEditingNotes, setIsEditingNotes] = useState(false);
+    const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
     const { toast } = useToast();
+
+    useEffect(() => {
+        if (isEditingNotes && notesTextareaRef.current) {
+            notesTextareaRef.current.focus();
+        }
+    }, [isEditingNotes]);
 
     const handleTagKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter' && tagInput.trim()) {
@@ -45,21 +53,18 @@ const PinItem = ({ pin, onUpdatePin, onRemoveTag }: { pin: Pin, onUpdatePin: (up
         }
     };
     
+    const handleSaveNote = () => {
+        onUpdatePin({ ...pin, notes: noteInput });
+        setIsEditingNotes(false);
+        toast({ title: "Note saved!" });
+    };
+
     const handleNoteKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            onUpdatePin({ ...pin, notes: noteInput });
-            toast({ title: "Note saved!" });
-            (event.target as HTMLTextAreaElement).blur();
+            handleSaveNote();
         }
     }
-    
-    const handleNoteBlur = () => {
-        if (noteInput !== pin.notes) {
-            onUpdatePin({ ...pin, notes: noteInput });
-            toast({ title: "Note saved!" });
-        }
-    };
 
     return (
         <Card className="bg-background">
@@ -74,14 +79,6 @@ const PinItem = ({ pin, onUpdatePin, onRemoveTag }: { pin: Pin, onUpdatePin: (up
                 </p>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                    <Input 
-                        placeholder="+ Add tags" 
-                        className="text-xs h-6 flex-1 min-w-[60px] bg-transparent border-dashed"
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyDown={handleTagKeyDown}
-                        style={{ fontSize: '10px' }}
-                    />
                     {pin.tags.map((tag, tagIndex) => (
                         <Badge key={tagIndex} variant="default" className="font-normal bg-primary/90 text-primary-foreground text-[10px] py-0.5">
                             {tag}
@@ -90,20 +87,41 @@ const PinItem = ({ pin, onUpdatePin, onRemoveTag }: { pin: Pin, onUpdatePin: (up
                             </button>
                         </Badge>
                     ))}
-                </div>
-                
-                <div>
-                    <Textarea 
-                        placeholder="Add private notes..." 
-                        className="text-xs bg-card mt-1 resize-none" 
-                        value={noteInput}
-                        onChange={(e) => setNoteInput(e.target.value)}
-                        onKeyDown={handleNoteKeyDown}
-                        onBlur={handleNoteBlur}
+                    <Input 
+                        placeholder="+ Add tags" 
+                        className="text-xs h-6 flex-1 min-w-[60px] bg-transparent border-dashed"
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyDown={handleTagKeyDown}
                         style={{ fontSize: '10px' }}
-                        rows={2}
                     />
                 </div>
+                
+                <div onClick={() => !isEditingNotes && setIsEditingNotes(true)}>
+                    {isEditingNotes ? (
+                        <div className="relative">
+                            <Textarea 
+                                ref={notesTextareaRef}
+                                placeholder="Add private notes..." 
+                                className="text-xs bg-card mt-1 resize-none pr-8" 
+                                value={noteInput}
+                                onChange={(e) => setNoteInput(e.target.value)}
+                                onKeyDown={handleNoteKeyDown}
+                                onBlur={handleSaveNote}
+                                style={{ fontSize: '10px' }}
+                                rows={2}
+                            />
+                            <Button size="icon" variant="ghost" className="absolute top-1 right-1 h-6 w-6" onClick={handleSaveNote}>
+                                <Check className="h-3 w-3"/>
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="text-xs bg-card mt-1 p-2 rounded-md min-h-[40px] cursor-text border border-transparent hover:border-dashed hover:border-input">
+                            {pin.notes || <span className="text-muted-foreground">Add private notes...</span>}
+                        </div>
+                    )}
+                </div>
+
                 <div className="flex justify-between items-center pt-2">
                     <Badge variant="outline" className="font-normal border-dashed text-[10px]">{pin.chat}</Badge>
                     <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(pin.time), { addSuffix: true })}</span>
@@ -136,13 +154,14 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins }: RightSide
       if (sortOrder === 'newest') {
           return new Date(b.time).getTime() - new Date(a.time).getTime();
       }
+      // Add logic for 'chats' sorting if needed
       return 0;
   });
 
   return (
     <aside className={cn(
         "border-l bg-card hidden lg:flex flex-col transition-all duration-300 ease-in-out relative",
-        isCollapsed ? "w-[58px]" : "w-[258px]"
+        isCollapsed ? "w-[58px]" : "w-[300px]"
         )}>
         
         <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 -left-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full">
@@ -184,7 +203,7 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins }: RightSide
                                 <span>{sortOrder === 'newest' ? 'Filter by Newest' : 'Filter by Chats'}</span>
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[225px]">
+                        <DropdownMenuContent align="end" className="w-[268px]">
                             <DropdownMenuItem onSelect={() => setSortOrder('chats')}>Filter by Chats</DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => setSortOrder('newest')}>Filter by Newest</DropdownMenuItem>
                         </DropdownMenuContent>

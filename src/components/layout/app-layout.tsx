@@ -1,7 +1,7 @@
 
 'use client';
 import type { ReactNode } from "react";
-import React, { useState, createContext, useContext } from "react";
+import React, { useState, createContext, useContext, useEffect } from "react";
 import { LeftSidebar } from "./left-sidebar";
 import { RightSidebar, type Pin } from "./right-sidebar";
 import { ChatListSidebar, type ChatBoard } from "./chat-list-sidebar";
@@ -9,8 +9,9 @@ import { Topbar } from "./top-bar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { Button } from "../ui/button";
-import { ChevronsLeft, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Message } from "../chat/chat-message";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -22,24 +23,34 @@ const initialChatBoards: ChatBoard[] = [
     { id: 3, name: "Marketing Campaign Ideas", time: "1 month", isStarred: false, pinCount: 0 },
 ];
 
+type ChatHistory = {
+  [key: number]: Message[];
+}
+
+const initialChatHistory: ChatHistory = {
+    1: [],
+    2: [],
+    3: [],
+}
+
 interface AppLayoutContextType {
     chatBoards: ChatBoard[];
     setChatBoards: React.Dispatch<React.SetStateAction<ChatBoard[]>>;
     activeChatId: number | null;
     setActiveChatId: (id: number) => void;
-    onPinMessage: (pin: Pin) => void;
+    onPinMessage?: (pin: Pin) => void;
 }
 
 export const AppLayoutContext = createContext<AppLayoutContextType | null>(null);
 
-function PageContentWrapper({ children, ...props }: AppLayoutProps & { onPinMessage?: (pin: Pin) => void, onUnpinMessage?: (messageId: string) => void }) {
+function PageContentWrapper({ children, ...props }: AppLayoutProps & { onPinMessage?: (pin: Pin) => void, onUnpinMessage?: (messageId: string) => void, messages?: Message[], setMessages?: (messages: Message[]) => void }) {
     if (React.isValidElement(children)) {
         // Filter out props that are not meant for the DOM element
-        const { onPinMessage, onUnpinMessage, ...rest } = props;
+        const { onPinMessage, onUnpinMessage, messages, setMessages, ...rest } = props;
 
         const childProps = {
             ...rest,
-            ...(typeof children.type !== 'string' ? { onPinMessage, onUnpinMessage } : {})
+            ...(typeof children.type !== 'string' ? { onPinMessage, onUnpinMessage, messages, setMessages } : {})
         };
         
         return React.cloneElement(children, childProps);
@@ -54,15 +65,27 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [pins, setPins] = useState<Pin[]>([]);
   const [chatBoards, setChatBoards] = useState(initialChatBoards);
-  const [activeChatId, setActiveChatId] = useState<number | null>(1);
+  const [activeChatId, setActiveChatId] = useState<number>(1);
+  const [chatHistory, setChatHistory] = useState<ChatHistory>(initialChatHistory);
   const isMobile = useIsMobile();
 
+  const setMessagesForActiveChat = (messages: Message[]) => {
+    if (activeChatId) {
+      setChatHistory(prev => ({ ...prev, [activeChatId]: messages }));
+    }
+  };
+  
   const handlePinMessage = (pin: Pin) => {
     setPins(prev => {
         const existingPinIndex = prev.findIndex(p => p.id === pin.id);
         if (existingPinIndex > -1) {
             // Unpin
-            return prev.filter(p => p.id !== pin.id);
+            const newPins = prev.filter(p => p.id !== pin.id);
+            const updatedChatBoards = chatBoards.map(board => 
+                board.name === pin.chat ? { ...board, pinCount: Math.max(0, (board.pinCount || 0) - 1) } : board
+            );
+            setChatBoards(updatedChatBoards);
+            return newPins;
         } else {
             // Pin
             const updatedPins = [pin, ...prev];
@@ -91,7 +114,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setChatBoards,
     activeChatId,
     setActiveChatId: (id: number) => setActiveChatId(id),
-    onPinMessage: handlePinMessage,
   };
 
   if (isMobile) {
@@ -115,12 +137,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
                                 setChatBoards={setChatBoards}
                                 activeChatId={activeChatId}
                                 setActiveChatId={setActiveChatId}
+                                setChatHistory={setChatHistory}
                             />
                         </SheetContent>
                     </Sheet>
                 </Topbar>
                  <main className="flex-1 flex flex-col min-w-0">
-                    <PageContentWrapper onPinMessage={handlePinMessage} onUnpinMessage={handleUnpinMessage}>
+                    <PageContentWrapper 
+                        onPinMessage={handlePinMessage} 
+                        onUnpinMessage={handleUnpinMessage}
+                        messages={chatHistory[activeChatId] || []}
+                        setMessages={setMessagesForActiveChat}
+                    >
                         {children}
                     </PageContentWrapper>
                 </main>
@@ -143,11 +171,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
               setChatBoards={setChatBoards}
               activeChatId={activeChatId}
               setActiveChatId={setActiveChatId}
+              setChatHistory={setChatHistory}
           />
           <main className="flex-1 flex flex-col min-w-0">
               <PageContentWrapper 
                   onPinMessage={handlePinMessage}
                   onUnpinMessage={handleUnpinMessage}
+                  messages={chatHistory[activeChatId] || []}
+                  setMessages={setMessagesForActiveChat}
               >
                   {children}
               </PageContentWrapper>
