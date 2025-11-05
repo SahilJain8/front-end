@@ -31,6 +31,7 @@ const PinItem = ({ pin, onUpdatePin }: { pin: Pin, onUpdatePin: (updatedPin: Pin
     const [isExpanded, setIsExpanded] = useState(false);
     const [tagInput, setTagInput] = useState('');
     const [noteInput, setNoteInput] = useState(pin.notes);
+    const { toast } = useToast();
 
     const handleTagKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter' && tagInput.trim()) {
@@ -50,6 +51,7 @@ const PinItem = ({ pin, onUpdatePin }: { pin: Pin, onUpdatePin: (updatedPin: Pin
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
             onUpdatePin({ ...pin, notes: noteInput });
+            toast({ title: "Note saved!" });
             (event.target as HTMLTextAreaElement).blur();
         }
     }
