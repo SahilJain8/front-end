@@ -165,7 +165,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
   }
 
   const handlePin = (message: Message) => {
-    if (!layoutContext || !onPinMessage || !onUnpinMessage) return;
+    if (!layoutContext) return;
   
     const activeChat = layoutContext.chatBoards.find(c => c.id === layoutContext.activeChatId);
     const chatName = activeChat ? activeChat.name : "Current Chat";
@@ -173,19 +173,23 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
     const isPinned = layoutContext.pins.some(p => p.id === message.id);
   
     if (isPinned) {
-      onUnpinMessage(message.id);
-      toast({ title: "Unpinned from board!" });
+      if (onUnpinMessage) {
+        onUnpinMessage(message.id);
+        toast({ title: "Unpinned from board!" });
+      }
     } else {
-      const newPin: PinType = {
-        id: message.id,
-        text: message.content,
-        tags: [],
-        notes: "",
-        chat: chatName,
-        time: new Date(),
-      };
-      onPinMessage(newPin);
-      toast({ title: "Pinned to board!" });
+      if (onPinMessage) {
+        const newPin: PinType = {
+          id: message.id,
+          text: message.content,
+          tags: [],
+          notes: "",
+          chat: chatName,
+          time: new Date(),
+        };
+        onPinMessage(newPin);
+        toast({ title: "Pinned to board!" });
+      }
     }
   };
 
@@ -199,7 +203,6 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
     setMessages(prev => (prev || []).map(msg => 
       msg.id === messageId ? { ...msg, content: newContent } : msg
     ));
-    // Here you would also make an API call to update the message on the backend
   };
 
   const handleDelete = (messageId: string) => {
@@ -213,7 +216,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
             {(messages || []).length === 0 ? (
                 <InitialPrompts onPromptClick={handlePromptClick} />
             ) : (
-                (messages || []).map((msg, index) => (
+                messages.map((msg, index) => (
                   <ChatMessage 
                     key={msg.id} 
                     message={msg}
