@@ -229,7 +229,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
             )}
             </div>
         </ScrollArea>
-        {messages.length > 0 && (
+        {(messages || []).length > 0 && (
              <div className="absolute bottom-24 right-4 flex-col gap-2 hidden md:flex z-10">
                 {!isAtTop && (
                     <Button 
