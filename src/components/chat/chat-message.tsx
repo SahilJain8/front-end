@@ -6,6 +6,30 @@ import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Pin, Copy, Pencil, Flag, Trash2, Check, X } from "lucide-react";
 import { Textarea } from "../ui/textarea";
+import { Skeleton } from "../ui/skeleton";
+
+// Custom hook for typewriter effect
+const useTypewriter = (text: string, speed: number = 20) => {
+  const [displayText, setDisplayText] = useState('');
+
+  useEffect(() => {
+    if (!text) return;
+    setDisplayText(''); // Reset on new text
+    let i = 0;
+    const intervalId = setInterval(() => {
+      setDisplayText(prev => prev + text.charAt(i));
+      i++;
+      if (i > text.length -1) {
+        clearInterval(intervalId);
+      }
+    }, speed);
+
+    return () => clearInterval(intervalId);
+  }, [text, speed]);
+
+  return displayText;
+};
+
 
 export interface Message {
   id: string;
@@ -13,6 +37,7 @@ export interface Message {
   content: string;
   avatar: ReactNode;
   isPinned?: boolean;
+  isLoading?: boolean;
 }
 
 interface ChatMessageProps {
@@ -28,6 +53,11 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMe
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Convert 90 WPM to character delay. Avg word is 5 chars + space = 6.
+  // 90 WPM * 6 chars/word = 540 chars/min.
+  // 60,000 ms/min / 540 chars/min = ~111 ms/char. We'll use a faster 20ms for better UX.
+  const displayedContent = useTypewriter(message.content, 20);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -80,6 +110,14 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMe
     </div>
   )
 
+  const LoadingState = () => (
+    <div className="flex items-center space-x-2">
+      <Skeleton className="h-4 w-4 rounded-full" />
+      <Skeleton className="h-4 w-20 rounded-md" />
+      <Skeleton className="h-4 w-16 rounded-md" />
+    </div>
+  )
+
   return (
     <div
       className={cn(
@@ -91,11 +129,10 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMe
       <div className="flex flex-col gap-2 max-w-2xl w-full">
         <div
             className={cn(
-            "p-4",
+            "p-4 rounded-[20px] break-words",
             isUser
                 ? "bg-primary text-primary-foreground"
-                : "bg-background",
-            "rounded-[20px]"
+                : "bg-background"
             )}
         >
           {isEditing && isUser ? (
@@ -113,8 +150,10 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMe
                     <Button size="sm" onClick={handleSaveEdit}><Check className="h-4 w-4"/></Button>
                 </div>
             </div>
+          ) : message.isLoading ? (
+            <LoadingState />
           ) : (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            <p className="text-sm whitespace-pre-wrap">{isUser ? message.content : displayedContent}</p>
           )}
         </div>
         <div className={cn("flex items-center", isUser ? "justify-end" : "justify-start")}>

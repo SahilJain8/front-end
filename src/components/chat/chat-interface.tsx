@@ -99,7 +99,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage }: ChatInterfacePro
 
     const data = await res.json();
 
-    const aiMessage: Message = {
+    const loadingMessage: Message = {
       id: (Date.now() + 1).toString(),
       sender: "ai",
       content: data.response,
@@ -119,7 +119,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage }: ChatInterfacePro
       ),
     };
 
-    setMessages((prev) => [...prev, aiMessage]);
+  
   } catch (err: any) {
     console.error(err);
 

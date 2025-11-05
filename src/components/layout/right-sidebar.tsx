@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Pin, Search, X, Files, ChevronDown, ChevronsLeft } from "lucide-react";
+import { Pin, Search, X, Files, ChevronDown, ChevronsRight } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Textarea } from "../ui/textarea";
 import { cn } from "@/lib/utils";
@@ -129,61 +129,63 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins }: RightSide
         )}>
         
         <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 -left-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full">
-            <ChevronsLeft className={cn("h-4 w-4 transition-transform", isCollapsed ? "rotate-180" : "rotate-0")}/>
+            <ChevronsRight className={cn("h-4 w-4 transition-transform", isCollapsed ? "rotate-180" : "rotate-0")}/>
         </Button>
         
-        {isCollapsed ? (
-            <div className="flex flex-col items-center py-4 space-y-4">
-                <Pin className="h-6 w-6" />
-            </div>
-        ) : (
-            <div className="flex flex-col h-full">
-                <div className="p-4 border-b shrink-0">
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            <Pin className="h-4 w-4" />
-                            <h2 className="font-medium text-base">Pinboard</h2>
-                        </div>
-                    </div>
-                    <div className="relative mt-2">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Search pins..." className="pl-9 bg-background rounded-[25px]" />
-                    </div>
-                    <div className="mt-4 flex gap-2">
-                        <Button variant={activeTab === 'Pins' ? 'default' : 'outline'} className="w-full rounded-[25px]" onClick={() => setActiveTab('Pins')}>
-                            <Pin className="mr-2 h-4 w-4" />
-                            Pins
-                        </Button>
-                        <Button variant={activeTab === 'Files' ? 'default' : 'outline'} className="w-full rounded-[25px]" onClick={() => setActiveTab('Files')}>
-                            <Files className="mr-2 h-4 w-4" />
-                            Files
-                        </Button>
-                    </div>
-                    <div className="mt-4">
-                        <Button variant="outline" className="w-full justify-between rounded-[25px]">
-                            <span>Filter by Chats</span>
-                            <ChevronDown className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-                <ScrollArea className="flex-1 min-h-0">
-                    <div className="p-4 space-y-3">
-                    {pins.length > 0 ? pins.map((pin) => (
-                        <PinItem key={pin.id} pin={pin} onUpdatePin={handleUpdatePin} />
-                    )) : (
-                        <div className="text-center text-sm text-muted-foreground py-10">
-                            No pins yet.
-                        </div>
-                    )}
-                    </div>
-                </ScrollArea>
-                <div className="p-4 border-t shrink-0">
-                    <Button className="w-full rounded-[25px]">
-                        Export Pins
-                    </Button>
-                </div>
-            </div>
-        )}
+        <div className="flex flex-col h-full">
+          {isCollapsed ? (
+              <div className="flex flex-col items-center py-4 space-y-4">
+                  <Pin className="h-6 w-6" />
+              </div>
+          ) : (
+            <>
+              <div className="p-4 border-b shrink-0">
+                  <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                          <Pin className="h-4 w-4" />
+                          <h2 className="font-medium text-base">Pinboard</h2>
+                      </div>
+                  </div>
+                  <div className="relative mt-2">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="Search pins..." className="pl-9 bg-background rounded-[25px]" />
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                      <Button variant={activeTab === 'Pins' ? 'default' : 'outline'} className="w-full rounded-[25px]" onClick={() => setActiveTab('Pins')}>
+                          <Pin className="mr-2 h-4 w-4" />
+                          Pins
+                      </Button>
+                      <Button variant={activeTab === 'Files' ? 'default' : 'outline'} className="w-full rounded-[25px]" onClick={() => setActiveTab('Files')}>
+                          <Files className="mr-2 h-4 w-4" />
+                          Files
+                      </Button>
+                  </div>
+                  <div className="mt-4">
+                      <Button variant="outline" className="w-full justify-between rounded-[25px]">
+                          <span>Filter by Chats</span>
+                          <ChevronDown className="h-4 w-4" />
+                      </Button>
+                  </div>
+              </div>
+              <ScrollArea className="flex-1 min-h-0">
+                  <div className="p-4 space-y-3">
+                  {pins.length > 0 ? pins.map((pin) => (
+                      <PinItem key={pin.id} pin={pin} onUpdatePin={handleUpdatePin} />
+                  )) : (
+                      <div className="text-center text-sm text-muted-foreground py-10">
+                          No pins yet.
+                      </div>
+                  )}
+                  </div>
+              </ScrollArea>
+              <div className="p-4 border-t shrink-0">
+                  <Button className="w-full rounded-[25px]">
+                      Export Pins
+                  </Button>
+              </div>
+            </>
+          )}
+        </div>
     </aside>
   );
 }
