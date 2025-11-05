@@ -1,7 +1,7 @@
 
 'use client';
 import type { ReactNode } from "react";
-import React, { useState, createContext, useContext, useEffect } from "react";
+import React, { useState, createContext, useEffect } from "react";
 import { LeftSidebar } from "./left-sidebar";
 import { RightSidebar, type Pin } from "./right-sidebar";
 import { ChatListSidebar, type ChatBoard } from "./chat-list-sidebar";
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import type { Message } from "../chat/chat-message";
 
 interface AppLayoutProps {
-  children: ReactNode;
+  children: React.Node;
 }
 
 const initialChatBoards: ChatBoard[] = [
@@ -40,19 +40,55 @@ interface AppLayoutContextType {
     setActiveChatId: (id: number) => void;
     pins: Pin[];
     onPinMessage?: (pin: Pin) => void;
+    onUnpinMessage?: (pinId: string) => void;
 }
 
 export const AppLayoutContext = createContext<AppLayoutContextType | null>(null);
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
-  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   const [pins, setPins] = useState<Pin[]>([]);
-  const [chatBoards, setChatBoards] = useState(initialChatBoards);
+  const [chatBoards, setChatBoards] = useState<ChatBoard[]>(initialChatBoards);
   const [activeChatId, setActiveChatId] = useState<number>(1);
   const [chatHistory, setChatHistory] = useState<ChatHistory>(initialChatHistory);
+
   const isMobile = useIsMobile();
+
+  // Load state from localStorage on initial mount
+  useEffect(() => {
+    try {
+      const savedChatBoards = localStorage.getItem('chatBoards');
+      const savedChatHistory = localStorage.getItem('chatHistory');
+      const savedPins = localStorage.getItem('pins');
+      const savedActiveChatId = localStorage.getItem('activeChatId');
+
+      if (savedChatBoards) setChatBoards(JSON.parse(savedChatBoards));
+      if (savedChatHistory) setChatHistory(JSON.parse(savedChatHistory));
+      if (savedPins) setPins(JSON.parse(savedPins).map((p: Pin) => ({...p, time: new Date(p.time)})) ); // Re-hydrate dates
+      if (savedActiveChatId) setActiveChatId(JSON.parse(savedActiveChatId));
+
+    } catch (error) {
+      console.error("Failed to load state from localStorage", error);
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+        localStorage.setItem('chatBoards', JSON.stringify(chatBoards));
+        localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        localStorage.setItem('pins', JSON.stringify(pins));
+        if (activeChatId) {
+            localStorage.setItem('activeChatId', JSON.stringify(activeChatId));
+        }
+    } catch (error) {
+        console.error("Failed to save state to localStorage", error);
+    }
+  }, [chatBoards, chatHistory, pins, activeChatId]);
+
 
   const setMessagesForActiveChat = (messages: Message[] | ((prev: Message[]) => Message[])) => {
     if (activeChatId) {
@@ -64,7 +100,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setPins(prev => {
         const existingPinIndex = prev.findIndex(p => p.id === pin.id);
         if (existingPinIndex > -1) {
-            // Unpin
             const newPins = prev.filter(p => p.id !== pin.id);
             const updatedChatBoards = chatBoards.map(board => 
                 board.name === pin.chat ? { ...board, pinCount: Math.max(0, (board.pinCount || 0) - 1) } : board
@@ -72,7 +107,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
             setChatBoards(updatedChatBoards);
             return newPins;
         } else {
-            // Pin
             const updatedPins = [pin, ...prev];
             const updatedChatBoards = chatBoards.map(board => 
                 board.name === pin.chat ? { ...board, pinCount: (board.pinCount || 0) + 1 } : board
@@ -101,12 +135,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setActiveChatId: (id: number) => setActiveChatId(id),
     pins,
     onPinMessage: handlePinMessage,
+    onUnpinMessage: handleUnpinMessage,
   };
 
   const pageContentProps = {
     onPinMessage: handlePinMessage,
     onUnpinMessage: handleUnpinMessage,
-    messages: chatHistory[activeChatId] || [],
+    messages: (activeChatId && chatHistory[activeChatId]) || [],
     setMessages: setMessagesForActiveChat
   };
   

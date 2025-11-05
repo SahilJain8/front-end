@@ -16,7 +16,6 @@ export function Topbar({ children }: { children?: ReactNode }) {
   const isMobile = useIsMobile();
   const tabs = [
     { name: "Chat Board", href: "/", icon: WandSparkles },
-    { name: "AI Automation", href: "/dashboard", icon: WandSparkles, disabled: true },
   ];
 
   return (
@@ -34,10 +33,9 @@ export function Topbar({ children }: { children?: ReactNode }) {
                 key={tab.name}
                 variant="ghost"
                 asChild
-                disabled={tab.disabled}
                 className={cn(
                     "font-semibold rounded-[25px]",
-                    pathname === tab.href && !tab.disabled ? "bg-accent text-accent-foreground" : ""
+                    pathname === tab.href ? "bg-accent text-accent-foreground" : ""
                 )}
             >
                 <Link href={tab.href}>

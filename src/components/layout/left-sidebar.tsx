@@ -5,7 +5,6 @@ import Link from "next/link";
 import React from 'react';
 import {
   Users,
-  WandSparkles,
   ChevronsLeft,
   Settings,
   Plus
@@ -46,10 +45,6 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
                 <Link href="#" className={cn("flex items-center gap-2 p-2 rounded-md hover:bg-accent", isCollapsed && "justify-center")}>
                     <Users />
                     <span className={cn(isCollapsed && "hidden")}>Personas</span>
-                </Link>
-                <Link href="/dashboard" className={cn("flex items-center gap-2 p-2 rounded-md hover:bg-accent", isCollapsed && "justify-center")}>
-                    <WandSparkles />
-                    <span className={cn(isCollapsed && "hidden")}>AI Automation</span>
                 </Link>
             </nav>
         </div>

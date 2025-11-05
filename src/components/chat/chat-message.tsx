@@ -65,7 +65,7 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete, onResubm
   // Convert 90 WPM to character delay. Avg word is 5 chars + space = 6.
   // 90 WPM * 6 chars/word = 540 chars/min.
   // 60,000 ms/min / 540 chars/min = ~111 ms/char. We'll use a faster 20ms for better UX.
-  const displayedContent = useTypewriter(message.content, 20, isNewMessage && !message.isLoading);
+  const displayedContent = useTypewriter(message.content, 20, isNewMessage && !isUser && !message.isLoading);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -118,7 +118,7 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete, onResubm
     return (
       <div className="flex items-center gap-1">
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onPin(message)}>
-          <Pin className={cn("h-4 w-4", message.isPinned && "fill-current text-blue-500")} />
+          <Pin className={cn("h-4 w-4", message.isPinned && "fill-primary text-primary")} />
         </Button>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(message.content)}><Copy className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" className="h-7 w-7"><Flag className="h-4 w-4" /></Button>

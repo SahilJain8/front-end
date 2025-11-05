@@ -270,12 +270,12 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages, setMessa
   }
 
   const handlePin = (message: Message) => {
-    if (!onPinMessage || !onUnpinMessage) return;
+    if (!layoutContext || !onPinMessage || !onUnpinMessage) return;
   
-    const activeChat = layoutContext?.chatBoards.find(c => c.id === layoutContext.activeChatId);
+    const activeChat = layoutContext.chatBoards.find(c => c.id === layoutContext.activeChatId);
     const chatName = activeChat ? activeChat.name : "Current Chat";
     
-    const isPinned = layoutContext?.pins.some(p => p.id === message.id);
+    const isPinned = layoutContext.pins.some(p => p.id === message.id);
   
     if (isPinned) {
       onUnpinMessage(message.id);
@@ -315,10 +315,10 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages, setMessa
     <div className="flex flex-col flex-1 bg-card overflow-hidden">
         <ScrollArea className="flex-1" viewportRef={scrollViewportRef} onScroll={handleScroll}>
             <div className="max-w-4xl mx-auto w-full space-y-6 p-4">
-            {(messages || []).length === 0 ? (
+            {messages.length === 0 ? (
                 <InitialPrompts onPromptClick={handlePromptClick} />
             ) : (
-                (messages || []).map((msg) => (
+                messages.map((msg, index) => (
                   <ChatMessage 
                     key={msg.id} 
                     message={{
@@ -330,7 +330,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages, setMessa
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onResubmit={handleSend}
-                    isNewMessage={msg.id === messages[messages.length - 1].id && msg.sender === 'ai'}
+                    isNewMessage={msg.id === messages[messages.length - 1].id && msg.sender === 'ai' && index === messages.length - 1}
                   />
                 ))
             )}
