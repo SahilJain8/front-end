@@ -38,6 +38,7 @@ interface AppLayoutContextType {
     setChatBoards: React.Dispatch<React.SetStateAction<ChatBoard[]>>;
     activeChatId: number | null;
     setActiveChatId: (id: number) => void;
+    pins: Pin[];
     onPinMessage?: (pin: Pin) => void;
 }
 
@@ -53,9 +54,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [chatHistory, setChatHistory] = useState<ChatHistory>(initialChatHistory);
   const isMobile = useIsMobile();
 
-  const setMessagesForActiveChat = (messages: Message[]) => {
+  const setMessagesForActiveChat = (messages: Message[] | ((prev: Message[]) => Message[])) => {
     if (activeChatId) {
-      setChatHistory(prev => ({ ...prev, [activeChatId]: messages }));
+      setChatHistory(prev => ({ ...prev, [activeChatId]: typeof messages === 'function' ? messages(prev[activeChatId] || []) : messages }));
     }
   };
   
@@ -93,11 +94,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
   };
   
-  const contextValue = {
+  const contextValue: AppLayoutContextType = {
     chatBoards,
     setChatBoards,
     activeChatId,
     setActiveChatId: (id: number) => setActiveChatId(id),
+    pins,
+    onPinMessage: handlePinMessage,
   };
 
   const pageContentProps = {
@@ -108,7 +111,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
   
   const pageContent = React.isValidElement(children) 
-    ? React.cloneElement(children as React.ReactElement, pageContentProps) 
+    ? React.cloneElement(children as React.ReactElement<any>, pageContentProps) 
     : children;
 
   if (isMobile) {
