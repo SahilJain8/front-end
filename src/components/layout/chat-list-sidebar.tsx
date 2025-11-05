@@ -33,11 +33,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Separator } from "../ui/separator";
 
 
-type ChatBoard = {
+export type ChatBoard = {
     id: number;
-    name: string;
+    name:string;
     time: string;
     isStarred: boolean;
     pinCount: number;
@@ -46,7 +47,7 @@ type ChatBoard = {
 interface ChatListSidebarProps {
     chatBoards: ChatBoard[];
     setChatBoards: React.Dispatch<React.SetStateAction<ChatBoard[]>>;
-    activeChatId: number;
+    activeChatId: number | null;
     setActiveChatId: (id: number) => void;
     isLeftSidebarCollapsed?: boolean;
 }
@@ -55,7 +56,7 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
   const [chatToDelete, setChatToDelete] = useState<number | null>(null);
 
   const handleAddChat = () => {
-    const newChat = {
+    const newChat: ChatBoard = {
         id: Date.now(),
         name: "New Chat",
         time: "1m",
@@ -79,6 +80,10 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
   const confirmDelete = () => {
     if (chatToDelete) {
         setChatBoards(prev => prev.filter(board => board.id !== chatToDelete));
+        if (activeChatId === chatToDelete) {
+            const newActiveChat = chatBoards.find(b => b.id !== chatToDelete);
+            setActiveChatId(newActiveChat ? newActiveChat.id : 0);
+        }
         setChatToDelete(null);
     }
   };
@@ -88,14 +93,15 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
     <>
       <aside className="w-72 bg-card text-card-foreground flex-col border-r hidden md:flex">
         <div className="p-4 border-b w-full">
+          <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search Ctrl+K" className="pl-9 bg-background rounded-[25px]" />
+          </div>
+          <Separator className="my-4 bg-border/50" />
           <Button variant="outline" className="w-full justify-start gap-2 rounded-[25px]" onClick={handleAddChat}>
               <Plus className="w-4 h-4" />
               <span>Add Chat Board</span>
           </Button>
-          <div className="relative mt-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search Ctrl+K" className="pl-9 bg-background rounded-[25px]" />
-          </div>
         </div>
         <div className="space-y-2 p-4 flex-1 overflow-y-auto">
             <h3 className="text-xs font-semibold text-muted-foreground px-2">CHAT BOARDS</h3>

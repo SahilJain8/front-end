@@ -1,12 +1,14 @@
 
 "use client";
 
-import { type ReactNode, useState, useRef, useEffect } from "react";
+import { type ReactNode, useState, useRef, useEffect, useContext } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Pin, Copy, Pencil, Flag, Trash2, Check, X } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import { Skeleton } from "../ui/skeleton";
+import { AppLayoutContext } from "../layout/app-layout";
+
 
 // Custom hook for typewriter effect
 const useTypewriter = (text: string, speed: number = 20) => {
@@ -17,9 +19,10 @@ const useTypewriter = (text: string, speed: number = 20) => {
     setDisplayText(''); // Reset on new text
     let i = 0;
     const intervalId = setInterval(() => {
-      setDisplayText(prev => prev + text.charAt(i));
-      i++;
-      if (i > text.length -1) {
+      if(i < text.length) {
+        setDisplayText(prev => prev + text.charAt(i));
+        i++;
+      } else {
         clearInterval(intervalId);
       }
     }, speed);
@@ -42,7 +45,7 @@ export interface Message {
 
 interface ChatMessageProps {
   message: Message;
-  onPin: (message: Message) => void;
+  onPin: (message: Message, chatName: string) => void;
   onCopy: (content: string) => void;
   onEdit: (messageId: string, newContent: string) => void;
   onDelete: (messageId: string) => void;
@@ -53,6 +56,7 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMe
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const layoutContext = useContext(AppLayoutContext);
   
   // Convert 90 WPM to character delay. Avg word is 5 chars + space = 6.
   // 90 WPM * 6 chars/word = 540 chars/min.
@@ -99,16 +103,21 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete }: ChatMe
     </div>
   )
 
-  const AiActions = () => (
-    <div className="flex items-center gap-1">
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onPin(message)}>
-        <Pin className={cn("h-4 w-4", message.isPinned && "fill-current text-blue-500")} />
-      </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(message.content)}><Copy className="h-4 w-4" /></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7"><Flag className="h-4 w-4" /></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(message.id)}><Trash2 className="h-4 w-4" /></Button>
-    </div>
-  )
+  const AiActions = () => {
+    const activeChat = layoutContext?.chatBoards.find(c => c.id === layoutContext.activeChatId);
+    const chatName = activeChat ? activeChat.name : "Current Chat";
+    
+    return (
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onPin(message, chatName)}>
+          <Pin className={cn("h-4 w-4", message.isPinned && "fill-current text-blue-500")} />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(message.content)}><Copy className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7"><Flag className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(message.id)}><Trash2 className="h-4 w-4" /></Button>
+      </div>
+    )
+  }
 
   const LoadingState = () => (
     <div className="flex items-center space-x-2">

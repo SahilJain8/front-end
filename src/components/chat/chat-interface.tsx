@@ -177,7 +177,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage }: ChatInterfacePro
     scrollViewportRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  const handlePin = (message: Message) => {
+  const handlePin = (message: Message, chatName: string) => {
     if (message.isPinned) {
       onUnpinMessage(message.id);
       setMessages(prev => prev.map(m => m.id === message.id ? { ...m, isPinned: false } : m));
@@ -188,14 +188,15 @@ export function ChatInterface({ onPinMessage, onUnpinMessage }: ChatInterfacePro
         text: message.content,
         tags: [],
         notes: "",
-        chat: "Current Chat",
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        chat: chatName,
+        time: new Date(),
       };
       onPinMessage(newPin);
       setMessages(prev => prev.map(m => m.id === message.id ? { ...m, isPinned: true } : m));
       toast({ title: "Pinned to board!" });
     }
   };
+
 
   const handleCopy = (content: string) => {
     navigator.clipboard.writeText(content);
@@ -224,7 +225,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage }: ChatInterfacePro
                   <ChatMessage 
                     key={msg.id} 
                     message={msg}
-                    onPin={handlePin}
+                    onPin={(message, chatName) => handlePin(message, chatName)}
                     onCopy={handleCopy}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
