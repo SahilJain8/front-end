@@ -10,27 +10,31 @@ import { Skeleton } from "../ui/skeleton";
 
 
 // Custom hook for typewriter effect
-const useTypewriter = (text: string, speed: number = 20) => {
-  const [displayText, setDisplayText] = useState('');
-
-  useEffect(() => {
-    if (!text) return;
-    setDisplayText(''); // Reset on new text
-    let i = 0;
-    const intervalId = setInterval(() => {
-      if(i < text.length) {
-        setDisplayText(prev => prev + text.charAt(i));
-        i++;
-      } else {
-        clearInterval(intervalId);
+const useTypewriter = (text: string, speed: number = 20, enabled: boolean = true) => {
+    const [displayText, setDisplayText] = useState('');
+  
+    useEffect(() => {
+      if (!enabled || !text) {
+        setDisplayText(text || '');
+        return;
       }
-    }, speed);
-
-    return () => clearInterval(intervalId);
-  }, [text, speed]);
-
-  return displayText;
-};
+  
+      setDisplayText(''); // Reset on new text
+      let i = 0;
+      const intervalId = setInterval(() => {
+        if (i < text.length) {
+          setDisplayText(prev => prev + text.charAt(i));
+          i++;
+        } else {
+          clearInterval(intervalId);
+        }
+      }, speed);
+  
+      return () => clearInterval(intervalId);
+    }, [text, speed, enabled]);
+  
+    return displayText;
+  };
 
 
 export interface Message {
@@ -49,9 +53,10 @@ interface ChatMessageProps {
   onEdit: (messageId: string, newContent: string) => void;
   onDelete: (messageId: string) => void;
   onResubmit: (newContent: string, messageId: string) => void;
+  isNewMessage: boolean;
 }
 
-export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete, onResubmit }: ChatMessageProps) {
+export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete, onResubmit, isNewMessage }: ChatMessageProps) {
   const isUser = message.sender === "user";
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
@@ -60,7 +65,7 @@ export function ChatMessage({ message, onPin, onCopy, onEdit, onDelete, onResubm
   // Convert 90 WPM to character delay. Avg word is 5 chars + space = 6.
   // 90 WPM * 6 chars/word = 540 chars/min.
   // 60,000 ms/min / 540 chars/min = ~111 ms/char. We'll use a faster 20ms for better UX.
-  const displayedContent = useTypewriter(message.content, 20);
+  const displayedContent = useTypewriter(message.content, 20, isNewMessage && !message.isLoading);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {

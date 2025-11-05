@@ -24,7 +24,7 @@ interface ChatInterfaceProps {
     setMessages: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
 }
 
-export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], setMessages = () => {} }: ChatInterfaceProps) {
+export function ChatInterface({ onPinMessage, onUnpinMessage, messages, setMessages }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
@@ -215,7 +215,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
           ),
         };
 
-        setMessages([...messages, userMessage, loadingMessage]);
+        setMessages((prev) => [...(prev || []), userMessage, loadingMessage]);
         setInput("");
         setIsScrolledToBottom(true);
         simulateAiResponse(loadingMessage.id);
@@ -275,7 +275,6 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
     const activeChat = layoutContext?.chatBoards.find(c => c.id === layoutContext.activeChatId);
     const chatName = activeChat ? activeChat.name : "Current Chat";
     
-    // Check if the message is already pinned by looking at the global pins state
     const isPinned = layoutContext?.pins.some(p => p.id === message.id);
   
     if (isPinned) {
@@ -331,6 +330,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onResubmit={handleSend}
+                    isNewMessage={msg.id === messages[messages.length - 1].id && msg.sender === 'ai'}
                   />
                 ))
             )}
