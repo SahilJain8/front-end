@@ -43,22 +43,6 @@ interface AppLayoutContextType {
 
 export const AppLayoutContext = createContext<AppLayoutContextType | null>(null);
 
-function PageContentWrapper({ children, ...props }: AppLayoutProps & { onPinMessage?: (pin: Pin) => void, onUnpinMessage?: (messageId: string) => void, messages?: Message[], setMessages?: (messages: Message[]) => void }) {
-    if (React.isValidElement(children)) {
-        // Filter out props that are not meant for the DOM element
-        const { onPinMessage, onUnpinMessage, messages, setMessages, ...rest } = props;
-
-        const childProps = {
-            ...rest,
-            ...(typeof children.type !== 'string' ? { onPinMessage, onUnpinMessage, messages, setMessages } : {})
-        };
-        
-        return React.cloneElement(children, childProps);
-    }
-    return <>{children}</>;
-}
-
-
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
@@ -122,6 +106,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
     messages: chatHistory[activeChatId] || [],
     setMessages: setMessagesForActiveChat
   };
+  
+  const pageContent = React.isValidElement(children) 
+    ? React.cloneElement(children as React.ReactElement, pageContentProps) 
+    : children;
 
   if (isMobile) {
     return (
@@ -150,9 +138,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     </Sheet>
                 </Topbar>
                  <main className="flex-1 flex flex-col min-w-0">
-                    <PageContentWrapper {...pageContentProps}>
-                        {children}
-                    </PageContentWrapper>
+                    {pageContent}
                 </main>
             </div>
         </AppLayoutContext.Provider>
@@ -176,9 +162,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               setChatHistory={setChatHistory}
           />
           <main className="flex-1 flex flex-col min-w-0">
-              <PageContentWrapper {...pageContentProps}>
-                  {children}
-              </PageContentWrapper>
+              {pageContent}
           </main>
           <RightSidebar
               isCollapsed={isRightSidebarCollapsed}
