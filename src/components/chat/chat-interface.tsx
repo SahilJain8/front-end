@@ -20,8 +20,8 @@ import { AppLayoutContext } from "../layout/app-layout";
 interface ChatInterfaceProps {
     onPinMessage?: (pin: PinType) => void;
     onUnpinMessage?: (messageId: string) => void;
-    messages?: Message[];
-    setMessages?: (messages: Message[]) => void;
+    messages: Message[];
+    setMessages: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
 }
 
 export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], setMessages = () => {} }: ChatInterfaceProps) {
@@ -238,7 +238,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
       };
 
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === loadingMessageId ? aiResponse : msg))
+        (prev || []).map((msg) => (msg.id === loadingMessageId ? aiResponse : msg))
       );
       setIsResponding(false);
     }, 1000);
@@ -271,12 +271,13 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
 
   const handlePin = (message: Message) => {
     if (!onPinMessage || !onUnpinMessage) return;
-
+  
     const activeChat = layoutContext?.chatBoards.find(c => c.id === layoutContext.activeChatId);
     const chatName = activeChat ? activeChat.name : "Current Chat";
     
-    const isPinned = messages.find(m => m.id === message.id)?.isPinned;
-
+    // Check if the message is already pinned by looking at the global pins state
+    const isPinned = layoutContext?.pins.some(p => p.id === message.id);
+  
     if (isPinned) {
       onUnpinMessage(message.id);
       toast({ title: "Unpinned from board!" });
@@ -292,8 +293,6 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
       onPinMessage(newPin);
       toast({ title: "Pinned to board!" });
     }
-
-    setMessages(messages.map(m => m.id === message.id ? { ...m, isPinned: !m.isPinned } : m));
   };
 
 
@@ -303,27 +302,30 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
   };
 
   const handleEdit = (messageId: string, newContent: string) => {
-    setMessages(prev => prev.map(msg => 
+    setMessages(prev => (prev || []).map(msg => 
       msg.id === messageId ? { ...msg, content: newContent } : msg
     ));
     // Here you would also make an API call to update the message on the backend
   };
 
   const handleDelete = (messageId: string) => {
-    setMessages(prev => prev.filter(m => m.id !== messageId));
+    setMessages(prev => (prev || []).filter(m => m.id !== messageId));
   };
   
   return (
     <div className="flex flex-col flex-1 bg-card overflow-hidden">
         <ScrollArea className="flex-1" viewportRef={scrollViewportRef} onScroll={handleScroll}>
             <div className="max-w-4xl mx-auto w-full space-y-6 p-4">
-            {messages.length === 0 ? (
+            {(messages || []).length === 0 ? (
                 <InitialPrompts onPromptClick={handlePromptClick} />
             ) : (
-                messages.map((msg) => (
+                (messages || []).map((msg) => (
                   <ChatMessage 
                     key={msg.id} 
-                    message={msg}
+                    message={{
+                        ...msg,
+                        isPinned: layoutContext?.pins.some(p => p.id === msg.id)
+                    }}
                     onPin={handlePin}
                     onCopy={handleCopy}
                     onEdit={handleEdit}
@@ -419,7 +421,3 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
     </div>
   );
 }
-
-      
-
-    
