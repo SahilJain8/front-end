@@ -219,7 +219,7 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
                   </div>
               </ScrollArea>
               <div className="p-4 border-t shrink-0">
-                  <Button variant="ghost" className="w-full rounded-[25px] h-9">
+                  <Button variant="outline" className="w-full rounded-[25px] h-9">
                       <Download className="mr-2 h-4 w-4" />
                       Export Pins
                   </Button>

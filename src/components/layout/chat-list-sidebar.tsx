@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import {
   MessageSquare,
   Plus,
@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "../ui/separator";
+import { AppLayoutContext } from "./app-layout";
 
 
 export type ChatBoard = {
@@ -54,10 +55,11 @@ interface ChatListSidebarProps {
 }
 
 export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setActiveChatId, onAddChat }: ChatListSidebarProps) {
-  const [chatToDelete, setChatToDelete] = useState<number | null>(null);
+  const [chatToDelete, setChatToDelete] = useState<ChatBoard | null>(null);
   const [renamingChatId, setRenamingChatId] = useState<number | null>(null);
   const [renamingText, setRenamingText] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const layoutContext = useContext(AppLayoutContext);
 
   useEffect(() => {
     if (renamingChatId && renameInputRef.current) {
@@ -71,16 +73,16 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
     ));
   };
   
-  const handleDeleteClick = (id: number) => {
-    setChatToDelete(id);
+  const handleDeleteClick = (board: ChatBoard) => {
+    setChatToDelete(board);
   };
   
   const confirmDelete = () => {
     if (chatToDelete) {
-        setChatBoards(prev => prev.filter(board => board.id !== chatToDelete));
+        setChatBoards(prev => prev.filter(board => board.id !== chatToDelete.id));
 
-        if (activeChatId === chatToDelete) {
-            const newActiveChat = chatBoards.find(b => b.id !== chatToDelete);
+        if (activeChatId === chatToDelete.id) {
+            const newActiveChat = chatBoards.find(b => b.id !== chatToDelete.id);
             setActiveChatId(newActiveChat ? newActiveChat.id : 0);
         }
         setChatToDelete(null);
@@ -165,7 +167,7 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleRenameClick(board) }}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
-                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteClick(board.id); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteClick(board); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                                       <DropdownMenuItem><Archive className="mr-2 h-4 w-4" />Archive</DropdownMenuItem>
                                       <DropdownMenuItem><Share2 className="mr-2 h-4 w-4" />Share</DropdownMenuItem>
                                   </DropdownMenuContent>
@@ -181,7 +183,10 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your chat board.
+              This action cannot be undone. This will permanently delete this chat board.
+              {chatToDelete && chatToDelete.pinCount > 0 && (
+                <div className="font-semibold text-destructive mt-2">This chat board has {chatToDelete.pinCount} pinned message(s).</div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

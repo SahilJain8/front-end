@@ -69,18 +69,22 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      const textarea = textareaRef.current;
+      textarea.focus();
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+
+      const handleChange = () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
+      };
+      textarea.addEventListener('input', handleChange);
+
+      return () => {
+        textarea.removeEventListener('input', handleChange);
+      };
     }
   }, [isEditing]);
-  
-  const handleSaveEdit = () => {
-    if (editedContent.trim() !== message.content) {
-      onEdit(message.id, editedContent);
-    }
-    setIsEditing(false);
-  };
   
   const handleSaveAndResubmit = () => {
     onResubmit(editedContent, message.id);
@@ -203,14 +207,14 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
             )}
         >
           {isEditing && isUser ? (
-            <div className="space-y-2">
+            <div className="space-y-2 w-full">
                <Textarea
                   ref={textareaRef}
                   value={editedContent}
                   onChange={(e) => setEditedContent(e.target.value)}
                   onKeyDown={handleEditKeyDown}
-                  className="w-full text-sm bg-background/20 text-card-foreground focus-visible:ring-ring"
-                  rows={3}
+                  className="w-full text-sm bg-background/20 text-card-foreground focus-visible:ring-ring resize-none overflow-hidden"
+                  rows={1}
                 />
                 <div className="flex justify-end gap-2">
                     <Button size="sm" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
