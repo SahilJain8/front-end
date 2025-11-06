@@ -16,7 +16,8 @@ export default function LoginPage() {
 
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would handle the sign-in logic
+    // Simulate successful login by setting a flag in localStorage
+    localStorage.setItem('isLoggedIn', 'true');
     // On success, redirect to the main app
     router.push('/chat');
   };
