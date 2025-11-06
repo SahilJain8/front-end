@@ -7,15 +7,18 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { GoogleLogo } from '@/components/icons/google-logo';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     // Here you would handle the sign-in logic
     // On success, redirect to the main app
-    router.push('/');
+    router.push('/chat');
   };
 
   return (
@@ -39,7 +42,17 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           </div>
-          <Input id="password" name="password" type="password" required />
+          <div className="relative">
+            <Input id="password" name="password" type={showPassword ? 'text' : 'password'} required />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+            </button>
+          </div>
         </div>
 
         <div>

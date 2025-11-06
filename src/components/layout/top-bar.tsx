@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import { Button } from "../ui/button";
 import { WandSparkles, BarChart2, UserPlus } from "lucide-react";
@@ -15,7 +14,7 @@ export function Topbar({ children }: { children?: ReactNode }) {
   const pathname = usePathname();
   const isMobile = useIsMobile();
   const tabs = [
-    { name: "Chat Board", href: "/", icon: WandSparkles },
+    { name: "Chat Board", href: "/chat", icon: WandSparkles },
   ];
 
   return (

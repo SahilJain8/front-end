@@ -1,4 +1,3 @@
-
 'use client';
 import type { ReactNode } from "react";
 import React, { useState, createContext, useEffect } from "react";
@@ -12,6 +11,7 @@ import { Button } from "../ui/button";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Message } from "../chat/chat-message";
+import { useRouter, usePathname } from "next/navigation";
 
 interface AppLayoutProps {
   children: React.ReactElement;
@@ -47,7 +47,7 @@ export const AppLayoutContext = createContext<AppLayoutContextType | null>(null)
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
-  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const [pins, setPins] = useState<Pin[]>([]);
@@ -56,6 +56,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [chatHistory, setChatHistory] = useState<ChatHistory>(initialChatHistory);
 
   const isMobile = useIsMobile();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Redirect to login if not authenticated (simple check for dev)
+  // In a real app, this would be a proper auth context check
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (!isLoggedIn && pathname.startsWith('/chat')) {
+      router.replace('/auth/login');
+    }
+  }, [pathname, router]);
 
   // Load state from localStorage on initial mount
   useEffect(() => {
@@ -98,21 +109,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
   
   const handlePinMessage = (pin: Pin) => {
     setPins(prev => {
-        const existingPinIndex = prev.findIndex(p => p.id === pin.id);
-        if (existingPinIndex > -1) {
-            const newPins = prev.filter(p => p.id !== pin.id);
-            const updatedChatBoards = chatBoards.map(board => 
-                board.name === pin.chat ? { ...board, pinCount: Math.max(0, (board.pinCount || 0) - 1) } : board
-            );
-            setChatBoards(updatedChatBoards);
-            return newPins;
+        const isAlreadyPinned = prev.some(p => p.id === pin.id);
+        if (isAlreadyPinned) {
+            return prev.filter(p => p.id !== pin.id);
         } else {
-            const updatedPins = [pin, ...prev];
-            const updatedChatBoards = chatBoards.map(board => 
-                board.name === pin.chat ? { ...board, pinCount: (board.pinCount || 0) + 1 } : board
-            );
-            setChatBoards(updatedChatBoards);
-            return updatedPins;
+            return [pin, ...prev];
         }
     });
   };
@@ -120,12 +121,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const handleUnpinMessage = (messageId: string) => {
     const pinToUnpin = pins.find(p => p.id === messageId);
     setPins(prev => prev.filter(p => p.id !== messageId));
-    if (pinToUnpin) {
-        const updatedChatBoards = chatBoards.map(board => 
-            board.name === pinToUnpin.chat ? { ...board, pinCount: Math.max(0, (board.pinCount || 0) - 1) } : board
-        );
-        setChatBoards(updatedChatBoards);
-    }
   };
   
   const contextValue: AppLayoutContextType = {
