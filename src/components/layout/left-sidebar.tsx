@@ -26,7 +26,7 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
   return (
       <aside className={cn(
           "bg-sidebar text-sidebar-foreground flex-col transition-all duration-300 ease-in-out border-r border-sidebar-border relative hidden md:flex",
-          isCollapsed ? "w-16 items-center" : "w-[195px]"
+          isCollapsed ? "w-16 items-center" : "w-[160px]"
         )}>
         
         <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full" style={{ right: '-1rem' }}>

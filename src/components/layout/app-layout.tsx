@@ -64,7 +64,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // In a real app, this would be a proper auth context check
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn && pathname.startsWith('/chat')) {
+    if (!isLoggedIn && (pathname.startsWith('/chat') || pathname.startsWith('/dashboard'))) {
       router.replace('/auth/login');
     }
   }, [pathname, router]);
@@ -109,18 +109,33 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
   
   const handlePinMessage = (pin: Pin) => {
-    setPins(prev => {
-        const isAlreadyPinned = prev.some(p => p.id === pin.id);
+    setPins(prevPins => {
+        const isAlreadyPinned = prevPins.some(p => p.id === pin.id);
         if (isAlreadyPinned) {
-            return prev.filter(p => p.id !== pin.id);
-        } else {
-            return [pin, ...prev];
+            return prevPins;
         }
+        
+        setChatBoards(prevBoards => prevBoards.map(board => {
+            if (board.id.toString() === pin.chatId) {
+                return { ...board, pinCount: (board.pinCount || 0) + 1 };
+            }
+            return board;
+        }));
+        
+        return [pin, ...prevPins];
     });
   };
 
   const handleUnpinMessage = (messageId: string) => {
     const pinToUnpin = pins.find(p => p.id === messageId);
+    if (pinToUnpin) {
+        setChatBoards(prevBoards => prevBoards.map(board => {
+            if (board.id.toString() === pinToUnpin.chatId) {
+                return { ...board, pinCount: Math.max(0, (board.pinCount || 0) - 1) };
+            }
+            return board;
+        }));
+    }
     setPins(prev => prev.filter(p => p.id !== messageId));
   };
   

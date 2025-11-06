@@ -185,11 +185,8 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
   }
 
   const handlePin = (message: Message) => {
-    if (!layoutContext) return;
+    if (!layoutContext || !layoutContext.activeChatId) return;
   
-    const activeChat = layoutContext.chatBoards.find(c => c.id === layoutContext.activeChatId);
-    const chatName = activeChat ? activeChat.name : "Current Chat";
-    
     const isPinned = layoutContext.pins.some(p => p.id === message.id);
   
     if (isPinned) {
@@ -204,7 +201,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
           text: message.content,
           tags: [],
           notes: "",
-          chat: chatName,
+          chatId: layoutContext.activeChatId.toString(),
           time: new Date(),
         };
         onPinMessage(newPin);

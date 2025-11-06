@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "../ui/button";
@@ -34,7 +35,7 @@ export function Topbar({ children }: { children?: ReactNode }) {
                 asChild
                 className={cn(
                     "font-semibold rounded-[25px]",
-                    pathname === tab.href ? "bg-accent text-accent-foreground" : ""
+                    pathname.startsWith(tab.href) ? "bg-secondary text-accent-foreground" : ""
                 )}
             >
                 <Link href={tab.href}>
@@ -48,9 +49,11 @@ export function Topbar({ children }: { children?: ReactNode }) {
 
       <div className={cn("items-center gap-2 px-4", isMobile ? "hidden" : "flex")}>
          <div className="flex items-center gap-2">
-            <Button variant="outline" className="rounded-[25px]">
-              <BarChart2 className="mr-2 h-4 w-4" />
-              Compare models
+            <Button variant="outline" className="rounded-[25px]" asChild>
+              <Link href="/dashboard">
+                <BarChart2 className="mr-2 h-4 w-4" />
+                Compare models
+              </Link>
             </Button>
             <CreatePersonaDialog />
          </div>

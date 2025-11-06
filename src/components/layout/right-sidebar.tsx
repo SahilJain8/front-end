@@ -19,7 +19,7 @@ export interface Pin {
   text: string;
   tags: string[];
   notes: string;
-  chat: string;
+  chatId: string;
   time: Date;
 }
 
@@ -123,7 +123,7 @@ const PinItem = ({ pin, onUpdatePin, onRemoveTag }: { pin: Pin, onUpdatePin: (up
                 </div>
 
                 <div className="flex justify-between items-center pt-2">
-                    <Badge variant="outline" className="font-normal border-dashed text-[10px]">{pin.chat}</Badge>
+                    <Badge variant="outline" className="font-normal border-dashed text-[10px]">{pin.chatId}</Badge>
                     <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(pin.time), { addSuffix: true })}</span>
                 </div>
             </CardContent>
@@ -165,7 +165,7 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins }: RightSide
         )}>
         
         <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 -left-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full">
-            <ChevronsRight className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")}/>
+            <ChevronsLeft className={cn("h-4 w-4 transition-transform", !isCollapsed && "rotate-180")}/>
         </Button>
         
         <div className="flex flex-col h-full">

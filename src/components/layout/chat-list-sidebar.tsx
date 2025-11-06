@@ -124,7 +124,7 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
 
   return (
     <>
-      <aside className="w-72 bg-card text-card-foreground flex-col border-r hidden md:flex">
+      <aside className="w-[240px] bg-card text-card-foreground flex-col border-r hidden md:flex">
         <div className="p-4 border-b w-full">
           <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -144,7 +144,7 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
                          key={board.id}
                          className={cn(
                             "w-full h-auto py-2 group flex justify-between items-center rounded-md hover:bg-accent cursor-pointer",
-                             activeChatId === board.id && "bg-accent"
+                             activeChatId === board.id && "bg-secondary"
                          )}
                          onClick={() => setActiveChatId(board.id)}
                         >
@@ -165,8 +165,8 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
                                     </div>
                                 ) : (
                                     <>
-                                        <p className="truncate w-full text-sm">{board.name}</p>
-                                        <p className="text-xs text-muted-foreground">{board.time}</p>
+                                        <p className="truncate w-full text-xs">{board.name}</p>
+                                        <p className="text-[10px] text-muted-foreground">{board.time}</p>
                                     </>
                                 )}
                                 </div>
