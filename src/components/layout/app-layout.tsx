@@ -40,8 +40,8 @@ interface AppLayoutContextType {
     activeChatId: number | null;
     setActiveChatId: (id: number) => void;
     pins: PinType[];
-    onPinMessage?: (pin: PinType) => void;
-    onUnpinMessage?: (pinId: string) => void;
+    onPinMessage: (pin: PinType) => void;
+    onUnpinMessage: (pinId: string) => void;
     handleAddChat: () => void;
 }
 
@@ -109,32 +109,31 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
   
   const handlePinMessage = (pin: PinType) => {
-    setPins(prevPins => {
-        const isAlreadyPinned = prevPins.some(p => p.id === pin.id);
-        if (isAlreadyPinned) return prevPins;
-        return [pin, ...prevPins];
-    });
-
-    setChatBoards_(prevBoards => prevBoards.map(board => {
-        if (board.id.toString() === pin.chatId) {
-            return { ...board, pinCount: (board.pinCount || 0) + 1 };
-        }
-        return board;
-    }));
+    setPins(prevPins => [pin, ...prevPins]);
+    setChatBoards_(prevBoards => 
+        prevBoards.map(board => {
+            if (board.id.toString() === pin.chatId) {
+                return { ...board, pinCount: (board.pinCount || 0) + 1 };
+            }
+            return board;
+        })
+    );
   };
 
   const handleUnpinMessage = (messageId: string) => {
     const pinToRemove = pins.find(p => p.id === messageId);
     if (!pinToRemove) return;
 
-    setPins(prev => prev.filter(p => p.id !== messageId));
+    setPins(prevPins => prevPins.filter(p => p.id !== messageId));
 
-    setChatBoards_(prevBoards => prevBoards.map(board => {
-        if (board.id.toString() === pinToRemove.chatId) {
-            return { ...board, pinCount: Math.max(0, (board.pinCount || 1) - 1) };
-        }
-        return board;
-    }));
+    setChatBoards_(prevBoards => 
+        prevBoards.map(board => {
+            if (board.id.toString() === pinToRemove.chatId) {
+                return { ...board, pinCount: Math.max(0, (board.pinCount || 1) - 1) };
+            }
+            return board;
+        })
+    );
   };
 
   const handleAddChat = () => {

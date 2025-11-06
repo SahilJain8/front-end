@@ -14,6 +14,16 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import type { Pin as PinType } from "../layout/right-sidebar";
 import { useToast } from "@/hooks/use-toast";
 import { AppLayoutContext } from "../layout/app-layout";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 interface ChatInterfaceProps {
@@ -35,6 +45,8 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
   const { toast } = useToast();
   const [isResponding, setIsResponding] = useState(false);
   const layoutContext = useContext(AppLayoutContext);
+
+  const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -222,9 +234,27 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
     ));
   };
 
-  const handleDelete = (messageId: string) => {
-    setMessages(prev => (prev || []).filter(m => m.id !== messageId));
+  const handleDeleteRequest = (message: Message) => {
+    setMessageToDelete(message);
   };
+
+  const confirmDelete = () => {
+    if (!messageToDelete) return;
+
+    // Check if the message was pinned
+    const isPinned = layoutContext?.pins.some(p => p.id === messageToDelete.id);
+    if (isPinned && onUnpinMessage) {
+      onUnpinMessage(messageToDelete.id);
+    }
+
+    setMessages(prev => (prev || []).filter(m => m.id !== messageToDelete.id));
+    setMessageToDelete(null);
+    toast({ title: "Message deleted." });
+  };
+  
+  const isMessagePinned = (messageId: string) => {
+    return layoutContext?.pins.some(p => p.id === messageId) || false;
+  }
   
   return (
     <div className="flex flex-col flex-1 bg-background overflow-hidden">
@@ -237,11 +267,11 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
                   <ChatMessage 
                     key={msg.id} 
                     message={msg}
-                    isPinned={layoutContext?.pins.some(p => p.id === msg.id)}
+                    isPinned={isMessagePinned(msg.id)}
                     onPin={handlePin}
                     onCopy={handleCopy}
                     onEdit={handleEdit}
-                    onDelete={handleDelete}
+                    onDelete={handleDeleteRequest}
                     onResubmit={handleSend}
                     isNewMessage={!isResponding && msg.id === messages[messages.length - 1].id && msg.sender === 'ai' && index === messages.length - 1}
                   />
@@ -273,64 +303,82 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
                 )}
             </div>
         )}
-      <footer className="shrink-0 p-4 bg-background">
-        <div className="relative max-w-4xl mx-auto w-full">
-          <div className="relative flex flex-col p-2 rounded-[25px] border border-input bg-card shadow-sm focus-within:ring-2 focus-within:ring-ring">
-            <Textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend(input);
-                }
-              }}
-              placeholder="Lets Play....."
-              className="pr-12 text-base resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-2 min-h-[48px]"
-              rows={1}
-              disabled={isResponding}
-            />
-            <div className="flex items-center justify-between mt-1 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
-                    <Button variant="ghost" className="rounded-[25px] h-8 px-3">
-                        <Library className="mr-2 h-4 w-4" />
-                        Library
-                    </Button>
-                    <Select>
-                        <SelectTrigger className="rounded-[25px] bg-transparent w-auto gap-2 h-8 px-3 border-0">
-                            <SelectValue placeholder="Choose Persona" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="researcher">Researcher</SelectItem>
-                            <SelectItem value="writer">Creative Writer</SelectItem>
-                            <SelectItem value="technical">Technical Expert</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select>
-                        <SelectTrigger className="rounded-[25px] bg-transparent w-auto gap-2 h-8 px-3 border-0">
-                            <SelectValue placeholder="Add Context" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="file">From File</SelectItem>
-                            <SelectItem value="url">From URL</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                        <Paperclip className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                        <Mic className="h-4 w-4" />
-                    </Button>
-                </div>
-                <Button size={isMobile ? 'icon' : 'lg'} onClick={() => handleSend(input)} disabled={!input.trim() || isResponding} className="bg-primary text-primary-foreground h-9 rounded-[25px] px-4 flex items-center gap-2">
-                    {!isMobile && "Send Message"}
-                    <Send className="h-4 w-4" />
-                </Button>
+        <footer className="shrink-0 p-4 bg-background">
+          <div className="relative max-w-4xl mx-auto w-full">
+            <div className="relative flex flex-col p-2 rounded-[25px] border border-input bg-card shadow-sm focus-within:ring-2 focus-within:ring-ring">
+              <Textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend(input);
+                  }
+                }}
+                placeholder="Lets Play....."
+                className="pr-12 text-base resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-2 min-h-[48px]"
+                rows={1}
+                disabled={isResponding}
+              />
+              <div className="flex items-center justify-between mt-1 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                      <Button variant="ghost" className="rounded-[25px] h-8 px-3">
+                          <Library className="mr-2 h-4 w-4" />
+                          Library
+                      </Button>
+                      <Select>
+                          <SelectTrigger className="rounded-[25px] bg-transparent w-auto gap-2 h-8 px-3 border-0">
+                              <SelectValue placeholder="Choose Persona" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="researcher">Researcher</SelectItem>
+                              <SelectItem value="writer">Creative Writer</SelectItem>
+                              <SelectItem value="technical">Technical Expert</SelectItem>
+                          </SelectContent>
+                      </Select>
+                      <Select>
+                          <SelectTrigger className="rounded-[25px] bg-transparent w-auto gap-2 h-8 px-3 border-0">
+                              <SelectValue placeholder="Add Context" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="file">From File</SelectItem>
+                              <SelectItem value="url">From URL</SelectItem>
+                          </SelectContent>
+                      </Select>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                          <Paperclip className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                          <Mic className="h-4 w-4" />
+                      </Button>
+                  </div>
+                  <Button size={isMobile ? 'icon' : 'lg'} onClick={() => handleSend(input)} disabled={!input.trim() || isResponding} className="bg-primary text-primary-foreground h-9 rounded-[25px] px-4 flex items-center gap-2">
+                      {!isMobile && "Send Message"}
+                      <Send className="h-4 w-4" />
+                  </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+
+        <AlertDialog open={!!messageToDelete} onOpenChange={(open) => !open && setMessageToDelete(null)}>
+        <AlertDialogContent className="rounded-[25px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this message.
+              {messageToDelete && isMessagePinned(messageToDelete.id) && (
+                <p className="font-semibold text-destructive mt-2">This message is currently pinned.</p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-[25px]" onClick={() => setMessageToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="rounded-[25px]" onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

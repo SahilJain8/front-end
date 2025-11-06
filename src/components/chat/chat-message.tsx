@@ -54,7 +54,7 @@ interface ChatMessageProps {
   onPin: (message: Message) => void;
   onCopy: (content: string) => void;
   onEdit: (messageId: string, newContent: string) => void;
-  onDelete: (messageId: string) => void;
+  onDelete: (message: Message) => void;
   onResubmit: (newContent: string, messageId: string) => void;
   isNewMessage: boolean;
 }
@@ -127,7 +127,7 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onDelete(message.id)}><Trash2 className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onDelete(message)}><Trash2 className="h-4 w-4" /></Button>
           </TooltipTrigger>
           <TooltipContent><p>Delete</p></TooltipContent>
         </Tooltip>
@@ -161,7 +161,7 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onDelete(message.id)}><Trash2 className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onDelete(message)}><Trash2 className="h-4 w-4" /></Button>
             </TooltipTrigger>
             <TooltipContent><p>Delete</p></TooltipContent>
           </Tooltip>
