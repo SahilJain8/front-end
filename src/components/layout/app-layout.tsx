@@ -42,6 +42,7 @@ interface AppLayoutContextType {
     pins: Pin[];
     onPinMessage?: (pin: Pin) => void;
     onUnpinMessage?: (pinId: string) => void;
+    handleAddChat: () => void;
 }
 
 export const AppLayoutContext = createContext<AppLayoutContextType | null>(null);
@@ -108,19 +109,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
   
   const handlePinMessage = (pin: Pin) => {
-    // Check if the pin already exists to prevent duplicates
-    if (pins.some(p => p.id === pin.id)) {
-        return;
-    }
-    // Add the new pin to the state
-    setPins(prevPins => [pin, ...prevPins]);
-    // Update the pin count for the corresponding chat board
-    setChatBoards(prevBoards => prevBoards.map(board => {
-        if (board.id.toString() === pin.chatId) {
-            return { ...board, pinCount: (board.pinCount || 0) + 1 };
+    setPins(prevPins => {
+        const isAlreadyPinned = prevPins.some(p => p.id === pin.id);
+        if (isAlreadyPinned) {
+            return prevPins;
         }
-        return board;
-    }));
+        const newPins = [pin, ...prevPins];
+        setChatBoards(prevBoards => prevBoards.map(board => {
+            if (board.id.toString() === pin.chatId) {
+                return { ...board, pinCount: (board.pinCount || 0) + 1 };
+            }
+            return board;
+        }));
+        return newPins;
+    });
   };
 
   const handleUnpinMessage = (messageId: string) => {
@@ -135,6 +137,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
         }));
     }
   };
+
+  const handleAddChat = () => {
+    const newChatId = Date.now();
+    const newChat: ChatBoard = {
+        id: newChatId,
+        name: "New Chat",
+        time: "1m",
+        isStarred: false,
+        pinCount: 0
+    };
+    setChatBoards(prev => [newChat, ...prev]);
+    setChatHistory(prev => ({...prev, [newChatId]: []}));
+    setActiveChatId(newChat.id);
+  };
   
   const contextValue: AppLayoutContextType = {
     chatBoards,
@@ -144,6 +160,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     pins,
     onPinMessage: handlePinMessage,
     onUnpinMessage: handleUnpinMessage,
+    handleAddChat,
   };
 
   const pageContentProps = {
@@ -170,13 +187,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
                              <LeftSidebar 
                                 isCollapsed={false}
                                 onToggle={() => {}}
+                                onAddChat={handleAddChat}
                             />
                             <ChatListSidebar 
                                 chatBoards={chatBoards}
                                 setChatBoards={setChatBoards}
                                 activeChatId={activeChatId}
                                 setActiveChatId={setActiveChatId}
-                                setChatHistory={setChatHistory}
+                                onAddChat={handleAddChat}
                             />
                         </SheetContent>
                     </Sheet>
@@ -197,13 +215,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <LeftSidebar 
               isCollapsed={isLeftSidebarCollapsed}
               onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
+              onAddChat={handleAddChat}
           />
           <ChatListSidebar 
               chatBoards={chatBoards}
               setChatBoards={setChatBoards}
               activeChatId={activeChatId}
               setActiveChatId={setActiveChatId}
-              setChatHistory={setChatHistory}
+              onAddChat={handleAddChat}
           />
           <main className="flex-1 flex flex-col min-w-0">
               {pageContent}
@@ -213,6 +232,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               onToggle={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
               pins={pins}
               setPins={setPins}
+              chatBoards={chatBoards}
           />
         </div>
       </div>

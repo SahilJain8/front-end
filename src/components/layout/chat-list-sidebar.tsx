@@ -50,10 +50,10 @@ interface ChatListSidebarProps {
     setChatBoards: React.Dispatch<React.SetStateAction<ChatBoard[]>>;
     activeChatId: number | null;
     setActiveChatId: (id: number) => void;
-    setChatHistory: React.Dispatch<React.SetStateAction<{[key: number]: any[]}>>;
+    onAddChat: () => void;
 }
 
-export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setActiveChatId, setChatHistory }: ChatListSidebarProps) {
+export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setActiveChatId, onAddChat }: ChatListSidebarProps) {
   const [chatToDelete, setChatToDelete] = useState<number | null>(null);
   const [renamingChatId, setRenamingChatId] = useState<number | null>(null);
   const [renamingText, setRenamingText] = useState("");
@@ -64,20 +64,6 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
         renameInputRef.current.focus();
     }
   }, [renamingChatId]);
-
-  const handleAddChat = () => {
-    const newChatId = Date.now();
-    const newChat: ChatBoard = {
-        id: newChatId,
-        name: "New Chat",
-        time: "1m",
-        isStarred: false,
-        pinCount: 0
-    };
-    setChatBoards(prev => [newChat, ...prev]);
-    setChatHistory(prev => ({...prev, [newChatId]: []}));
-    setActiveChatId(newChat.id);
-  };
 
   const toggleStar = (id: number) => {
     setChatBoards(prev => prev.map(board => 
@@ -92,11 +78,6 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
   const confirmDelete = () => {
     if (chatToDelete) {
         setChatBoards(prev => prev.filter(board => board.id !== chatToDelete));
-        setChatHistory(prev => {
-            const newHistory = {...prev};
-            delete newHistory[chatToDelete];
-            return newHistory;
-        });
 
         if (activeChatId === chatToDelete) {
             const newActiveChat = chatBoards.find(b => b.id !== chatToDelete);
@@ -131,7 +112,7 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
               <Input placeholder="Search Ctrl+K" className="pl-9 bg-background rounded-[25px]" />
           </div>
           <Separator className="my-4 bg-border/50" />
-          <Button variant="outline" className="w-full justify-start gap-2 rounded-[25px]" onClick={handleAddChat}>
+          <Button variant="outline" className="w-full justify-start gap-2 rounded-[25px]" onClick={onAddChat}>
               <Plus className="w-4 h-4" />
               <span>Add Chat Board</span>
           </Button>

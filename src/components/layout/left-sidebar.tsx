@@ -18,15 +18,16 @@ import { cn } from "@/lib/utils";
 interface LeftSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
+  onAddChat: () => void;
 }
 
-export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
+export function LeftSidebar({ isCollapsed, onToggle, onAddChat }: LeftSidebarProps) {
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
 
   return (
       <aside className={cn(
           "bg-sidebar text-sidebar-foreground flex-col transition-all duration-300 ease-in-out border-r border-sidebar-border relative hidden md:flex",
-          isCollapsed ? "w-16 items-center" : "w-[160px]"
+          isCollapsed ? "w-16 items-center" : "w-60"
         )}>
         
         <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full" style={{ right: '-1rem' }}>
@@ -34,7 +35,7 @@ export function LeftSidebar({ isCollapsed, onToggle }: LeftSidebarProps) {
         </Button>
         
         <div className={cn("p-4 space-y-4 w-full", isCollapsed && "p-2")}>
-            <Button variant="outline" className={cn("w-full justify-start gap-2 rounded-[25px]", isCollapsed && "justify-center w-auto")}>
+            <Button variant="outline" className={cn("w-full justify-start gap-2 rounded-[25px]", isCollapsed && "justify-center w-auto aspect-square p-0")} onClick={onAddChat}>
                 <Plus className="w-4 h-4" />
                 <span className={cn(isCollapsed && "hidden")}>Add Chat Board</span>
             </Button>

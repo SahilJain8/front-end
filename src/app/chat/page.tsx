@@ -23,7 +23,7 @@ function ChatPageContent({ isRightSidebarVisible, setIsRightSidebarVisible, onPi
 
   return (
       <div className="flex flex-col flex-1 h-full overflow-hidden">
-        <header className="flex items-center justify-between p-2 border-b h-[69px] bg-card shrink-0">
+        <header className="flex items-center justify-between p-2 border-b h-[60px] bg-card shrink-0">
             <div className="flex items-center gap-4">
                 <ModelSelector />
                 <div className="w-full max-w-sm hidden md:block">

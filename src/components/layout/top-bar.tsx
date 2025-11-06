@@ -19,7 +19,7 @@ export function Topbar({ children }: { children?: ReactNode }) {
   ];
 
   return (
-    <header className="flex items-center justify-between p-2 border-b h-[69px] bg-card shrink-0 z-20">
+    <header className="flex items-center justify-between p-2 border-b h-[60px] bg-card shrink-0 z-20">
       <div className="flex items-center gap-4">
         {isMobile ? children : (
          <Link href="/" className="flex items-center gap-2 px-4">
