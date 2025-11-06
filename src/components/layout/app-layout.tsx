@@ -1,3 +1,4 @@
+
 'use client';
 import type { ReactNode } from "react";
 import React, { useState, createContext, useEffect } from "react";
@@ -46,7 +47,7 @@ interface AppLayoutContextType {
 export const AppLayoutContext = createContext<AppLayoutContextType | null>(null);
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(true);
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -145,7 +146,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   if (isMobile) {
     return (
         <AppLayoutContext.Provider value={contextValue}>
-            <div className="flex flex-col h-screen bg-card w-full">
+            <div className="flex flex-col h-screen bg-background w-full">
                 <Topbar>
                     <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                         <SheetTrigger asChild>

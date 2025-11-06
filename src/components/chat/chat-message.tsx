@@ -20,8 +20,8 @@ const useTypewriter = (text: string, speed: number = 20, enabled: boolean = true
         return;
       }
   
-      setDisplayText(''); // Reset on new text
       let i = 0;
+      setDisplayText(''); // Reset on new text
       const intervalId = setInterval(() => {
         if (i < text.length) {
           setDisplayText(prev => prev + text.charAt(i));
@@ -144,7 +144,7 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
   return (
     <div
       className={cn(
-        "flex items-start gap-4 w-full",
+        "flex items-start gap-4 group w-full",
         isUser ? "justify-end" : "justify-start"
       )}
     >
@@ -152,8 +152,8 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
       <div className={cn("flex flex-col gap-2 max-w-[calc(100%-4rem)]", isUser ? 'items-end' : 'items-start')}>
         <div
             className={cn(
-            "p-4 rounded-[20px] break-words bg-card",
-            isUser && "bg-muted text-card-foreground"
+            "p-4 rounded-[20px] break-words",
+            isUser ? "bg-card text-card-foreground" : "bg-card text-card-foreground",
             )}
         >
           {isEditing && isUser ? (

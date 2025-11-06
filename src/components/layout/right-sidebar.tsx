@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Pin, Search, X, Files, ChevronsRight, Pencil, Check } from "lucide-react";
+import { Pin, Search, X, Files, ChevronsRight, Pencil, Check, ChevronsLeft } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Textarea } from "../ui/textarea";
 import { cn } from "@/lib/utils";
@@ -165,7 +165,7 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins }: RightSide
         )}>
         
         <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 -left-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full">
-            <ChevronsRight className={cn("h-4 w-4 transition-transform", !isCollapsed && "rotate-180")}/>
+            <ChevronsRight className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")}/>
         </Button>
         
         <div className="flex flex-col h-full">

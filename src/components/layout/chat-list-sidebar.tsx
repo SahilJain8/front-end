@@ -165,7 +165,7 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
                                     </div>
                                 ) : (
                                     <>
-                                        <p className="truncate w-full">{board.name}</p>
+                                        <p className="truncate w-full text-sm">{board.name}</p>
                                         <p className="text-xs text-muted-foreground">{board.time}</p>
                                     </>
                                 )}
