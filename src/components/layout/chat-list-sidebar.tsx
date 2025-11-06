@@ -177,7 +177,7 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
         </div>
       </aside>
       <AlertDialog open={!!chatToDelete} onOpenChange={(open) => !open && setChatToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>

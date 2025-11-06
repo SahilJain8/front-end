@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Pin, Search, X, Files, ChevronsLeft } from "lucide-react";
+import { Pin, Search, X, Files, ChevronsLeft, ChevronDown } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Textarea } from "../ui/textarea";
 import { cn } from "@/lib/utils";
@@ -105,23 +105,23 @@ const PinItem = ({ pin, onUpdatePin, onRemoveTag, chatName }: { pin: Pin, onUpda
                             <Textarea 
                                 ref={notesTextareaRef}
                                 placeholder="Add private notes..." 
-                                className="text-xs bg-card mt-1 resize-none pr-8 rounded-md" 
+                                className="text-xs bg-card mt-1 resize-none pr-8 rounded-md p-1 min-h-[24px]" 
                                 value={noteInput}
                                 onChange={(e) => setNoteInput(e.target.value)}
                                 onKeyDown={handleNoteKeyDown}
                                 onBlur={handleSaveNote}
                                 style={{ fontSize: '10px' }}
-                                rows={2}
+                                rows={1}
                             />
                         </div>
                     ) : (
-                        <div className="text-xs bg-card mt-1 p-2 rounded-md min-h-[30px] cursor-text border border-transparent hover:border-dashed hover:border-input">
+                        <div className="text-xs bg-card mt-1 p-1 rounded-md min-h-[24px] cursor-text border border-transparent hover:border-dashed hover:border-input">
                             {pin.notes || <span className="text-muted-foreground">Add private notes...</span>}
                         </div>
                     )}
                 </div>
 
-                <div className="flex justify-between items-center pt-2">
+                <div className="flex justify-between items-center pt-1">
                     <Badge variant="outline" className="font-normal border-dashed text-[10px] rounded-md">{chatName || `Chat ${pin.chatId}`}</Badge>
                     <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(pin.time), { addSuffix: true })}</span>
                 </div>
@@ -186,11 +186,11 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
                       <Input placeholder="Search pins..." className="pl-9 bg-background rounded-[25px]" />
                   </div>
                   <div className="mt-4 flex gap-2">
-                      <Button variant={activeTab === 'Pins' ? 'default' : 'outline'} className="w-full rounded-[25px]" onClick={() => setActiveTab('Pins')}>
+                      <Button variant={activeTab === 'Pins' ? 'secondary' : 'ghost'} className="w-full rounded-[25px] h-9" onClick={() => setActiveTab('Pins')}>
                           <Pin className="mr-2 h-4 w-4" />
                           Pins
                       </Button>
-                      <Button variant={activeTab === 'Files' ? 'default' : 'outline'} className="w-full rounded-[25px]" onClick={() => setActiveTab('Files')}>
+                      <Button variant={activeTab === 'Files' ? 'secondary' : 'ghost'} className="w-full rounded-[25px] h-9" onClick={() => setActiveTab('Files')}>
                           <Files className="mr-2 h-4 w-4" />
                           Files
                       </Button>
@@ -198,8 +198,9 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
                   <div className="mt-4">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full justify-between rounded-[25px]">
+                            <Button variant="outline" className="w-full justify-between rounded-[25px] h-9">
                                 <span>{sortOrder === 'newest' ? 'Filter by Newest' : 'Filter by Chats'}</span>
+                                <ChevronDown className="h-4 w-4 opacity-50" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-[268px]">
@@ -224,7 +225,7 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
                   </div>
               </ScrollArea>
               <div className="p-4 border-t shrink-0">
-                  <Button className="w-full rounded-[25px]">
+                  <Button variant="secondary" className="w-full rounded-[25px] h-9">
                       Export Pins
                   </Button>
               </div>
