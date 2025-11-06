@@ -101,25 +101,26 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
     }
   };
 
+  const actionButtonClasses = "h-7 w-7 text-muted-foreground/80 hover:text-muted-foreground";
 
   const UserActions = () => (
     <div className="flex items-center gap-1">
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(message.content)}><Copy className="h-4 w-4" /></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditing(true)}><Pencil className="h-4 w-4" /></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7"><Flag className="h-4 w-4" /></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(message.id)}><Trash2 className="h-4 w-4" /></Button>
+      <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onCopy(message.content)}><Copy className="h-4 w-4" /></Button>
+      <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => setIsEditing(true)}><Pencil className="h-4 w-4" /></Button>
+      <Button variant="ghost" size="icon" className={actionButtonClasses}><Flag className="h-4 w-4" /></Button>
+      <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onDelete(message.id)}><Trash2 className="h-4 w-4" /></Button>
     </div>
   )
 
   const AiActions = () => {
     return (
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onPin(message)}>
-          <Pin className={cn("h-4 w-4", isPinned && "fill-blue-400 text-blue-400")} />
+        <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onPin(message)}>
+          <Pin className={cn("h-4 w-4", isPinned && "fill-primary text-primary")} />
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(message.content)}><Copy className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7"><Flag className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(message.id)}><Trash2 className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onCopy(message.content)}><Copy className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className={actionButtonClasses}><Flag className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onDelete(message.id)}><Trash2 className="h-4 w-4" /></Button>
       </div>
     )
   }
@@ -144,16 +145,16 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
   return (
     <div
       className={cn(
-        "flex items-start gap-4 group w-full",
+        "flex items-start gap-4 w-full",
         isUser ? "justify-end" : "justify-start"
       )}
     >
       {!isUser && AvatarComponent}
-      <div className={cn("flex flex-col gap-2 max-w-[calc(100%-4rem)]", isUser ? 'items-end' : 'items-start')}>
+      <div className={cn("flex flex-col gap-1 max-w-[calc(100%-4rem)]", isUser ? 'items-end' : 'items-start')}>
         <div
             className={cn(
             "p-4 rounded-[20px] break-words",
-            isUser ? "bg-card text-card-foreground" : "bg-card text-card-foreground",
+            "bg-card text-card-foreground",
             )}
         >
           {isEditing && isUser ? (
@@ -177,7 +178,7 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
             <p className="text-sm whitespace-pre-wrap">{isUser ? message.content : displayedContent}</p>
           )}
         </div>
-        <div className={cn("flex items-center opacity-0 group-hover:opacity-100 transition-opacity", isUser ? "justify-end" : "justify-start")}>
+        <div className={cn("flex items-center transition-opacity", isUser ? "justify-end" : "justify-start")}>
             {isUser ? <UserActions /> : <AiActions />}
         </div>
       </div>

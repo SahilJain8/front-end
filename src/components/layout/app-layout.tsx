@@ -61,7 +61,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
 
   // Redirect to login if not authenticated (simple check for dev)
-  // In a real app, this would be a proper auth context check
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
     if (!isLoggedIn && (pathname.startsWith('/chat') || pathname.startsWith('/dashboard'))) {
@@ -109,26 +108,25 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
   
   const handlePinMessage = (pin: Pin) => {
-    setPins(prevPins => {
-        const isAlreadyPinned = prevPins.some(p => p.id === pin.id);
-        if (isAlreadyPinned) {
-            return prevPins;
+    // Check if the pin already exists to prevent duplicates
+    if (pins.some(p => p.id === pin.id)) {
+        return;
+    }
+    // Add the new pin to the state
+    setPins(prevPins => [pin, ...prevPins]);
+    // Update the pin count for the corresponding chat board
+    setChatBoards(prevBoards => prevBoards.map(board => {
+        if (board.id.toString() === pin.chatId) {
+            return { ...board, pinCount: (board.pinCount || 0) + 1 };
         }
-        
-        setChatBoards(prevBoards => prevBoards.map(board => {
-            if (board.id.toString() === pin.chatId) {
-                return { ...board, pinCount: (board.pinCount || 0) + 1 };
-            }
-            return board;
-        }));
-        
-        return [pin, ...prevPins];
-    });
+        return board;
+    }));
   };
 
   const handleUnpinMessage = (messageId: string) => {
     const pinToUnpin = pins.find(p => p.id === messageId);
     if (pinToUnpin) {
+        setPins(prev => prev.filter(p => p.id !== messageId));
         setChatBoards(prevBoards => prevBoards.map(board => {
             if (board.id.toString() === pinToUnpin.chatId) {
                 return { ...board, pinCount: Math.max(0, (board.pinCount || 0) - 1) };
@@ -136,7 +134,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
             return board;
         }));
     }
-    setPins(prev => prev.filter(p => p.id !== messageId));
   };
   
   const contextValue: AppLayoutContextType = {
