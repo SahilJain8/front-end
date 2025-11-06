@@ -1,7 +1,7 @@
 
 'use client';
 import type { ReactNode } from "react";
-import React, { useState, createContext, useEffect } from "react";
+import React, { useState, createContext, useEffect, useCallback } from "react";
 import { LeftSidebar } from "./left-sidebar";
 import { RightSidebar, type PinType } from "./right-sidebar";
 import { ChatListSidebar, type ChatBoard } from "./chat-list-sidebar";
@@ -61,7 +61,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const setChatBoards = (boards: ChatBoard[] | ((prev: ChatBoard[]) => ChatBoard[])) => {
+  const setChatBoards = useCallback((boards: ChatBoard[] | ((prev: ChatBoard[]) => ChatBoard[])) => {
     setChatBoards_(prevBoards => {
         const newBoards = typeof boards === 'function' ? boards(prevBoards) : boards;
         const updatedBoards = newBoards.map(board => {
@@ -70,7 +70,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         });
         return updatedBoards;
     });
-  };
+  }, [pins]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -116,6 +116,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
   }, [chatBoards, chatHistory, pins, activeChatId]);
 
+  useEffect(() => {
+    setChatBoards(chatBoards);
+  }, [pins, chatBoards, setChatBoards]);
+
 
   const setMessagesForActiveChat = (messages: Message[] | ((prev: Message[]) => Message[])) => {
     if (activeChatId) {
@@ -144,14 +148,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
         isStarred: false,
         pinCount: 0
     };
-    setChatBoards(prev => [newChat, ...prev]);
+    setChatBoards_(prev => [newChat, ...prev]);
     setChatHistory(prev => ({...prev, [newChatId]: []}));
     setActiveChatId(newChat.id);
   };
   
   const contextValue: AppLayoutContextType = {
     chatBoards,
-    setChatBoards,
+    setChatBoards: setChatBoards_,
     activeChatId,
     setActiveChatId: (id: number) => setActiveChatId(id),
     pins,
@@ -188,7 +192,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             />
                             <ChatListSidebar 
                                 chatBoards={chatBoards}
-                                setChatBoards={setChatBoards}
+                                setChatBoards={setChatBoards_}
                                 activeChatId={activeChatId}
                                 setActiveChatId={setActiveChatId}
                                 onAddChat={handleAddChat}
@@ -216,7 +220,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           />
           <ChatListSidebar 
               chatBoards={chatBoards}
-              setChatBoards={setChatBoards}
+              setChatBoards={setChatBoards_}
               activeChatId={activeChatId}
               setActiveChatId={setActiveChatId}
               onAddChat={handleAddChat}

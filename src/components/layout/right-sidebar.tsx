@@ -8,10 +8,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Pin, Search, Files, ChevronsLeft, ChevronDown, Download, X } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { cn } from "@/lib/utils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuCheckboxItem } from "../ui/dropdown-menu";
 import type { ChatBoard } from "./chat-list-sidebar";
 import { PinItem } from "../pinboard/pin-item";
 import { AppLayoutContext } from "./app-layout";
+import { Separator } from "../ui/separator";
 
 export interface PinType {
   id: string;
@@ -30,9 +31,11 @@ interface RightSidebarProps {
     chatBoards: ChatBoard[];
 }
 
+type FilterMode = 'current-chat' | 'newest' | 'oldest' | 'a-z' | 'z-a';
+
 export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards }: RightSidebarProps) {
   const [activeTab, setActiveTab] = useState("Pins");
-  const [filterMode, setFilterMode] = useState<'current-chat' | 'newest' | 'oldest' | 'tags'>('current-chat');
+  const [filterMode, setFilterMode] = useState<FilterMode>('current-chat');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const layoutContext = useContext(AppLayoutContext);
   const activeChatId = layoutContext?.activeChatId;
@@ -54,47 +57,49 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
     pins.forEach(pin => pin.tags.forEach(tag => tagSet.add(tag)));
-    return Array.from(tagSet);
+    return Array.from(tagSet).sort();
   }, [pins]);
 
   const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev => {
-        const newSelected = prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag];
-        if (newSelected.length > 0) {
-            setFilterMode('tags');
-        } else {
-            setFilterMode('current-chat');
-        }
-        return newSelected;
-    });
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
   };
 
   const sortedAndFilteredPins = useMemo(() => {
     let filtered = pins;
     
+    if (selectedTags.length > 0) {
+        filtered = pins.filter(pin => selectedTags.every(tag => pin.tags.includes(tag)));
+    }
+
     switch(filterMode) {
       case 'current-chat':
-        filtered = pins.filter(p => p.chatId === activeChatId?.toString());
-        return filtered.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+        return filtered.filter(p => p.chatId === activeChatId?.toString()).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
       case 'newest':
-        return [...pins].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+        return [...filtered].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
       case 'oldest':
-        return [...pins].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
-      case 'tags':
-        if(selectedTags.length === 0) return [];
-        return pins.filter(pin => selectedTags.every(tag => pin.tags.includes(tag)));
+        return [...filtered].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+      case 'a-z':
+        return [...filtered].sort((a, b) => a.text.localeCompare(b.text));
+      case 'z-a':
+        return [...filtered].sort((a, b) => b.text.localeCompare(a.text));
       default:
-        return pins;
+        return filtered;
     }
   }, [pins, filterMode, activeChatId, selectedTags]);
 
   const getFilterLabel = () => {
+    if (selectedTags.length > 0) {
+        return `Filtered by ${selectedTags.length} tag(s)`;
+    }
     switch (filterMode) {
         case 'current-chat': return 'Filter by Current Chat';
-        case 'newest': return 'Filter by Newest';
-        case 'oldest': return 'Filter by Oldest';
-        case 'tags': return `Filtered by ${selectedTags.length} tag(s)`;
-        default: return 'Filter by...';
+        case 'newest': return 'Sort by Newest';
+        case 'oldest': return 'Sort by Oldest';
+        case 'a-z': return 'Sort A-Z';
+        case 'z-a': return 'Sort Z-A';
+        default: return 'Filter & Sort';
     }
   }
 
@@ -146,30 +151,42 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-[268px]">
-                            <DropdownMenuItem onSelect={() => setFilterMode('current-chat')}>Filter by Current Chat</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => setFilterMode('newest')}>Filter by Newest</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => setFilterMode('oldest')}>Filter by Oldest</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => { setFilterMode('current-chat'); setSelectedTags([]); }}>Filter by Current Chat</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setFilterMode('newest')}>Sort by Newest</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setFilterMode('oldest')}>Sort by Oldest</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setFilterMode('a-z')}>Sort A-Z</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setFilterMode('z-a')}>Sort Z-A</DropdownMenuItem>
+                            <Separator />
+                            <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>Filter by Tags</DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent className="p-0">
+                                    <ScrollArea className="h-48">
+                                        <div className="p-2">
+                                            {allTags.length > 0 ? allTags.map(tag => (
+                                                <DropdownMenuCheckboxItem
+                                                    key={tag}
+                                                    checked={selectedTags.includes(tag)}
+                                                    onCheckedChange={() => handleTagToggle(tag)}
+                                                    onSelect={(e) => e.preventDefault()} // Prevent closing menu
+                                                >
+                                                    {tag}
+                                                </DropdownMenuCheckboxItem>
+                                            )) : (
+                                                <DropdownMenuItem disabled>No tags found</DropdownMenuItem>
+                                            )}
+                                        </div>
+                                    </ScrollArea>
+                                </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                             {selectedTags.length > 0 && (
+                                <>
+                                <Separator />
+                                <DropdownMenuItem onSelect={() => setSelectedTags([])} className="text-red-500">Clear Tag Filter</DropdownMenuItem>
+                                </>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  {allTags.length > 0 && (
-                      <div className="mt-2 space-y-2">
-                          <h4 className="text-xs font-semibold text-muted-foreground px-2">Filter by Tags</h4>
-                          <div className="flex flex-wrap gap-1">
-                              {allTags.map(tag => (
-                                  <Badge
-                                      key={tag}
-                                      variant={selectedTags.includes(tag) ? 'default' : 'secondary'}
-                                      onClick={() => handleTagToggle(tag)}
-                                      className="cursor-pointer font-normal text-foreground text-[10px] py-0.5 rounded-md"
-                                  >
-                                      {tag}
-                                      {selectedTags.includes(tag) && <X className="ml-1 h-3 w-3" />}
-                                  </Badge>
-                              ))}
-                          </div>
-                      </div>
-                  )}
               </div>
               <ScrollArea className="flex-1 min-h-0">
                   <div className="p-4 space-y-3">
