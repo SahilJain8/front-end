@@ -117,7 +117,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         // Update pin count on the board
         setChatBoards_(prevBoards => prevBoards.map(board => {
             if (board.id.toString() === pin.chatId) {
-                return { ...board, pinCount: board.pinCount + 1 };
+                return { ...board, pinCount: (board.pinCount || 0) + 1 };
             }
             return board;
         }));
@@ -152,14 +152,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
     };
     setChatBoards_(prev => [newChat, ...prev]);
     setChatHistory(prev => ({...prev, [newChatId]: []}));
-    setActiveChatId(newChat.id);
+    setActiveChatId(newChatId);
   };
   
   const contextValue: AppLayoutContextType = {
     chatBoards,
     setChatBoards: setChatBoards_,
     activeChatId,
-    setActiveChatId: (id: number) => setActiveChatId(id),
+    setActiveChatId,
     pins,
     onPinMessage: handlePinMessage,
     onUnpinMessage: handleUnpinMessage,
