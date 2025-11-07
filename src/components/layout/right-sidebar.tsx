@@ -215,8 +215,10 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
                         <PinItem key={pin.id} pin={pin} onUpdatePin={handleUpdatePin} onRemoveTag={handleRemoveTag} chatName={chatBoard?.name} />
                       )
                   }) : (
-                      <div className="text-center text-sm text-muted-foreground py-10">
-                          No pins found for this filter.
+                      <div className="text-center text-sm text-muted-foreground py-10 flex flex-col items-center gap-2">
+                          <Pin className="h-8 w-8 text-muted-foreground" />
+                          <p className="font-bold text-base text-foreground">No pins yet</p>
+                          <p className="max-w-xs px-4">Pin useful answers or references from your chats to keep them handy for later.</p>
                       </div>
                   )}
                   </div>
