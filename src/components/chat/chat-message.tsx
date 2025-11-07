@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { Pin, Copy, Pencil, Flag, Trash2, Bot, User } from "lucide-react";
+import { Pin, Copy, Pencil, Flag, Trash2, Bot, User, Check, X } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import { Skeleton } from "../ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -81,7 +81,9 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
       textarea.addEventListener('input', handleChange);
 
       return () => {
-        textarea.removeEventListener('input', handleChange);
+        if (textarea) {
+            textarea.removeEventListener('input', handleChange);
+        }
       };
     }
   }, [isEditing]);
@@ -213,12 +215,12 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
                   value={editedContent}
                   onChange={(e) => setEditedContent(e.target.value)}
                   onKeyDown={handleEditKeyDown}
-                  className="w-full text-sm bg-background/20 text-card-foreground focus-visible:ring-ring resize-none overflow-hidden"
+                  className="w-full text-sm bg-transparent text-card-foreground focus-visible:ring-0 ring-0 border-0 shadow-none resize-none overflow-hidden"
                   rows={1}
                 />
-                <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
-                    <Button size="sm" onClick={handleSaveAndResubmit}>Save & Submit</Button>
+                <div className="flex justify-end gap-1">
+                    <Button size="icon" variant="ghost" onClick={handleSaveAndResubmit} className="h-7 w-7"><Check className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={handleCancelEdit} className="h-7 w-7"><X className="h-4 w-4" /></Button>
                 </div>
             </div>
           ) : message.isLoading ? (
