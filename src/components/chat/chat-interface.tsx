@@ -368,10 +368,10 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete this message.
-              {messageToDelete && isMessagePinned(messageToDelete.id) && (
-                <div className="font-semibold text-destructive mt-2">This message is currently pinned.</div>
-              )}
             </AlertDialogDescription>
+            {messageToDelete && isMessagePinned(messageToDelete.id) && (
+              <p className="font-semibold text-destructive mt-2 text-sm">This message is currently pinned.</p>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-[25px]" onClick={() => setMessageToDelete(null)}>Cancel</AlertDialogCancel>
@@ -383,4 +383,5 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
   );
 }
 
+    
     
