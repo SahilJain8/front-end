@@ -47,6 +47,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
   const layoutContext = useContext(AppLayoutContext);
 
   const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
+  const [lastMessageId, setLastMessageId] = useState<string | null>(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -146,6 +147,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
       setMessages((prev) =>
         (prev || []).map((msg) => (msg.id === loadingMessageId ? aiResponse : msg))
       );
+      setLastMessageId(loadingMessageId);
       
     } catch (error) {
       console.error('Error fetching AI response:', error);
@@ -263,7 +265,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
             {(messages || []).length === 0 ? (
                 <InitialPrompts onPromptClick={handlePromptClick} />
             ) : (
-                messages.map((msg, index) => (
+                messages.map((msg) => (
                   <ChatMessage 
                     key={msg.id} 
                     message={msg}
@@ -273,7 +275,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
                     onEdit={handleEdit}
                     onDelete={handleDeleteRequest}
                     onResubmit={handleSend}
-                    isNewMessage={!isResponding && index === messages.length - 1}
+                    isNewMessage={msg.id === lastMessageId}
                   />
                 ))
             )}
@@ -382,6 +384,3 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
     </div>
   );
 }
-
-    
-    
