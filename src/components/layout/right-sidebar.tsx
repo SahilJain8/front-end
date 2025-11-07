@@ -5,7 +5,7 @@ import { useState, useMemo, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Pin, Search, Files, ChevronsLeft, ChevronDown, Download, X } from "lucide-react";
+import { Pin, Search, Files, ChevronsLeft, ChevronDown, Download, Tag } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuCheckboxItem } from "../ui/dropdown-menu";
@@ -169,13 +169,16 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
                             <DropdownMenuSub>
                                 <DropdownMenuSubTrigger>Filter by Tags</DropdownMenuSubTrigger>
                                 <DropdownMenuSubContent className="p-2">
-                                    <Input
-                                        placeholder="🏷️ Search tags..."
-                                        className="mb-2 h-8 rounded-[25px]"
-                                        value={tagSearch}
-                                        onChange={(e) => setTagSearch(e.target.value)}
-                                        onClick={(e) => e.preventDefault()}
-                                    />
+                                    <div className="relative">
+                                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Search tags..."
+                                            className="mb-2 h-8 rounded-[25px] pl-8"
+                                            value={tagSearch}
+                                            onChange={(e) => setTagSearch(e.target.value)}
+                                            onClick={(e) => e.preventDefault()}
+                                        />
+                                    </div>
                                     <ScrollArea className="h-auto max-h-48">
                                         <div className="space-y-1">
                                             {filteredTags.length > 0 ? filteredTags.map(tag => (
