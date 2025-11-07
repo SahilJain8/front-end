@@ -184,10 +184,10 @@ export function ChatListSidebar({ chatBoards, setChatBoards, activeChatId, setAc
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete this chat board.
-              {chatToDelete && chatToDelete.pinCount > 0 && (
-                <p className="font-semibold text-destructive mt-2">This chat board has {chatToDelete.pinCount} pinned message(s).</p>
-              )}
             </AlertDialogDescription>
+            {chatToDelete && chatToDelete.pinCount > 0 && (
+                <p className="text-sm font-semibold text-destructive mt-2">This chat board has {chatToDelete.pinCount} pinned message(s).</p>
+              )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-[25px]" onClick={() => setChatToDelete(null)}>Cancel</AlertDialogCancel>
