@@ -170,8 +170,8 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
                                 <DropdownMenuSubTrigger>Filter by Tags</DropdownMenuSubTrigger>
                                 <DropdownMenuSubContent className="p-2">
                                     <Input
-                                        placeholder="Search tags..."
-                                        className="mb-2 h-8"
+                                        placeholder="🏷️ Search tags..."
+                                        className="mb-2 h-8 rounded-[25px]"
                                         value={tagSearch}
                                         onChange={(e) => setTagSearch(e.target.value)}
                                         onClick={(e) => e.preventDefault()}
