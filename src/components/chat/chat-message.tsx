@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 
 
 // Custom hook for typewriter effect
-const useTypewriter = (text: string, speed: number = 5, enabled: boolean = true) => {
+const useTypewriter = (text: string, speed: number = 50, enabled: boolean = true) => {
     const [displayText, setDisplayText] = useState('');
   
     useEffect(() => {
@@ -65,7 +65,10 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
   const [editedContent, setEditedContent] = useState(message.content);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  const displayedContent = useTypewriter(message.content, 5, isNewMessage && !isUser && !message.isLoading);
+  // Smart speed logic
+  // 150 wpm ~ 80ms/char, 300 wpm ~ 40ms/char
+  const typewriterSpeed = message.content.length < 500 ? 80 : 40;
+  const displayedContent = useTypewriter(message.content, typewriterSpeed, isNewMessage && !isUser && !message.isLoading);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {

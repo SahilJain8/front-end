@@ -311,7 +311,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey && !isResponding) {
                     e.preventDefault();
                     handleSend(input);
                   }
@@ -370,7 +370,7 @@ export function ChatInterface({ onPinMessage, onUnpinMessage, messages = [], set
               This action cannot be undone. This will permanently delete this message.
             </AlertDialogDescription>
             {messageToDelete && isMessagePinned(messageToDelete.id) && (
-              <p className="font-semibold text-destructive mt-2 text-sm">This message is currently pinned.</p>
+              <div className="font-semibold text-destructive mt-2 text-sm">This message is currently pinned.</div>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>
