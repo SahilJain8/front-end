@@ -1,57 +1,63 @@
 import { NextResponse } from 'next/server';
 import type { AIModel } from '@/types/model';
 
-const models: AIModel[] = [
-  {
-    companyName: 'OpenAI',
-    modelName: 'GPT-5',
-    version: '5',
-    modelType: 'paid',
-    inputLimit: 128000,
-    outputLimit: 4096,
-  },
-  {
-    companyName: 'Anthropic',
-    modelName: 'Claude 3 Opus',
-    version: '3.0',
-    modelType: 'paid',
-    inputLimit: 200000,
-    outputLimit: 4096,
-  },
-    {
-    companyName: 'Anthropic',
-    modelName: 'Claude 3 Sonnet',
-    version: '3.0',
-    modelType: 'free',
-    inputLimit: 200000,
-    outputLimit: 4096,
-  },
-  {
-    companyName: 'Google',
-    modelName: 'Gemini Pro',
-    version: '1.0',
-    modelType: 'paid',
-    inputLimit: 30720,
-    outputLimit: 2048,
-  },
-  {
-    companyName: 'Google',
-    modelName: 'Gemini 2.5 Flash',
-    version: '2.5',
-    modelType: 'paid',
-    inputLimit: 1000000,
-    outputLimit: 8192,
-  },
-  {
-    companyName: 'Mistral AI',
-    modelName: 'Mistral Large',
-    version: '1.0',
-    modelType: 'free',
-    inputLimit: 32000,
-    outputLimit: 4096,
-  },
-];
-
+/**
+ * GET /api/models
+ * Fetches available AI models from the backend server
+ *
+ * Response format:
+ * [
+ *   {
+ *     "modelName": "GPT-4",
+ *     "companyName": "OpenAI",
+ *     "version": "4.0",
+ *     "inputLimit": 128000,  // max input tokens
+ *     "outputLimit": 4096     // max output tokens
+ *   }
+ * ]
+ */
 export async function GET() {
-  return NextResponse.json(models);
+  try {
+    // Get backend API URL from environment variables
+    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8000';
+    const modelsEndpoint = process.env.MODELS_API_ENDPOINT || '/api/models';
+    const apiUrl = `${backendUrl}${modelsEndpoint}`;
+
+    // Make GET request to backend server
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Disable caching for fresh data
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Backend API returned status ${response.status}`);
+    }
+
+    // Parse JSON response
+    const models: AIModel[] = await response.json();
+
+    // Validate response structure
+    if (!Array.isArray(models)) {
+      throw new Error('Invalid response format: expected an array');
+    }
+
+    // Return models to client
+    return NextResponse.json(models);
+
+  } catch (error) {
+    console.error('Error fetching models:', error);
+
+    // Return error response with appropriate status code
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch models',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
 }
