@@ -23,6 +23,7 @@ const chatFlow = ai.defineFlow(
   },
   async prompt => {
     const llmResponse = await ai.generate({
+      model: 'googleai/gemini-2.5-flash',
       prompt: prompt,
     });
 
