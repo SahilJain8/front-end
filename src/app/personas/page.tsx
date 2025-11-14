@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from "react";
 import AppLayout from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,67 +11,90 @@ import { PersonaCard } from "@/components/personas/persona-card";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Persona } from "@/components/personas/persona-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
-const personas: Persona[] = [
+const initialPersonas: Persona[] = [
     {
+      id: '1',
       name: 'Elena',
       title: 'UX Advisor',
-      description: 'Senior product manager with 10 years of UX research experience',
+      description: 'Senior product manager with 10 years of UX research experience, focusing on user-centric design and data-driven improvements.',
       avatarUrl: PlaceHolderImages.find(p => p.id === 'asha-avatar')?.imageUrl ?? '',
       avatarHint: PlaceHolderImages.find(p => p.id === 'asha-avatar')?.imageHint ?? '',
       tags: ['Empathetic', 'Temp: 2.1'],
       expertise: ['UX Research', 'Product Design', 'User Testing', 'Data Analysis', 'Figma'],
       personality: ['Patient', 'Analytical', 'Creative'],
+      isPinned: true,
     },
     {
+      id: '2',
       name: 'Marcus',
       title: 'Developer Mentor',
-      description: 'Full-stack developer specializing in modern web technologies',
+      description: 'Full-stack developer specializing in modern web technologies and building scalable, maintainable applications.',
       avatarUrl: PlaceHolderImages.find(p => p.id === 'codementor-avatar')?.imageUrl ?? '',
       avatarHint: PlaceHolderImages.find(p => p.id === 'codementor-avatar')?.imageHint ?? '',
       tags: ['Technical', 'Temp: 2.1'],
-      expertise: ['JavaScript', 'React', 'Node.js'],
+      expertise: ['JavaScript', 'React', 'Node.js', 'Go'],
       personality: ['Decisive', 'Patient', 'Analytical'],
+      isPinned: false,
     },
     {
+      id: '3',
       name: 'Chloe',
       title: 'Creative Coach',
-      description: 'Award-winning creative director with expertise in branding and storytelling',
+      description: 'Award-winning creative director with expertise in branding, storytelling, and creating impactful marketing campaigns.',
       avatarUrl: PlaceHolderImages.find(p => p.id === 'luna-avatar')?.imageUrl ?? '',
       avatarHint: PlaceHolderImages.find(p => p.id === 'luna-avatar')?.imageHint ?? '',
       tags: ['Witty', 'Temp: 2.1'],
       expertise: ['Branding', 'Storytelling', 'Design', 'Copywriting'],
       personality: ['Creative', 'Humorous', 'Decisive'],
+      isPinned: false,
     },
      {
+      id: '4',
       name: 'Aria',
-      title: 'UX Advisor',
-      description: 'Senior product manager with 10 years of UX research experience',
+      title: 'Data Scientist',
+      description: 'Data scientist with a knack for finding hidden patterns and building predictive models for business intelligence.',
       avatarUrl: PlaceHolderImages.find(p => p.id === 'asha-avatar')?.imageUrl ?? '',
       avatarHint: PlaceHolderImages.find(p => p.id === 'asha-avatar')?.imageHint ?? '',
-      tags: ['Empathetic', 'Temp: 2.1'],
-      expertise: ['UX Research', 'Product Design', 'User Testing'],
-      personality: ['Patient', 'Analytical', 'Creative'],
+      tags: ['Analytical', 'Temp: 0.5'],
+      expertise: ['Python', 'Machine Learning', 'SQL', 'Tableau'],
+      personality: ['Detail-oriented', 'Inquisitive', 'Systematic'],
+      isPinned: false,
     },
     {
+      id: '5',
       name: 'Devin',
-      title: 'Developer Mentor',
-      description: 'Full-stack developer specializing in modern web technologies',
+      title: 'DevOps Engineer',
+      description: 'Full-stack developer specializing in modern web technologies, CI/CD pipelines, and cloud infrastructure.',
       avatarUrl: PlaceHolderImages.find(p => p.id === 'codementor-avatar')?.imageUrl ?? '',
       avatarHint: PlaceHolderImages.find(p => p.id === 'codementor-avatar')?.imageHint ?? '',
-      tags: ['Technical', 'Temp: 2.1'],
-      expertise: ['JavaScript', 'React', 'Node.js', 'Python', 'DevOps'],
+      tags: ['Technical', 'Temp: 1.5'],
+      expertise: ['JavaScript', 'React', 'Node.js', 'Python', 'DevOps', 'AWS'],
       personality: ['Decisive', 'Patient', 'Analytical'],
+      isPinned: false,
     },
     {
+      id: '6',
       name: 'Isla',
-      title: 'Creative Coach',
-      description: 'Award-winning creative director with expertise in branding and storytelling',
+      title: 'Marketing Strategist',
+      description: 'Award-winning creative director with expertise in branding and storytelling, skilled in digital marketing and SEO.',
       avatarUrl: PlaceHolderImages.find(p => p.id === 'luna-avatar')?.imageUrl ?? '',
       avatarHint: PlaceHolderImages.find(p => p.id === 'luna-avatar')?.imageHint ?? '',
       tags: ['Witty', 'Temp: 2.1'],
-      expertise: ['Branding', 'Storytelling', 'Design'],
+      expertise: ['Branding', 'Storytelling', 'Design', 'SEO'],
       personality: ['Creative', 'Humorous', 'Decisive'],
+      isPinned: false,
     },
 ];
 
@@ -98,11 +122,45 @@ function StackedAvatars() {
 
 
 function PersonasPageContent() {
+    const [personas, setPersonas] = useState<Persona[]>(initialPersonas);
+    const [personaToDelete, setPersonaToDelete] = useState<Persona | null>(null);
+    const { toast } = useToast();
+
     const stats = [
-        { value: "5", label: "Total Personas" },
+        { value: personas.length, label: "Total Personas" },
         { value: "24", label: "Conversations" },
         { value: "156", label: "Messages Sent" },
     ];
+
+    const handleDeleteRequest = (persona: Persona) => {
+        setPersonaToDelete(persona);
+    };
+
+    const confirmDelete = () => {
+        if (!personaToDelete) return;
+        setPersonas(personas.filter(p => p.id !== personaToDelete.id));
+        setPersonaToDelete(null);
+        toast({ title: "Persona deleted", description: `${personaToDelete.name} has been removed.`});
+    };
+
+    const handlePinToggle = (personaId: string) => {
+        setPersonas(prevPersonas => {
+            const personaToToggle = prevPersonas.find(p => p.id === personaId);
+            if (!personaToToggle) return prevPersonas;
+
+            const updatedPersona = { ...personaToToggle, isPinned: !personaToToggle.isPinned };
+            
+            const otherPersonas = prevPersonas.filter(p => p.id !== personaId);
+
+            if (updatedPersona.isPinned) {
+                return [updatedPersona, ...otherPersonas].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+            } else {
+                 const newArr = [...otherPersonas, updatedPersona];
+                 return newArr.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+            }
+        });
+        toast({ title: personaToToggle.isPinned ? "Persona unpinned!" : "Persona pinned to top!" });
+    };
     
     return (
         <div className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto">
@@ -148,12 +206,31 @@ function PersonasPageContent() {
                         </Select>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {personas.map((persona, index) => (
-                            <PersonaCard key={index} persona={persona} />
+                        {personas.map((persona) => (
+                            <PersonaCard 
+                                key={persona.id} 
+                                persona={persona} 
+                                onDelete={() => handleDeleteRequest(persona)}
+                                onPinToggle={() => handlePinToggle(persona.id)}
+                            />
                         ))}
                     </div>
                 </main>
             </div>
+            <AlertDialog open={!!personaToDelete} onOpenChange={(open) => !open && setPersonaToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the persona.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setPersonaToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

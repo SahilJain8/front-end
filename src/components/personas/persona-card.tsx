@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, MessageSquare } from "lucide-react";
+import { MoreHorizontal, MessageSquare, Pin } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface Persona {
+    id: string;
     name: string;
     title: string;
     description: string;
@@ -17,13 +19,16 @@ export interface Persona {
     tags: string[];
     expertise: string[];
     personality: string[];
+    isPinned: boolean;
 }
 
 interface PersonaCardProps {
     persona: Persona;
+    onDelete: () => void;
+    onPinToggle: () => void;
 }
 
-export function PersonaCard({ persona }: PersonaCardProps) {
+export function PersonaCard({ persona, onDelete, onPinToggle }: PersonaCardProps) {
     const displayedExpertise = persona.expertise.slice(0, 3);
     const remainingExpertiseCount = persona.expertise.length - 3;
     
@@ -41,23 +46,29 @@ export function PersonaCard({ persona }: PersonaCardProps) {
                             <p className="text-xs text-muted-foreground">{persona.title}</p>
                         </div>
                     </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-500">Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center">
+                        {persona.isPinned && <Pin className="h-4 w-4 text-muted-foreground mr-1" />}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={onPinToggle}>
+                                    {persona.isPinned ? "Unpin from top" : "Pin to top"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>Edit</DropdownMenuItem>
+                                <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                                <DropdownMenuItem onClick={onDelete} className="text-red-500">Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </header>
 
-                <p className="text-sm text-muted-foreground flex-1">{persona.description}</p>
+                <p className="text-sm text-muted-foreground flex-1 min-h-[60px]">{persona.description}</p>
 
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 min-h-[26px]">
                     {persona.tags.map(tag => (
                          <Badge key={tag} variant="secondary" className="font-normal">{tag}</Badge>
                     ))}
@@ -65,7 +76,7 @@ export function PersonaCard({ persona }: PersonaCardProps) {
 
                 <div>
                     <h4 className="font-semibold text-sm mb-2">Expertise</h4>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1.5 min-h-[26px]">
                          {displayedExpertise.map(skill => (
                             <Badge key={skill} variant="outline">{skill}</Badge>
                         ))}
@@ -77,7 +88,7 @@ export function PersonaCard({ persona }: PersonaCardProps) {
 
                  <div>
                     <h4 className="font-semibold text-sm mb-2">Personality</h4>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1.5 min-h-[26px]">
                          {persona.personality.map(trait => (
                             <Badge key={trait} variant="outline" className="rounded-full">{trait}</Badge>
                         ))}
