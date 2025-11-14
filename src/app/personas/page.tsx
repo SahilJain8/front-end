@@ -144,20 +144,19 @@ function PersonasPageContent() {
     };
 
     const handlePinToggle = (personaId: string) => {
+        const personaToToggle = personas.find(p => p.id === personaId);
+        if (!personaToToggle) return;
+
         setPersonas(prevPersonas => {
-            const personaToToggle = prevPersonas.find(p => p.id === personaId);
-            if (!personaToToggle) return prevPersonas;
-
-            const updatedPersona = { ...personaToToggle, isPinned: !personaToToggle.isPinned };
+            const updatedPersonas = prevPersonas.map(p => 
+                p.id === personaId ? { ...p, isPinned: !p.isPinned } : p
+            );
             
-            const otherPersonas = prevPersonas.filter(p => p.id !== personaId);
-
-            if (updatedPersona.isPinned) {
-                return [updatedPersona, ...otherPersonas].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-            } else {
-                 const newArr = [...otherPersonas, updatedPersona];
-                 return newArr.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-            }
+            return updatedPersonas.sort((a, b) => {
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
+                return 0;
+            });
         });
         toast({ title: personaToToggle.isPinned ? "Persona unpinned!" : "Persona pinned to top!" });
     };
