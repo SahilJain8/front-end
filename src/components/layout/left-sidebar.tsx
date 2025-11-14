@@ -104,12 +104,12 @@ export function LeftSidebar({
           isCollapsed ? "w-16 items-center" : "w-64"
         )}>
         
-        <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-2 -right-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full">
+        <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 -right-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full">
             <ChevronsLeft className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")}/>
         </Button>
         
         <div className={cn("p-2 space-y-2 w-full")}>
-            <Button variant="ghost" className={cn("w-full justify-start gap-2", isCollapsed && "justify-center w-auto aspect-square p-0")} onClick={onAddChat}>
+            <Button variant="ghost" className={cn("w-full justify-start gap-2 rounded-md", isCollapsed && "justify-center w-auto aspect-square p-0")} onClick={onAddChat}>
                 <Plus className="w-4 h-4" />
                 <span className={cn(isCollapsed && "hidden")}>New Chat</span>
             </Button>
@@ -117,11 +117,13 @@ export function LeftSidebar({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search chats" className="pl-9 bg-card rounded-md h-9" />
             </div>
-            <Link href="/personas" className={cn("flex items-center gap-2 p-2 rounded-md hover:bg-accent", isCollapsed && "justify-center")}>
-                <Users className="w-4 h-4" />
-                <span className={cn(isCollapsed && "hidden")}>Personas</span>
-            </Link>
-             <Button variant="ghost" className={cn("w-full justify-start gap-2", isCollapsed && "justify-center")}>
+             <Button asChild variant="ghost" className={cn("w-full justify-start gap-2 rounded-md", isCollapsed && "justify-center w-auto aspect-square p-0")}>
+                <Link href="/personas">
+                    <Users className="w-4 h-4" />
+                    <span className={cn(isCollapsed && "hidden")}>Personas</span>
+                </Link>
+            </Button>
+             <Button variant="ghost" className={cn("w-full justify-start gap-2 rounded-md", isCollapsed && "justify-center w-auto aspect-square p-0")}>
                 <Library className="w-4 h-4" />
                 <span className={cn(isCollapsed && "hidden")}>Library</span>
             </Button>
@@ -131,19 +133,18 @@ export function LeftSidebar({
 
         <div className={cn("space-y-1 flex-1 overflow-y-auto w-full px-2", isCollapsed && "px-1")}>
             <h3 className={cn("text-xs font-semibold text-muted-foreground px-2 mb-2", isCollapsed && "hidden")}>Chat Boards</h3>
-            {chatBoards.map((board) => (
+            {!isCollapsed && chatBoards.map((board) => (
               <div
                     key={board.id}
                     className={cn(
-                      "w-full h-auto py-2 group flex justify-between items-center rounded-md hover:bg-accent cursor-pointer",
+                      "w-full h-auto py-2 group flex justify-between items-center rounded-md hover:bg-accent cursor-pointer px-2",
                       activeChatId === board.id && "bg-secondary",
-                      isCollapsed ? "px-1 justify-center" : "px-2"
                     )}
                     onClick={() => setActiveChatId(board.id)}
                   >
                       <div className="flex items-center gap-2 overflow-hidden flex-1">
                           <MessageSquare className="w-5 h-5 flex-shrink-0" />
-                          <div className={cn("flex-grow text-left overflow-hidden", isCollapsed && "hidden")}>
+                          <div className="flex-grow text-left overflow-hidden">
                           {renamingChatId === board.id ? (
                               <div className="flex items-center gap-1">
                                   <Input 
@@ -152,7 +153,7 @@ export function LeftSidebar({
                                       onChange={(e) => setRenamingText(e.target.value)}
                                       onBlur={handleRenameSave}
                                       onKeyDown={(e) => e.key === 'Enter' && handleRenameSave()}
-                                      className="h-7 text-xs rounded-[25px]"
+                                      className="h-7 text-xs rounded-md"
                                   />
                                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleRenameSave}><Check className="h-4 w-4" /></Button>
                               </div>
@@ -164,7 +165,7 @@ export function LeftSidebar({
                           )}
                           </div>
                       </div>
-                        <div className={cn("ml-2 flex-shrink-0 flex items-center gap-1", isCollapsed && "hidden")}>
+                        <div className={"ml-2 flex-shrink-0 flex items-center gap-1"}>
                           <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={(e) => toggleStar(e, board.id)}>
                             <Star className={cn("w-4 h-4 text-muted-foreground", board.isStarred && "text-blue-400 fill-blue-400")} />
                           </Button>
