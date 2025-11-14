@@ -1,10 +1,9 @@
 
 'use client';
 import type { ReactNode } from "react";
-import React, { useState, createContext, useEffect, useCallback } from "react";
+import React, { useState, createContext, useEffect, useCallback, useRef } from "react";
 import { LeftSidebar } from "./left-sidebar";
 import { RightSidebar, type PinType } from "./right-sidebar";
-import { ChatListSidebar, type ChatBoard } from "./chat-list-sidebar";
 import { Topbar } from "./top-bar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
@@ -13,10 +12,28 @@ import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Message } from "../chat/chat-message";
 import { useRouter, usePathname } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AppLayoutProps {
   children: React.ReactElement;
 }
+
+export type ChatBoard = {
+    id: number;
+    name:string;
+    time: string;
+    isStarred: boolean;
+    pinCount: number;
+};
 
 const initialChatBoards: ChatBoard[] = [
     { id: 1, name: "Product Analysis Q4", time: "2m", isStarred: true, pinCount: 0 },
@@ -48,7 +65,7 @@ interface AppLayoutContextType {
 export const AppLayoutContext = createContext<AppLayoutContextType | null>(null);
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(true);
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -57,9 +74,36 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [activeChatId, setActiveChatId] = useState<number>(1);
   const [chatHistory, setChatHistory] = useState<ChatHistory>(initialChatHistory);
 
+  const [chatToDelete, setChatToDelete] = useState<ChatBoard | null>(null);
+  const [renamingChatId, setRenamingChatId] = useState<number | null>(null);
+  const [renamingText, setRenamingText] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
   const isMobile = useIsMobile();
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (renamingChatId && renameInputRef.current) {
+        renameInputRef.current.focus();
+    }
+  }, [renamingChatId]);
+
+  const handleDeleteClick = (board: ChatBoard) => {
+    setChatToDelete(board);
+  };
+  
+  const confirmDelete = () => {
+    if (chatToDelete) {
+        setChatBoards_(prev => prev.filter(board => board.id !== chatToDelete.id));
+
+        if (activeChatId === chatToDelete.id) {
+            const newActiveChat = chatBoards.find(b => b.id !== chatToDelete.id);
+            setActiveChatId(newActiveChat ? newActiveChat.id : 0);
+        }
+        setChatToDelete(null);
+    }
+  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -171,6 +215,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
   
   const pageContent = React.cloneElement(children, pageContentProps);
 
+  const sidebarProps = {
+    isCollapsed: isLeftSidebarCollapsed,
+    onToggle: () => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed),
+    chatBoards: chatBoards,
+    setChatBoards: setChatBoards_,
+    activeChatId: activeChatId,
+    setActiveChatId: setActiveChatId,
+    onAddChat: handleAddChat,
+    renamingChatId: renamingChatId,
+    setRenamingChatId: setRenamingChatId,
+    renamingText: renamingText,
+    setRenamingText: setRenamingText,
+    renameInputRef: renameInputRef,
+    handleDeleteClick: handleDeleteClick,
+  };
+
   if (isMobile) {
     return (
         <AppLayoutContext.Provider value={contextValue}>
@@ -183,18 +243,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="left" className="p-0 flex gap-0 w-[80vw]">
-                             <LeftSidebar 
-                                isCollapsed={false}
-                                onToggle={() => {}}
-                                onAddChat={handleAddChat}
-                            />
-                            <ChatListSidebar 
-                                chatBoards={chatBoards}
-                                setChatBoards={setChatBoards_}
-                                activeChatId={activeChatId}
-                                setActiveChatId={setActiveChatId}
-                                onAddChat={handleAddChat}
-                            />
+                             <LeftSidebar {...sidebarProps} isCollapsed={false} />
                         </SheetContent>
                     </Sheet>
                 </Topbar>
@@ -202,6 +251,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     {pageContent}
                 </main>
             </div>
+            <AlertDialog open={!!chatToDelete} onOpenChange={(open) => !open && setChatToDelete(null)}>
+              <AlertDialogContent className="rounded-[25px]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this chat board.
+                  </AlertDialogDescription>
+                  {chatToDelete && chatToDelete.pinCount > 0 && (
+                      <p className="text-sm font-semibold text-destructive mt-2">This chat board has {chatToDelete.pinCount} pinned message(s).</p>
+                    )}
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-[25px]" onClick={() => setChatToDelete(null)}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction className="rounded-[25px]" onClick={confirmDelete}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
         </AppLayoutContext.Provider>
     )
   }
@@ -211,18 +277,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div className="flex flex-col h-screen bg-background w-full">
         <Topbar />
         <div className="flex flex-1 overflow-hidden">
-          <LeftSidebar 
-              isCollapsed={isLeftSidebarCollapsed}
-              onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
-              onAddChat={handleAddChat}
-          />
-          <ChatListSidebar 
-              chatBoards={chatBoards}
-              setChatBoards={setChatBoards_}
-              activeChatId={activeChatId}
-              setActiveChatId={setActiveChatId}
-              onAddChat={handleAddChat}
-          />
+          <LeftSidebar {...sidebarProps} />
           <main className="flex-1 flex flex-col min-w-0">
               {pageContent}
           </main>
@@ -235,6 +290,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
           />
         </div>
       </div>
+      <AlertDialog open={!!chatToDelete} onOpenChange={(open) => !open && setChatToDelete(null)}>
+        <AlertDialogContent className="rounded-[25px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this chat board.
+            </AlertDialogDescription>
+            {chatToDelete && chatToDelete.pinCount > 0 && (
+                <p className="text-sm font-semibold text-destructive mt-2">This chat board has {chatToDelete.pinCount} pinned message(s).</p>
+              )}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-[25px]" onClick={() => setChatToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="rounded-[25px]" onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayoutContext.Provider>
   );
 }
