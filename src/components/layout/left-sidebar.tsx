@@ -109,21 +109,21 @@ export function LeftSidebar({
         </Button>
         
         <div className={cn("p-2 space-y-2 w-full")}>
-            <Button variant="ghost" className={cn("w-full justify-start gap-2 rounded-md", isCollapsed && "justify-center w-auto aspect-square p-0")} onClick={onAddChat}>
+            <Button variant="ghost" className={cn("w-full justify-start gap-2 rounded-[25px]", isCollapsed && "justify-center w-auto aspect-square p-0")} onClick={onAddChat}>
                 <Plus className="w-4 h-4" />
                 <span className={cn(isCollapsed && "hidden")}>New Chat</span>
             </Button>
             <div className={cn("relative", isCollapsed && "hidden")}>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search chats" className="pl-9 bg-card rounded-md h-9" />
+              <Input placeholder="Search chats" className="pl-9 bg-card rounded-[25px] h-9" />
             </div>
-             <Button asChild variant="ghost" className={cn("w-full justify-start gap-2 rounded-md", isCollapsed && "justify-center w-auto aspect-square p-0")}>
+             <Button asChild variant="ghost" className={cn("w-full justify-start gap-2 rounded-[25px]", isCollapsed && "justify-center w-auto aspect-square p-0")}>
                 <Link href="/personas">
                     <Users className="w-4 h-4" />
                     <span className={cn(isCollapsed && "hidden")}>Personas</span>
                 </Link>
             </Button>
-             <Button variant="ghost" className={cn("w-full justify-start gap-2 rounded-md", isCollapsed && "justify-center w-auto aspect-square p-0")}>
+             <Button variant="ghost" className={cn("w-full justify-start gap-2 rounded-[25px]", isCollapsed && "justify-center w-auto aspect-square p-0")}>
                 <Library className="w-4 h-4" />
                 <span className={cn(isCollapsed && "hidden")}>Library</span>
             </Button>
@@ -131,13 +131,13 @@ export function LeftSidebar({
         
         <Separator className={cn("my-2", isCollapsed && "mx-2")} />
 
-        <div className={cn("space-y-1 flex-1 overflow-y-auto w-full px-2", isCollapsed && "px-1")}>
+        <div className={cn("space-y-1 flex-1 overflow-y-auto w-full px-2", isCollapsed && "px-1 hidden")}>
             <h3 className={cn("text-xs font-semibold text-muted-foreground px-2 mb-2", isCollapsed && "hidden")}>Chat Boards</h3>
             {!isCollapsed && chatBoards.map((board) => (
               <div
                     key={board.id}
                     className={cn(
-                      "w-full h-auto py-2 group flex justify-between items-center rounded-md hover:bg-accent cursor-pointer px-2",
+                      "w-full h-auto py-2 group flex justify-between items-center rounded-[25px] hover:bg-accent cursor-pointer px-2",
                       activeChatId === board.id && "bg-secondary",
                     )}
                     onClick={() => setActiveChatId(board.id)}
@@ -208,7 +208,7 @@ export function LeftSidebar({
             <nav className="space-y-1 mt-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className={cn("flex items-center gap-2 p-2 rounded-md w-full", isCollapsed ? "justify-center" : "justify-start")}>
+                    <Button variant="ghost" className={cn("flex items-center gap-2 p-2 rounded-[25px] w-full", isCollapsed ? "justify-center" : "justify-start")}>
                       <Settings />
                       <span className={cn(isCollapsed && "hidden")}>Setting</span>
                     </Button>
