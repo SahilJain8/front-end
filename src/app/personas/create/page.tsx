@@ -20,7 +20,6 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import Image from 'next/image';
 
 const steps = ['Identity', 'Communication', 'Expertise', 'Behavior', 'Review'];
 const avatarSuggestions = [
@@ -56,7 +55,7 @@ export default function CreatePersonaPage() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted/20">
-      <div className="p-4 md:p-8 lg:p-12 max-w-5xl mx-auto space-y-8">
+      <div className="p-4 md:p-8 lg:p-12 max-w-5xl mx-auto space-y-8 persona-builder-container">
         <Link href="/personas" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" />
           Back to Home
@@ -88,7 +87,7 @@ export default function CreatePersonaPage() {
             </div>
 
             {currentStep === 1 && (
-              <div id="identity" className="space-y-6">
+              <div id="identity-form" className="space-y-6">
                 <h2 className="text-xl font-semibold">Identity</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                   <div className="flex flex-col items-center md:items-start gap-2">
@@ -209,7 +208,6 @@ export default function CreatePersonaPage() {
               </div>
             )}
 
-            {/* Placeholder for other steps */}
             {currentStep > 1 && (
                 <div className="text-center text-muted-foreground py-16">
                     Step {currentStep}: {steps[currentStep - 1]} content goes here.
