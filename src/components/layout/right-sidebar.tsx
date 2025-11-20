@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useContext, useEffect, type ReactNode } from 'react';
+import { useState, useMemo, useContext, type ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from '../ui/badge';
 
 export interface PinType {
     id: string;
@@ -48,7 +49,7 @@ const mockFolders: Folder[] = [
     { id: 'research', name: 'Research', createdAt: new Date() },
 ];
 
-const mockPins: PinType[] = [
+const initialPins: PinType[] = [
     { id: '1', title: 'Initial Research Findings', text: 'The market for AI-driven collaboration tools is expanding rapidly. Key competitors are focusing on integration capabilities.', tags: ['market-research', 'AI'], notes: 'Follow up on competitor APIs.', chatId: '1', time: new Date(Date.now() - 86400000), folderId: 'research', isArchived: false },
     { id: '2', title: 'UI/UX Feedback', text: 'Users report that the onboarding process could be more intuitive. Suggest adding a guided tour.', tags: ['ux', 'feedback'], notes: '', chatId: '1', time: new Date(Date.now() - 172800000), folderId: null, isArchived: false },
     { id: '3', title: 'API Design Concepts', text: 'Initial thoughts on the REST API structure for version 2. Focus on clear versioning and webhook support.', tags: ['api', 'dev'], notes: 'Draft OpenAPI spec.', chatId: '2', time: new Date(Date.now() - 259200000), folderId: 'research', isArchived: false },
@@ -216,16 +217,26 @@ interface RightSidebarProps {
 export function RightSidebar({
   isCollapsed,
   onToggle,
-  pins,
-  setPins,
+  pins: allPins,
+  setPins: setAllPins,
   chatBoards
 }: RightSidebarProps) {
     const { toast } = useToast();
     const layoutContext = useContext(AppLayoutContext);
     const [isOrganizeDialogOpen, setIsOrganizeDialogOpen] = useState(false);
     const [folders, setFolders] = useState<Folder[]>(mockFolders);
+    const [pins, setPins] = useState<PinType[]>(initialPins);
+
     const [searchTerm, setSearchTerm] = useState('');
+    const [sortOrder, setSortOrder] = useState('newest');
     const [filterChat, setFilterChat] = useState("all");
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+    const uniqueTags = useMemo(() => {
+        const tags = new Set<string>();
+        pins.forEach(pin => pin.tags.forEach(tag => tags.add(tag)));
+        return Array.from(tags).sort();
+    }, [pins]);
 
     const filteredPins = useMemo(() => {
         let processedPins = [...pins];
@@ -233,17 +244,36 @@ export function RightSidebar({
         if (searchTerm) {
             processedPins = processedPins.filter(pin => 
                 pin.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                pin.notes.toLowerCase().includes(searchTerm.toLowerCase())
+                pin.notes.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                pin.title.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
 
         if (filterChat === 'current' && layoutContext?.activeChatId) {
             processedPins = processedPins.filter(pin => pin.chatId === layoutContext.activeChatId);
         }
+        
+        if (selectedTags.length > 0) {
+            processedPins = processedPins.filter(pin => selectedTags.every(tag => pin.tags.includes(tag)));
+        }
+
+        switch (sortOrder) {
+            case 'newest':
+                processedPins.sort((a, b) => b.time.getTime() - a.time.getTime());
+                break;
+            case 'oldest':
+                processedPins.sort((a, b) => a.time.getTime() - b.time.getTime());
+                break;
+            case 'a-z':
+                processedPins.sort((a, b) => a.title.localeCompare(b.title));
+                break;
+            case 'z-a':
+                processedPins.sort((a, b) => b.title.localeCompare(a.title));
+                break;
+        }
 
         return processedPins;
-    }, [pins, searchTerm, filterChat, layoutContext?.activeChatId]);
-
+    }, [pins, searchTerm, filterChat, sortOrder, selectedTags, layoutContext?.activeChatId]);
 
     const onUpdatePin = (updatedPin: PinType) => {
         setPins(pins.map(p => p.id === updatedPin.id ? updatedPin : p));
@@ -259,6 +289,12 @@ export function RightSidebar({
             return p;
         });
         setPins(updatedPins);
+    };
+
+    const toggleTagFilter = (tag: string) => {
+        setSelectedTags(prev => 
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        );
     };
 
     return (
@@ -300,16 +336,48 @@ export function RightSidebar({
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <Select value={filterChat} onValueChange={setFilterChat}>
-                            <SelectTrigger className="w-full rounded-full text-xs">
-                                <SelectValue placeholder="Filter by" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Chats</SelectItem>
-                                <SelectItem value="current">Current Chat</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                            <Select value={sortOrder} onValueChange={setSortOrder}>
+                                <SelectTrigger className="w-full rounded-full text-xs">
+                                    <SelectValue placeholder="Sort by" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="newest">Sort by: Newest</SelectItem>
+                                    <SelectItem value="oldest">Sort by: Oldest</SelectItem>
+                                    <SelectItem value="a-z">Sort by: A-Z</SelectItem>
+                                    <SelectItem value="z-a">Sort by: Z-A</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={filterChat} onValueChange={setFilterChat}>
+                                <SelectTrigger className="w-full rounded-full text-xs">
+                                    <SelectValue placeholder="Filter by" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Chats</SelectItem>
+                                    <SelectItem value="current">Current Chat</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
+                    
+                    {uniqueTags.length > 0 && (
+                        <div className="p-4 border-b">
+                            <h4 className="text-xs font-semibold text-muted-foreground mb-2">Filter by Tags</h4>
+                            <div className="flex flex-wrap gap-1.5">
+                                {uniqueTags.map(tag => (
+                                    <Badge 
+                                        key={tag}
+                                        variant={selectedTags.includes(tag) ? 'default' : 'secondary'}
+                                        onClick={() => toggleTagFilter(tag)}
+                                        className="cursor-pointer"
+                                    >
+                                        {tag}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
 
                     <ScrollArea className="flex-1">
                         <div className="p-4 space-y-3">
