@@ -112,8 +112,8 @@ export function LeftSidebar({
 
   const navItems = [
     { label: "Chat Board", icon: LayoutGrid, active: true },
-    { label: "Workflows", icon: GitBranch, active: false },
-    { label: "Ai Automation", icon: Bot, active: false },
+    // { label: "Workflows", icon: GitBranch, active: false },
+    // { label: "Ai Automation", icon: Bot, active: false },
   ];
 
   return (
