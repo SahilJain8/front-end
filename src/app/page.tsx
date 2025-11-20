@@ -54,23 +54,6 @@ function ChatPageContent({
                 )}
             </div>
         </header>
-        <div className="border-b bg-white/70 backdrop-blur-sm px-4 py-2 flex flex-wrap gap-2 items-center">
-            {[
-              { label: "Persona", value: "Tutor" },
-              { label: "Tone", value: "Friendly" },
-              { label: "Intensity", value: "Medium" },
-            ].map((meta) => (
-              <div
-                key={meta.label}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200/60 bg-slate-50/80 px-3 py-1 text-xs font-medium text-slate-600 shadow-[0_4px_12px_rgba(15,23,42,0.04)]"
-              >
-                <span className="text-[11px] uppercase tracking-wide text-slate-400">
-                  {meta.label}
-                </span>
-                <span className="text-slate-700">{meta.value}</span>
-              </div>
-            ))}
-        </div>
         <ChatInterface
           onPinMessage={onPinMessage}
           onUnpinMessage={onUnpinMessage}
