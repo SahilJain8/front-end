@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -19,6 +20,8 @@ import {
   Bot,
   Sparkles,
   LayoutGrid,
+  UserPlus,
+  BarChart2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
