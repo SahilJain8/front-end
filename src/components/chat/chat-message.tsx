@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { Pin, Copy, Pencil, Flag, Trash2, Bot, User, Check, X, Info } from "lucide-react";
+import { Pin, Copy, Pencil, Flag, Trash2, Bot, User, Check, X, Info, CornerDownRight, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import { Skeleton } from "../ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -271,6 +271,8 @@ export interface Message {
   isLoading?: boolean;
   chatMessageId?: string;
   pinId?: string;
+  referencedMessageId?: string | null;
+  thinkingContent?: string | null;
   metadata?: {
     modelName?: string;
     providerName?: string;
@@ -285,17 +287,20 @@ interface ChatMessageProps {
   isPinned?: boolean;
   onPin: (message: Message) => void;
   onCopy: (content: string) => void;
-  onEdit: (messageId: string, newContent: string) => void;
   onDelete: (message: Message) => void;
   onResubmit: (newContent: string, messageId: string) => void;
+  onReference?: (message: Message) => void;
+  onRegenerate?: (message: Message) => void;
+  referencedMessage?: Message | null;
   isNewMessage: boolean;
 }
 
-export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete, onResubmit, isNewMessage }: ChatMessageProps) {
+export function ChatMessage({ message, isPinned, onPin, onCopy, onDelete, onResubmit, onReference, onRegenerate, referencedMessage, isNewMessage }: ChatMessageProps) {
   const isUser = message.sender === "user";
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showThinking, setShowThinking] = useState(false);
   
   // Faster typewriter effect (~1500 WPM) to keep bot replies snappy.
   const typewriterSpeed = 7;
@@ -324,6 +329,9 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
       };
     }
   }, [isEditing]);
+  useEffect(() => {
+    setShowThinking(false);
+  }, [message.id, message.thinkingContent]);
   
   const handleSaveAndResubmit = () => {
     onResubmit(editedContent, message.id);
@@ -430,6 +438,31 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
             </TooltipTrigger>
             <TooltipContent><p>Copy</p></TooltipContent>
           </Tooltip>
+          {onRegenerate && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={actionButtonClasses}
+                  onClick={() => onRegenerate(message)}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Regenerate</p></TooltipContent>
+            </Tooltip>
+          )}
+          {onReference && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onReference(message)}>
+                  <CornerDownRight className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Reply to this message</p></TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className={actionButtonClasses}><Flag className="h-4 w-4" /></Button>
@@ -488,10 +521,22 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
   }
 
   const LoadingState = () => (
-    <div className="flex items-center space-x-2">
-      <Skeleton className="h-4 w-4 rounded-full" />
-      <Skeleton className="h-4 w-20 rounded-md" />
-      <Skeleton className="h-4 w-16 rounded-md" />
+    <div className="flex items-center gap-3">
+      <div className="h-9 w-9 rounded-full bg-slate-200/80 shadow-inner animate-pulse" />
+      <div className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          {[0, 1, 2].map((dot) => (
+            <span
+              key={dot}
+              className="h-2.5 w-2.5 rounded-full bg-slate-300 animate-bounce"
+              style={{ animationDelay: `${dot * 0.12}s` }}
+            />
+          ))}
+          <span className="text-xs font-medium text-muted-foreground">
+            thinking…
+          </span>
+        </div>
+      </div>
     </div>
   )
 
@@ -521,6 +566,41 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onEdit, onDelete
               : "bg-white text-slate-900 border-slate-100"
             )}
         >
+          {message.referencedMessageId && referencedMessage && (
+            <div className="mb-3 pb-3 border-b border-slate-200">
+              <div className="flex items-start gap-2 text-xs">
+                <CornerDownRight className="h-3 w-3 text-slate-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-500 mb-0.5">Replying to:</p>
+                  <p className="text-slate-600 line-clamp-2 italic">
+                    {referencedMessage.content}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          {message.thinkingContent && (
+            <div className="mb-3 rounded-2xl border border-dashed border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between text-left font-semibold"
+                onClick={() => setShowThinking((prev) => !prev)}
+              >
+                <span>{showThinking ? "Hide reasoning" : "Show reasoning"}</span>
+                {showThinking ? (
+                  <EyeOff className="h-3.5 w-3.5" />
+                ) : (
+                  <Eye className="h-3.5 w-3.5" />
+                )}
+              </button>
+              {showThinking && (
+                <pre className="mt-2 whitespace-pre-wrap text-[11px] leading-relaxed text-amber-900/90">
+                  {message.thinkingContent}
+                </pre>
+              )}
+            </div>
+          )}
+
           {isEditing && isUser ? (
             <div className="space-y-2 w-full">
                <Textarea

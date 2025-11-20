@@ -9,7 +9,7 @@ import { PinsSidebar } from "../pins/pins-sidebar";
 import { PIN_TAG_ACCENTS } from "../pins/types";
 import type { Pin as StickyPin, PinAccent, PinTag } from "../pins/types";
 
-export interface PinType {
+export interface Pin {
   id: string;
   text: string;
   tags: string[];
@@ -19,11 +19,14 @@ export interface PinType {
   messageId?: string;
 }
 
+// Alias for backwards compatibility
+export type PinType = Pin;
+
 interface RightSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
-  pins: PinType[];
-  setPins: React.Dispatch<React.SetStateAction<PinType[]>>;
+  pins: Pin[];
+  setPins: React.Dispatch<React.SetStateAction<Pin[]>>;
   chatBoards: unknown[];
   onPinDeleteRequest?: (pin: StickyPin) => void;
 }
@@ -76,14 +79,14 @@ const deriveTitle = (value: string) => {
   return firstLine.length > 64 ? `${firstLine.slice(0, 61)}...` : firstLine;
 };
 
-const derivePreview = (pin: PinType) => {
+const derivePreview = (pin: Pin) => {
   if (pin.notes?.trim()) {
     return pin.notes.trim();
   }
   return pin.text.replace(/\s+/g, " ").slice(0, 140);
 };
 
-const legacyPinToSticky = (pin: PinType): StickyPin => {
+const legacyPinToSticky = (pin: Pin): StickyPin => {
   const primaryTag = resolvePinTag(pin.tags);
 
   return {
@@ -102,8 +105,8 @@ const legacyPinToSticky = (pin: PinType): StickyPin => {
 
 const stickyPinToLegacy = (
   pin: StickyPin,
-  options?: { previous?: PinType; fallbackChatId?: string }
-): PinType => {
+  options?: { previous?: Pin; fallbackChatId?: string }
+): Pin => {
   const previous = options?.previous;
   const selectedText =
     pin.content && pin.content.trim().length > 0

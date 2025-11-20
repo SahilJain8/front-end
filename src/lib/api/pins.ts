@@ -3,20 +3,11 @@
 import { CHAT_PINS_ENDPOINT, PIN_DETAIL_ENDPOINT } from "@/lib/config";
 import { apiFetch } from "./client";
 
-export interface BackendPinMeta {
-  tag?: string;
-  title?: string;
-  should_pin?: boolean;
-  assistant_message?: string;
-}
-
 export interface BackendPin {
   id: string;
   chat: string;
-  message: string;
   content: string;
   model_name?: string;
-  tags?: BackendPinMeta | null;
   created_at?: string;
 }
 
@@ -41,14 +32,14 @@ export async function fetchPins(
 
 export async function createPin(
   chatId: string,
-  messageId: string,
+  content: string,
   csrfToken?: string | null
 ): Promise<BackendPin> {
   const response = await apiFetch(
     CHAT_PINS_ENDPOINT(chatId),
     {
       method: "POST",
-      body: JSON.stringify({ messageId }),
+      body: JSON.stringify({ content }),
     },
     csrfToken
   );

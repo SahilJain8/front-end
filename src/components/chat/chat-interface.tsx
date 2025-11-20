@@ -4,10 +4,11 @@ import { useState, useRef, useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Paperclip, Send, Mic, Library } from "lucide-react";
+import { Paperclip, Send, Mic, Library, Trash2, X } from "lucide-react";
 import { ChatMessage, type Message } from "./chat-message";
 import { InitialPrompts } from "./initial-prompts";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { ReferenceBanner } from "./reference-banner";
 import {
   Select,
   SelectContent,
@@ -16,10 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { Pin as PinType } from "../layout/right-sidebar";
+import type { Pin } from "../layout/right-sidebar";
 import type { AIModel } from "@/types/ai-model";
 import { useToast } from "@/hooks/use-toast";
 import { AppLayoutContext } from "../layout/app-layout";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,12 +32,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/context/auth-context";
-import { CHAT_COMPLETION_ENDPOINT } from "@/lib/config";
+import {
+  CHAT_COMPLETION_ENDPOINT,
+  CHAT_DETAIL_ENDPOINT,
+  DELETE_MESSAGE_ENDPOINT,
+} from "@/lib/config";
+import { extractThinkingContent } from "@/lib/thinking";
 import { getModelIcon } from "@/lib/model-icons";
 
 interface ChatInterfaceProps {
-  onPinMessage?: (pin: PinType) => Promise<void> | void;
+  onPinMessage?: (pin: Pin) => Promise<void> | void;
   onUnpinMessage?: (messageId: string) => Promise<void> | void;
   messages?: Message[];
   setMessages?: (
@@ -47,6 +62,12 @@ interface ChatInterfaceProps {
 
 type MessageAvatar = Pick<Message, "avatarUrl" | "avatarHint">;
 
+// Interface for a mentioned pin
+interface MentionedPin {
+  id: string;
+  label: string;
+}
+
 export function ChatInterface({
   onPinMessage,
   onUnpinMessage,
@@ -57,15 +78,19 @@ export function ChatInterface({
   const [input, setInput] = useState("");
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
+  const [referencedMessage, setReferencedMessage] = useState<Message | null>(null);
+  const [mentionedPins, setMentionedPins] = useState<MentionedPin[]>([]);
+  const [showPinDropdown, setShowPinDropdown] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const userAvatar = PlaceHolderImages.find((p) => p.id === "user-avatar");
   const defaultAiAvatar = PlaceHolderImages.find((p) => p.id === "ai-avatar");
   const resolveModelAvatar = (modelOverride?: AIModel | null): MessageAvatar => {
     if (modelOverride) {
-      const hintParts = [modelOverride.companyName, modelOverride.modelName].filter(Boolean);
+      const hintParts = [modelOverride.modelName, modelOverride.companyName].filter(Boolean);
       return {
-        avatarUrl: getModelIcon(modelOverride.companyName),
+        avatarUrl: getModelIcon(modelOverride.modelName || modelOverride.companyName),
         avatarHint: hintParts.join(" ").trim(),
       };
     }
@@ -82,6 +107,17 @@ export function ChatInterface({
 
   const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
   const [lastMessageId, setLastMessageId] = useState<string | null>(null);
+  const [regenerationState, setRegenerationState] = useState<{
+    aiMessage: Message;
+    userMessage: Message;
+  } | null>(null);
+  const [regeneratePrompt, setRegeneratePrompt] = useState("");
+  const [isRegeneratingResponse, setIsRegeneratingResponse] = useState(false);
+  const [isChatDeleteDialogOpen, setIsChatDeleteDialogOpen] = useState(false);
+  const [isDeletingChat, setIsDeletingChat] = useState(false);
+  const activeChatBoard = layoutContext?.chatBoards.find(
+    (board) => board.id === layoutContext?.activeChatId
+  );
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -91,6 +127,31 @@ export function ChatInterface({
       textareaRef.current.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
     }
   }, [input]);
+
+  // Clear reference and mentions when switching chats
+  useEffect(() => {
+    setReferencedMessage(null);
+    setMentionedPins([]);
+    setShowPinDropdown(false);
+  }, [layoutContext?.activeChatId]);
+
+  // Get available pins
+  const availablePins = layoutContext?.pins || [];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          textareaRef.current && !textareaRef.current.contains(event.target as Node)) {
+        setShowPinDropdown(false);
+      }
+    };
+
+    if (showPinDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showPinDropdown]);
 
   useEffect(() => {
     const viewport = scrollViewportRef.current;
@@ -105,7 +166,11 @@ export function ChatInterface({
     chatId: string,
     userMessageId: string | undefined,
     modelForRequest: AIModel | null,
-    avatarForRequest: MessageAvatar
+    avatarForRequest: MessageAvatar,
+    referencedMessageId?: string | null,
+    regenerateMessageId?: string | null,
+    userMessageBackendId?: string | null,
+    pinIds?: string[]
   ) => {
     try {
       if (!modelForRequest) {
@@ -119,28 +184,43 @@ export function ChatInterface({
         headers["X-CSRFToken"] = csrfToken;
       }
 
+      const payload: Record<string, unknown> = {
+        prompt: userMessage,
+        chatId,
+        model: modelForRequest
+          ? {
+              companyName: modelForRequest.companyName,
+              modelName: modelForRequest.modelName,
+              version: modelForRequest.version,
+            }
+          : null,
+        user: user
+          ? {
+              id: user.id ?? null,
+              email: user.email ?? null,
+              name: user.name ?? null,
+            }
+          : null,
+      };
+
+      if (referencedMessageId) {
+        payload.referencedMessageId = referencedMessageId;
+      }
+      if (regenerateMessageId) {
+        payload.regenerateMessageId = regenerateMessageId;
+      }
+      if (userMessageBackendId) {
+        payload.userMessageId = userMessageBackendId;
+      }
+      if (pinIds && pinIds.length > 0) {
+        payload.pinIds = pinIds;
+      }
+
       const response = await fetch(CHAT_COMPLETION_ENDPOINT, {
         method: "POST",
         headers,
         credentials: "include",
-        body: JSON.stringify({
-          prompt: userMessage,
-          chatId,
-          model: modelForRequest
-            ? {
-                companyName: modelForRequest.companyName,
-                modelName: modelForRequest.modelName,
-                version: modelForRequest.version,
-              }
-            : null,
-          user: user
-            ? {
-                id: user.id ?? null,
-                email: user.email ?? null,
-                name: user.name ?? null,
-              }
-            : null,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -163,13 +243,21 @@ export function ChatInterface({
 
       const data = await response.json();
 
+      const sanitized = extractThinkingContent(
+        data.message || "API didn't respond"
+      );
+
       const aiResponse: Message = {
         id: loadingMessageId,
         sender: "ai",
-        content: data.message || "API didn't respond",
+        content:
+          sanitized.visibleText ||
+          (sanitized.thinkingText ? "" : "API didn't respond"),
+        thinkingContent: sanitized.thinkingText,
         avatarUrl: avatarForRequest.avatarUrl,
         avatarHint: avatarForRequest.avatarHint,
         chatMessageId: data.messageId ?? undefined,
+        referencedMessageId: referencedMessageId ?? null,
         metadata: data.metadata ? {
           modelName: data.metadata.modelName,
           providerName: data.metadata.providerName,
@@ -247,6 +335,10 @@ export function ChatInterface({
     const activeModel = selectedModel;
     const requestAvatar = resolveModelAvatar(activeModel);
 
+    // Capture the referenced message ID and mentioned pin IDs before clearing
+    const refMessageId = referencedMessage?.chatMessageId || referencedMessage?.id || null;
+    const pinIdsToSend = mentionedPins.map(mp => mp.id);
+
     let chatId = layoutContext?.activeChatId ?? null;
     let initialAiResponse: string | null = null;
     let initialAiMessageId: string | null = null;
@@ -308,14 +400,23 @@ export function ChatInterface({
       };
 
       setMessages([...updatedMessages, loadingMessage], chatId);
+      const backendUserMessageId =
+        updatedMessages[userMessageIndex].chatMessageId ?? null;
       fetchAiResponse(
         trimmedContent,
         loadingMessage.id,
         chatId,
         messageIdToUpdate,
         activeModel,
-        requestAvatar
+        requestAvatar,
+        refMessageId,
+        undefined,
+        backendUserMessageId,
+        pinIdsToSend
       );
+      // Clear reference and mentions after sending
+      setReferencedMessage(null);
+      setMentionedPins([]);
     } else {
       // This is a new message
       const turnId =
@@ -349,13 +450,18 @@ export function ChatInterface({
       setInput("");
       setIsScrolledToBottom(true);
       if (initialAiResponse !== null) {
+        const initialSanitized = extractThinkingContent(initialAiResponse);
         const aiResponse: Message = {
           id: loadingMessage.id,
           sender: "ai",
-          content: initialAiResponse,
+          content:
+            initialSanitized.visibleText ||
+            (initialSanitized.thinkingText ? "" : initialAiResponse),
+          thinkingContent: initialSanitized.thinkingText,
           avatarUrl: requestAvatar.avatarUrl,
           avatarHint: requestAvatar.avatarHint,
           chatMessageId: initialAiMessageId ?? undefined,
+          referencedMessageId: refMessageId,
         };
         setMessages(
           (prev = []) =>
@@ -372,6 +478,8 @@ export function ChatInterface({
         );
         setLastMessageId(loadingMessage.id);
         setIsResponding(false);
+        // Clear reference after sending
+        setReferencedMessage(null);
         return;
       }
       fetchAiResponse(
@@ -380,14 +488,60 @@ export function ChatInterface({
         chatId,
         userMessage.id,
         activeModel,
-        requestAvatar
+        requestAvatar,
+        refMessageId,
+        undefined,
+        userMessage.chatMessageId ?? null,
+        pinIdsToSend
       );
+      // Clear reference and mentions after sending
+      setReferencedMessage(null);
+      setMentionedPins([]);
     }
+  };
+
+  const handleInputChange = (value: string) => {
+    setInput(value);
+
+    // Check if user typed @ at the end
+    const lastChar = value[value.length - 1];
+    if (lastChar === '@') {
+      setShowPinDropdown(true);
+    }
+  };
+
+  const handleSelectPin = (pin: Pin) => {
+    const pinLabel = pin.text.slice(0, 50) || pin.id;
+
+    // Remove the trailing @ from input
+    const newInput = input.slice(0, -1);
+    setInput(newInput);
+
+    // Add to mentioned pins if not already added
+    if (!mentionedPins.some(mp => mp.id === pin.id)) {
+      setMentionedPins(prev => [...prev, { id: pin.id, label: pinLabel }]);
+    }
+
+    setShowPinDropdown(false);
+    textareaRef.current?.focus();
+  };
+
+  const handleRemoveMention = (pinId: string) => {
+    setMentionedPins(prev => prev.filter(mp => mp.id !== pinId));
   };
 
   const handlePromptClick = (prompt: string) => {
     setInput(prompt);
     textareaRef.current?.focus();
+  };
+
+  const handleReference = (message: Message) => {
+    setReferencedMessage(message);
+    textareaRef.current?.focus();
+  };
+
+  const handleClearReference = () => {
+    setReferencedMessage(null);
   };
 
   const handleScroll = () => {
@@ -441,7 +595,7 @@ export function ChatInterface({
         }
       } else {
         if (onPinMessage) {
-          const newPin: PinType = {
+          const newPin: Pin = {
             id: identifier,
             messageId: identifier,
             text: message.content,
@@ -469,33 +623,276 @@ export function ChatInterface({
     toast({ title: "Copied to clipboard!" });
   };
 
-  const handleEdit = (messageId: string, newContent: string) => {
-    setMessages((prev) =>
-      (prev || []).map((msg) =>
-        msg.id === messageId ? { ...msg, content: newContent } : msg
-      )
-    );
-  };
-
   const handleDeleteRequest = (message: Message) => {
     setMessageToDelete(message);
   };
 
-  const confirmDelete = () => {
-    if (!messageToDelete) return;
+  const handleRegenerateRequest = (aiMessage: Message) => {
+    if (isResponding) {
+      toast({
+        title: "Please wait",
+        description: "Hold on for the current response to finish.",
+      });
+      return;
+    }
+    const allMessages = messages || [];
+    const aiIndex = allMessages.findIndex((msg) => msg.id === aiMessage.id);
+    if (aiIndex === -1) {
+      toast({
+        title: "Unable to regenerate",
+        description: "We could not locate the original message for this response.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const linkedUser =
+      [...allMessages.slice(0, aiIndex)].reverse().find((msg) => msg.sender === "user") ||
+      null;
+    if (!linkedUser) {
+      toast({
+        title: "Unable to regenerate",
+        description: "We could not find the prompt that created this response.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setRegeneratePrompt(linkedUser.content);
+    setRegenerationState({
+      aiMessage,
+      userMessage: linkedUser,
+    });
+  };
 
-    const identifier = messageToDelete.chatMessageId ?? messageToDelete.id;
-    const isPinned =
-      layoutContext?.pins.some(
-        (p) => p.messageId === identifier || p.id === identifier
-      ) || false;
-    if (isPinned && onUnpinMessage && identifier) {
-      onUnpinMessage(identifier);
+  const handleCancelRegenerate = () => {
+    if (isRegeneratingResponse) return;
+    setRegenerationState(null);
+    setRegeneratePrompt("");
+  };
+
+  const handleConfirmRegenerate = () => {
+    if (!regenerationState) return;
+    const trimmedPrompt = regeneratePrompt.trim();
+    if (!selectedModel) {
+      toast({
+        title: "Select a model",
+        description: "Choose a model before regenerating a response.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (trimmedPrompt === "") {
+      toast({
+        title: "Missing prompt",
+        description: "Update the prompt before regenerating.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const chatId = layoutContext?.activeChatId;
+    if (!chatId) {
+      toast({
+        title: "No chat selected",
+        description: "Pick a chat before regenerating a response.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    setMessages((prev) => (prev || []).filter((m) => m.id !== messageToDelete.id));
-    setMessageToDelete(null);
-    toast({ title: "Message deleted." });
+    const backendAiMessageId =
+      regenerationState.aiMessage.chatMessageId ?? regenerationState.aiMessage.id;
+    const backendUserMessageId =
+      regenerationState.userMessage.chatMessageId ?? regenerationState.userMessage.id;
+
+    if (!backendAiMessageId || !backendUserMessageId) {
+      toast({
+        title: "Missing identifiers",
+        description: "We could not determine which messages to regenerate.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResponding(true);
+    setIsRegeneratingResponse(true);
+
+    const avatar = resolveModelAvatar(selectedModel);
+
+    setMessages(
+      (prev = []) =>
+        prev.map((msg) => {
+          if (msg.id === regenerationState.userMessage.id) {
+            return { ...msg, content: trimmedPrompt };
+          }
+          if (msg.id === regenerationState.aiMessage.id) {
+            return { ...msg, content: "", isLoading: true, thinkingContent: null };
+          }
+          return msg;
+        }),
+      chatId
+    );
+    setLastMessageId(regenerationState.aiMessage.id);
+
+    fetchAiResponse(
+      trimmedPrompt,
+      regenerationState.aiMessage.id,
+      chatId,
+      regenerationState.userMessage.id,
+      selectedModel,
+      avatar,
+      regenerationState.userMessage.referencedMessageId ?? null,
+      backendAiMessageId,
+      backendUserMessageId
+    )
+      .catch(() => {
+        // fetchAiResponse already surfaces the error via toast.
+      })
+      .finally(() => {
+        setIsRegeneratingResponse(false);
+        setRegenerationState(null);
+        setRegeneratePrompt("");
+      });
+  };
+
+  const confirmDelete = async () => {
+    if (!messageToDelete) return;
+
+    const chatId = layoutContext?.activeChatId;
+    const identifier = messageToDelete.chatMessageId ?? messageToDelete.id;
+
+    if (!chatId || !identifier) {
+      toast({
+        title: "Unable to delete",
+        description: "Missing chat or message information.",
+        variant: "destructive",
+      });
+      setMessageToDelete(null);
+      return;
+    }
+
+    try {
+      // Call backend to delete message and all following messages
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (csrfToken) {
+        headers["X-CSRFToken"] = csrfToken;
+      }
+
+      const response = await fetch(DELETE_MESSAGE_ENDPOINT(chatId, identifier), {
+        method: "DELETE",
+        headers,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete message");
+      }
+
+      const data = await response.json();
+      const deletedIds = data.deleted_message_ids || [];
+
+      // Remove all deleted messages from UI
+      setMessages((prev) =>
+        (prev || []).filter((m) => {
+          const msgId = m.chatMessageId || m.id;
+          return !deletedIds.includes(msgId);
+        })
+      );
+
+      // Unpin any pinned messages that were deleted
+      const pinsToUnpin = layoutContext?.pins.filter((p) =>
+        deletedIds.includes(p.messageId)
+      ) || [];
+
+      for (const pin of pinsToUnpin) {
+        if (onUnpinMessage && pin.messageId) {
+          await onUnpinMessage(pin.messageId);
+        }
+      }
+
+      setMessageToDelete(null);
+      toast({
+        title: "Messages deleted",
+        description: data.message || `Deleted ${data.deleted_count} message(s)`,
+      });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast({
+        title: "Delete failed",
+        description: "Unable to delete message. Please try again.",
+        variant: "destructive",
+      });
+      setMessageToDelete(null);
+    }
+  };
+
+  const handleConfirmChatDelete = async () => {
+    const currentLayout = layoutContext;
+    if (!currentLayout?.activeChatId) {
+      toast({
+        title: "No chat selected",
+        description: "Choose a chat before deleting.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const chatId = currentLayout.activeChatId;
+    setIsDeletingChat(true);
+
+    try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (csrfToken) {
+        headers["X-CSRFToken"] = csrfToken;
+      }
+
+      const response = await fetch(CHAT_DETAIL_ENDPOINT(chatId), {
+        method: "DELETE",
+        headers,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to delete chat");
+      }
+
+      setMessages([], chatId);
+      const boardIndex = currentLayout.chatBoards.findIndex(
+        (board) => board.id === chatId
+      );
+      currentLayout.setChatBoards((prev) =>
+        prev.filter((board) => board.id !== chatId)
+      );
+      let nextChatId: string | null = null;
+      if (boardIndex !== -1) {
+        const after = currentLayout.chatBoards[boardIndex + 1];
+        const before = currentLayout.chatBoards[boardIndex - 1];
+        nextChatId = after?.id ?? before?.id ?? null;
+      }
+      if (currentLayout.activeChatId === chatId) {
+        currentLayout.setActiveChatId(nextChatId);
+      }
+      setInput("");
+      setReferencedMessage(null);
+      setMessageToDelete(null);
+      setIsChatDeleteDialogOpen(false);
+      toast({
+        title: "Chat deleted",
+        description: "This conversation has been removed.",
+      });
+    } catch (error) {
+      console.error("Failed to delete chat", error);
+      toast({
+        title: "Delete failed",
+        description:
+          error instanceof Error ? error.message : "Unable to delete chat.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingChat(false);
+    }
   };
 
   const isMessagePinned = (message: Message) => {
@@ -507,10 +904,48 @@ export function ChatInterface({
     );
   };
 
+  const getMessagesToDelete = (message: Message) => {
+    if (!message) return [];
+
+    // Find the index of the message to delete
+    const messageIndex = messages.findIndex((m) => m.id === message.id);
+    if (messageIndex === -1) return [];
+
+    // All messages from this one onwards will be deleted
+    return messages.slice(messageIndex);
+  };
+
   const isSendDisabled = !selectedModel || !input.trim() || isResponding;
 
   return (
     <div className="flex flex-col flex-1 bg-background overflow-hidden">
+      <div className="border-b border-slate-200 bg-white/70 backdrop-blur-sm px-4 py-4 sm:px-6 lg:px-10 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Active Chat
+          </p>
+          <p className="text-base font-semibold text-card-foreground">
+            {activeChatBoard?.name ?? "Untitled chat"}
+          </p>
+          {activeChatBoard?.time && (
+            <p className="text-xs text-muted-foreground">
+              Last activity {activeChatBoard.time}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            onClick={() => setIsChatDeleteDialogOpen(true)}
+            disabled={!layoutContext?.activeChatId || isDeletingChat}
+          >
+            <Trash2 className="mr-2 h-3.5 w-3.5" />
+            Delete Chat
+          </Button>
+        </div>
+      </div>
       <ScrollArea
         className="flex-1"
         viewportRef={scrollViewportRef}
@@ -520,19 +955,28 @@ export function ChatInterface({
           {(messages || []).length === 0 ? (
             <InitialPrompts onPromptClick={handlePromptClick} />
           ) : (
-            messages.map((msg) => (
-              <ChatMessage
-                key={msg.id}
-                message={msg}
-                isPinned={isMessagePinned(msg)}
-                onPin={handlePin}
-                onCopy={handleCopy}
-                onEdit={handleEdit}
-                onDelete={handleDeleteRequest}
-                onResubmit={handleSend}
-                isNewMessage={msg.id === lastMessageId}
-              />
-            ))
+            messages.map((msg) => {
+              // Find the referenced message if this message references one
+              const refMsg = msg.referencedMessageId
+                ? messages.find(m => (m.chatMessageId || m.id) === msg.referencedMessageId)
+                : null;
+
+              return (
+                <ChatMessage
+                  key={msg.id}
+                  message={msg}
+                  isPinned={isMessagePinned(msg)}
+                  onPin={handlePin}
+                  onCopy={handleCopy}
+                  onDelete={handleDeleteRequest}
+                  onResubmit={handleSend}
+                  onRegenerate={msg.sender === "ai" ? handleRegenerateRequest : undefined}
+                  onReference={msg.sender === "ai" ? handleReference : undefined}
+                  referencedMessage={refMsg}
+                  isNewMessage={msg.id === lastMessageId}
+                />
+              );
+            })
           )}
         </div>
       </ScrollArea>
@@ -589,20 +1033,86 @@ export function ChatInterface({
       )}
 
       <footer className="shrink-0 border-t bg-white/80 backdrop-blur-sm p-4">
+        {referencedMessage && (
+          <ReferenceBanner
+            referencedMessage={referencedMessage}
+            onClear={handleClearReference}
+          />
+        )}
         <div className="relative mx-auto w-full max-w-[min(1400px,100%)]">
+          {/* @ Pin Dropdown */}
+          {showPinDropdown && availablePins.length > 0 && (
+            <div
+              ref={dropdownRef}
+              className="absolute bottom-full mb-2 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg max-h-64 overflow-y-auto z-50"
+            >
+              <div className="p-2 border-b bg-slate-50">
+                <p className="text-xs font-medium text-slate-600">Select a pin to mention</p>
+              </div>
+              {availablePins.map((pin) => (
+                <button
+                  key={pin.id}
+                  type="button"
+                  onClick={() => handleSelectPin(pin)}
+                  className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0"
+                >
+                  <p className="text-sm font-medium text-slate-900 truncate">
+                    {pin.text.slice(0, 60) || "Untitled Pin"}
+                  </p>
+                  {pin.tags && pin.tags.length > 0 && (
+                    <div className="flex gap-1 mt-1.5">
+                      {pin.tags.slice(0, 3).map((tag, i) => (
+                        <span
+                          key={i}
+                          className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="relative flex flex-col p-3 rounded-[28px] border border-input/60 bg-white shadow-[0_20px_45px_rgba(15,23,42,0.08)] focus-within:ring-2 focus-within:ring-ring">
+            {/* Mentioned Pins Chips */}
+            {mentionedPins.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2 px-2">
+                {mentionedPins.map((mp) => (
+                  <div
+                    key={mp.id}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                  >
+                    <span className="font-medium">@{mp.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMention(mp.id)}
+                      className="hover:bg-blue-100 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <Textarea
               ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !isResponding) {
+                if (e.key === "Escape" && showPinDropdown) {
+                  e.preventDefault();
+                  setShowPinDropdown(false);
+                } else if (e.key === "Enter" && !e.shiftKey && !isResponding && !showPinDropdown) {
                   e.preventDefault();
                   handleSend(input);
                 }
               }}
               placeholder={
-                selectedModel ? "Lets Play....." : "Select a model to start chatting"
+                selectedModel ? "Type @ to mention pins..." : "Select a model to start chatting"
               }
               className="pr-12 text-base resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-2 min-h-[48px]"
               rows={1}
@@ -663,22 +1173,119 @@ export function ChatInterface({
         </div>
       </footer>
 
+      <Dialog
+        open={!!regenerationState}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancelRegenerate();
+          }
+        }}
+      >
+        <DialogContent className="rounded-[25px]">
+          <DialogHeader>
+            <DialogTitle>Regenerate response</DialogTitle>
+            <DialogDescription>
+              Adjust the original prompt and the assistant will respond again.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">
+              Prompt
+            </label>
+            <Textarea
+              value={regeneratePrompt}
+              onChange={(e) => setRegeneratePrompt(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              className="rounded-[25px]"
+              onClick={handleCancelRegenerate}
+              disabled={isRegeneratingResponse}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="rounded-[25px]"
+              onClick={handleConfirmRegenerate}
+              disabled={
+                isRegeneratingResponse || regeneratePrompt.trim() === ""
+              }
+            >
+              {isRegeneratingResponse ? "Regenerating..." : "Regenerate"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={isChatDeleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !isDeletingChat) {
+            setIsChatDeleteDialogOpen(false);
+          }
+        }}
+      >
+        <AlertDialogContent className="rounded-[25px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete entire chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action removes every message in this conversation. It cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="rounded-[25px]"
+              onClick={() => setIsChatDeleteDialogOpen(false)}
+              disabled={isDeletingChat}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-[25px] bg-destructive hover:bg-destructive/90"
+              onClick={handleConfirmChatDelete}
+              disabled={isDeletingChat}
+            >
+              {isDeletingChat ? "Deleting…" : "Delete chat"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog
         open={!!messageToDelete}
         onOpenChange={(open) => !open && setMessageToDelete(null)}
       >
         <AlertDialogContent className="rounded-[25px]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Message?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this
-              message.
+              {messageToDelete && (() => {
+                const messagesToDelete = getMessagesToDelete(messageToDelete);
+                const count = messagesToDelete.length;
+
+                if (count > 1) {
+                  return `This will delete this message and ${count - 1} message(s) that came after it. This action cannot be undone.`;
+                }
+                return "This will permanently delete this message. This action cannot be undone.";
+              })()}
             </AlertDialogDescription>
-            {messageToDelete && isMessagePinned(messageToDelete) && (
-              <div className="font-semibold text-destructive mt-2 text-sm">
-                This message is currently pinned.
-              </div>
-            )}
+            {messageToDelete && (() => {
+              const messagesToDelete = getMessagesToDelete(messageToDelete);
+              const pinnedMessages = messagesToDelete.filter(isMessagePinned);
+
+              if (pinnedMessages.length > 0) {
+                return (
+                  <div className="font-semibold text-destructive mt-2 text-sm">
+                    ⚠️ {pinnedMessages.length} pinned message(s) will be affected.
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
@@ -688,7 +1295,7 @@ export function ChatInterface({
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-[25px]"
+              className="rounded-[25px] bg-destructive hover:bg-destructive/90"
               onClick={confirmDelete}
             >
               Delete

@@ -43,6 +43,9 @@ import {
   fetchPins,
   type BackendPin,
 } from "@/lib/api/pins";
+import { CHAT_DETAIL_ENDPOINT } from "@/lib/config";
+import { useToast } from "@/hooks/use-toast";
+import { extractThinkingContent } from "@/lib/thinking";
 
 interface AppLayoutProps {
   children: React.ReactElement;
@@ -126,13 +129,19 @@ const normalizeBackendMessage = (msg: BackendMessage): Message => {
   const senderRaw = (msg.sender || msg.role || "user").toLowerCase();
   const sender: Message["sender"] =
     senderRaw === "ai" || senderRaw === "assistant" ? "ai" : "user";
+  const baseContent = msg.content || msg.message || "";
+  const { visibleText, thinkingText } =
+    sender === "ai"
+      ? extractThinkingContent(baseContent)
+      : { visibleText: baseContent, thinkingText: null };
   return {
     id:
       msg.id !== undefined
         ? String(msg.id)
         : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     sender,
-    content: msg.content || msg.message || "",
+    content: visibleText,
+    thinkingContent: thinkingText,
   };
 };
 
@@ -166,10 +175,14 @@ const convertBackendEntryToMessages = (entry: BackendMessage): Message[] => {
   }
 
   if (hasResponse) {
+    const sanitized = extractThinkingContent(entry.response as string);
     messages.push({
       id: `${baseId}-response`,
       sender: "ai",
-      content: entry.response as string,
+      content:
+        sanitized.visibleText ||
+        (sanitized.thinkingText ? "" : (entry.response as string)),
+      thinkingContent: sanitized.thinkingText,
       chatMessageId,
       pinId,
     });
@@ -180,15 +193,14 @@ const convertBackendEntryToMessages = (entry: BackendMessage): Message[] => {
 
 const backendPinToLegacy = (pin: BackendPin): PinType => {
   const createdAt = pin.created_at ? new Date(pin.created_at) : new Date();
-  const primaryTag = pin.tags?.tag ? [pin.tags.tag] : [];
   return {
     id: pin.id,
     text: pin.content,
-    tags: primaryTag,
-    notes: pin.tags?.title ?? "",
+    tags: [],
+    notes: "",
     chatId: pin.chat,
     time: createdAt,
-    messageId: pin.message,
+    messageId: pin.id, // Use pin ID as messageId since message field was removed
   };
 };
 
@@ -209,12 +221,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
   const [renamingText, setRenamingText] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const [isDeletingChatBoard, setIsDeletingChatBoard] = useState(false);
 
   const isMobile = useIsMobile();
   const router = useRouter();
   const pathname = usePathname();
   const { user, csrfToken, setCsrfToken } = useAuth();
   const csrfTokenRef = useRef<string | null>(csrfToken);
+  const { toast } = useToast();
 
   // Helper to save pins to localStorage
   const savePinsToCache = useCallback((chatId: string, pinsData: PinType[]) => {
@@ -269,15 +283,70 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setChatToDelete(board);
   };
   
-  const confirmDelete = () => {
-    if (chatToDelete) {
-        setChatBoards_(prev => prev.filter(board => board.id !== chatToDelete.id));
+  const confirmDelete = async () => {
+    if (!chatToDelete) return;
+    const chatId = chatToDelete.id;
+    setIsDeletingChatBoard(true);
 
-        if (activeChatId === chatToDelete.id) {
-            const newActiveChat = chatBoards.find(b => b.id !== chatToDelete.id);
-            setActiveChatId(newActiveChat ? newActiveChat.id : null);
+    try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (csrfTokenRef.current) {
+        headers["X-CSRFToken"] = csrfTokenRef.current;
+      }
+
+      const response = await fetch(CHAT_DETAIL_ENDPOINT(chatId), {
+        method: "DELETE",
+        headers,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to delete chat");
+      }
+
+      setChatHistory((prev) => {
+        const next = { ...prev };
+        delete next[chatId];
+        return next;
+      });
+
+      setChatBoards_((prev) => {
+        const nextBoards = prev.filter((board) => board.id !== chatId);
+        if (activeChatId === chatId) {
+          const removedIndex = prev.findIndex((board) => board.id === chatId);
+          const fallback =
+            nextBoards[removedIndex] ??
+            nextBoards[removedIndex - 1] ??
+            nextBoards[0] ??
+            null;
+          setActiveChatId(fallback ? fallback.id : null);
         }
-        setChatToDelete(null);
+        return nextBoards;
+      });
+
+      if (pinsChatId === chatId) {
+        setPins_([]);
+        setPinsChatId(null);
+      }
+
+      setChatToDelete(null);
+      toast({
+        title: "Chat deleted",
+        description: "This chat board has been removed.",
+      });
+    } catch (error) {
+      console.error("Failed to delete chat board", error);
+      toast({
+        title: "Delete failed",
+        description:
+          error instanceof Error ? error.message : "Unable to delete chat.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingChatBoard(false);
     }
   };
 
@@ -392,14 +461,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const handlePinMessage = useCallback(
     async (pinRequest: PinType) => {
       const chatId = pinRequest.chatId || activeChatId;
-      const messageId = pinRequest.messageId ?? pinRequest.id;
-      if (!chatId || !messageId) {
-        console.warn("Missing identifiers for pin action");
+      const content = pinRequest.text;
+      if (!chatId || !content) {
+        console.warn("Missing chatId or content for pin action");
         return;
       }
 
       try {
-        const backendPin = await createPin(chatId, messageId, csrfTokenRef.current);
+        const backendPin = await createPin(chatId, content, csrfTokenRef.current);
         const normalized = backendPinToLegacy(backendPin);
         if (chatId === activeChatId) {
           setPins((prev) => [normalized, ...prev.filter((p) => p.id !== normalized.id)]);
@@ -571,13 +640,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete this chat board.
                   </AlertDialogDescription>
-                  {chatToDelete && chatToDelete.pinCount > 0 && (
-                      <p className="text-sm font-semibold text-destructive mt-2">This chat board has {chatToDelete.pinCount} pinned message(s).</p>
-                    )}
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="rounded-[25px]" onClick={() => setChatToDelete(null)}>Cancel</AlertDialogCancel>
-                  <AlertDialogAction className="rounded-[25px]" onClick={confirmDelete}>Delete</AlertDialogAction>
+                  <AlertDialogCancel
+                    className="rounded-[25px]"
+                    onClick={() => setChatToDelete(null)}
+                    disabled={isDeletingChatBoard}
+                  >
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    className="rounded-[25px]"
+                    onClick={confirmDelete}
+                    disabled={isDeletingChatBoard}
+                  >
+                    {isDeletingChatBoard ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -613,13 +691,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete this chat board.
             </AlertDialogDescription>
-            {chatToDelete && chatToDelete.pinCount > 0 && (
-                <p className="text-sm font-semibold text-destructive mt-2">This chat board has {chatToDelete.pinCount} pinned message(s).</p>
-              )}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-[25px]" onClick={() => setChatToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="rounded-[25px]" onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel
+              className="rounded-[25px]"
+              onClick={() => setChatToDelete(null)}
+              disabled={isDeletingChatBoard}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-[25px]"
+              onClick={confirmDelete}
+              disabled={isDeletingChatBoard}
+            >
+              {isDeletingChatBoard ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

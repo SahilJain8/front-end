@@ -8,9 +8,13 @@ export const API_BASE_URL =
 export const LOGIN_ENDPOINT = `${API_BASE_URL}/login/`;
 export const CHAT_COMPLETION_ENDPOINT = `${API_BASE_URL}/chat/`;
 export const CHATS_ENDPOINT = `${API_BASE_URL}/chats/`;
+export const CHAT_DETAIL_ENDPOINT = (chatId: string | number) =>
+  `${API_BASE_URL}/chats/${chatId}/`;
 export const MODELS_ENDPOINT = `${API_BASE_URL}/get_models`;
 export const CHAT_MESSAGES_ENDPOINT = (chatId: string | number) =>
   `${API_BASE_URL}/chats/${chatId}/messages/`;
+export const DELETE_MESSAGE_ENDPOINT = (chatId: string | number, messageId: string | number) =>
+  `${API_BASE_URL}/chats/${chatId}/messages/${messageId}/`;
 export const CHAT_PINS_ENDPOINT = (chatId: string | number) =>
   `${API_BASE_URL}/chats/${chatId}/pins/`;
 export const PIN_DETAIL_ENDPOINT = (pinId: string | number) =>
