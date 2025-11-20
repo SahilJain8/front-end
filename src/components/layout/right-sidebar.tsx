@@ -298,26 +298,14 @@ export function RightSidebar({
                 variant="ghost"
                 size="icon"
                 onClick={onToggle}
-                className={cn(
-                    "absolute top-1/2 -translate-y-1/2 -left-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full",
-                     isCollapsed && "hidden"
-                )}
+                className="absolute top-1/2 -translate-y-1/2 -left-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full"
             >
                 <ChevronsLeft
                     className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")}
                 />
             </Button>
             
-            {isCollapsed ? (
-                 <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onToggle}
-                    className="absolute top-1/2 -translate-y-1/2 -right-10 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full"
-                >
-                    <ChevronsLeft className="h-4 w-4 rotate-180" />
-                </Button>
-            ) : (
+            {!isCollapsed && (
                 <div className="flex flex-col h-full">
                     <div className="p-4 space-y-4 border-b">
                          <div className="flex items-center justify-between">
@@ -394,5 +382,3 @@ export function RightSidebar({
         </aside>
     );
 }
-
-    
