@@ -207,7 +207,7 @@ const backendPinToLegacy = (pin: BackendPin): PinType => {
 const PINS_CACHE_KEY = 'chat-pins-cache';
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(true);
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -486,7 +486,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         throw error;
       }
     },
-    [activeChatId]
+    [activeChatId, setPins]
   );
 
   const handleUnpinMessage = useCallback(
@@ -516,7 +516,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         throw error;
       }
     },
-    [pins]
+    [pins, setPins]
   );
 
   const ensureChatOnServer = useCallback(
@@ -678,9 +678,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
               pins={pins}
               setPins={setPins}
               chatBoards={chatBoards}
-              onPinDeleteRequest={(pin) => {
-                handleUnpinMessage(pin.id).catch(() => undefined);
-              }}
           />
         </div>
       </div>
