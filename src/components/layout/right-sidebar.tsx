@@ -300,18 +300,17 @@ export function RightSidebar({
                 onClick={onToggle}
                 className={cn(
                     "absolute top-1/2 -translate-y-1/2 -left-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full",
-                    isCollapsed && "hidden"
                 )}
             >
                 <ChevronsLeft
-                className={cn("h-4 w-4 transition-transform", !isCollapsed && "rotate-180")}
+                className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")}
                 />
             </Button>
             
             {isCollapsed ? (
-                <div className="flex flex-1 flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
+                <div className="flex flex-1 flex-col items-center justify-center gap-2 text-xs text-muted-foreground p-2">
                     <Pin className="h-5 w-5" />
-                    Pins
+                     <span className="[writing-mode:vertical-rl]">Pinboard</span>
                 </div>
             ) : (
                 <div className="flex flex-col h-full">
@@ -320,7 +319,7 @@ export function RightSidebar({
                             <h3 className="font-semibold flex items-center gap-2"><Pin className="h-4 w-4" />Pinboard</h3>
                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onToggle}><X className="h-4 w-4" /></Button>
                         </div>
-                        <Button variant="secondary" className="w-full text-muted-foreground" onClick={() => setIsOrganizeDialogOpen(true)}>
+                        <Button variant="secondary" className="w-full text-muted-foreground bg-[#767676]/10 hover:bg-[#767676]/20" onClick={() => setIsOrganizeDialogOpen(true)}>
                             <Folder className="mr-2 h-4 w-4" />
                             Organize Pins
                         </Button>
@@ -335,7 +334,7 @@ export function RightSidebar({
                         </div>
                          <div className="flex flex-col gap-2">
                             <Select value={filterType} onValueChange={setFilterType}>
-                                <SelectTrigger className="w-full rounded-[30px] text-xs">
+                                <SelectTrigger className="w-full rounded-[30px] text-xs bg-[#D9D9D9]/20 border-0">
                                     <SelectValue placeholder="Sort & Filter" />
                                 </SelectTrigger>
                                 <SelectContent>
