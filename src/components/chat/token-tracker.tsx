@@ -5,6 +5,20 @@ import { Progress } from "@/components/ui/progress";
 import { fetchTokenStats, type TokenStats } from "@/lib/api/tokens";
 import { useAuth } from "@/context/auth-context";
 
+// Assuming a max token budget for display purposes, adjust as needed.
+// For example, if '2m' means 2 million.
+const MAX_TOKEN_BUDGET = 2_000_000; 
+
+const formatLargeNumber = (num: number): string => {
+  if (num >= 1_000_000) {
+    return `${(num / 1_000_000).toFixed(1)}M`;
+  }
+  if (num >= 1_000) {
+    return `${(num / 1_000).toFixed(1)}K`;
+  }
+  return num.toString();
+};
+
 export function TokenTracker() {
   const { csrfToken } = useAuth();
   const [stats, setStats] = useState<TokenStats>({
@@ -38,40 +52,38 @@ export function TokenTracker() {
     };
   }, [csrfToken]);
 
-  const { usagePercent, remainingFormatted } = useMemo(() => {
-    const totalBudget = Math.max(
-      1,
-      stats.availableTokens + stats.totalTokensUsed
-    );
+  const { usagePercent, formattedTotalUsed, formattedBudget } = useMemo(() => {
+    const totalUsed = stats.totalTokensUsed;
+    const totalBudget = MAX_TOKEN_BUDGET; // Use the predefined max budget for display
+    
     const percent = Math.min(
       100,
-      (stats.totalTokensUsed / totalBudget) * 100
+      (totalUsed / totalBudget) * 100
     );
-    const formatter = new Intl.NumberFormat("en-US", {
-      maximumFractionDigits: 0,
-    });
+
     return {
       usagePercent: Math.round(percent),
-      remainingFormatted: formatter.format(stats.availableTokens),
+      formattedTotalUsed: formatLargeNumber(totalUsed),
+      formattedBudget: formatLargeNumber(totalBudget),
     };
-  }, [stats.availableTokens, stats.totalTokensUsed]);
+  }, [stats.totalTokensUsed]);
 
   return (
     <div className="flex flex-col gap-1 w-full text-sm">
       <div className="flex items-center justify-between text-muted-foreground">
-        <span>Token usage</span>
+        <span>Token count</span>
         <span className="font-mono text-xs">
-          {isLoading ? "…" : `${usagePercent}% used`}
+          {isLoading ? "…" : `${usagePercent}%`}
         </span>
       </div>
       <div className="flex items-center gap-3">
         <Progress
           value={usagePercent}
-          className="h-2 flex-grow"
+          className="h-[6px] flex-grow rounded-[40px]"
           indicatorClassName="bg-green-500"
         />
         <span className="text-xs text-muted-foreground whitespace-nowrap">
-          {remainingFormatted} left
+          {isLoading ? "…" : `${formattedTotalUsed}/${formattedBudget}`}
         </span>
       </div>
     </div>

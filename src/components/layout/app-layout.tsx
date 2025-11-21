@@ -353,14 +353,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
   };
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn && !pathname.startsWith('/auth')) {
-        router.replace('/auth/login');
-    }
-  }, [pathname, router]);
-
   const loadChatBoards = useCallback(async () => {
     if (!user) return;
     try {
@@ -676,23 +668,25 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <AppLayoutContext.Provider value={contextValue}>
-      <div className="flex flex-col h-screen bg-background w-full">
-        <Topbar
-          selectedModel={selectedModel}
-          onModelSelect={setSelectedModel}
-        />
-        <div className="flex flex-1 overflow-hidden">
-          <LeftSidebar {...sidebarProps} />
-          <main className="flex-1 flex flex-col min-w-0">
-              {pageContent}
-          </main>
-          <RightSidebar
-              isCollapsed={isRightSidebarCollapsed}
-              onToggle={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
-              pins={pins}
-              setPins={setPins}
-              chatBoards={chatBoards}
+      <div className="flex h-screen bg-background w-full">
+        <LeftSidebar {...sidebarProps} />
+        <div className="flex flex-col flex-1">
+          <Topbar
+            selectedModel={selectedModel}
+            onModelSelect={setSelectedModel}
           />
+          <div className="flex flex-1 overflow-hidden">
+            <main className="flex-1 flex flex-col min-w-0">
+                {pageContent}
+            </main>
+            <RightSidebar
+                isCollapsed={isRightSidebarCollapsed}
+                onToggle={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+                pins={pins}
+                setPins={setPins}
+                chatBoards={chatBoards}
+            />
+          </div>
         </div>
       </div>
       <AlertDialog open={!!chatToDelete} onOpenChange={(open) => !open && setChatToDelete(null)}>

@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo, useContext } from "react";
+import { useState, useMemo, useContext, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -74,6 +75,10 @@ export function RightSidebar({ isCollapsed, onToggle, pins: initialPins, setPins
   const [isOrganizeDialogOpen, setIsOrganizeDialogOpen] = useState(false);
   const layoutContext = useContext(AppLayoutContext);
   const activeChatId = layoutContext?.activeChatId;
+
+  useEffect(() => {
+    setPins(initialPins.length > 0 ? initialPins : samplePins);
+  }, [initialPins]);
 
   const handleUpdatePin = (updatedPin: PinType) => {
     setPins(prevPins => prevPins.map(p => p.id === updatedPin.id ? updatedPin : p));
@@ -150,10 +155,10 @@ export function RightSidebar({ isCollapsed, onToggle, pins: initialPins, setPins
   return (
     <>
     <aside className={cn(
-        "hidden lg:flex flex-col transition-all duration-300 ease-in-out relative",
-        isCollapsed ? "w-[58px]" : "w-[300px]"
+        "hidden lg:flex flex-col transition-all duration-300 ease-in-out relative border-l border-[#D9D9D9]",
+        isCollapsed ? "w-[58px]" : "w-[268px]"
         )}
-        style={{ backgroundColor: 'hsl(var(--right-sidebar-background))' }}
+        style={{ backgroundColor: '#FFFFFF' }}
         >
         
         <Button variant="ghost" size="icon" onClick={onToggle} className="absolute top-1/2 -translate-y-1/2 -left-4 bg-card border hover:bg-accent z-10 h-8 w-8 rounded-full">

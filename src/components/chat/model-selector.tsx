@@ -22,8 +22,12 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
 
   return (
     <>
-      <Button variant="outline" className="w-auto gap-2" onClick={() => setIsDialogOpen(true)}>
-        <ChevronsUpDown className="w-4 h-4 text-muted-foreground" />
+      <Button 
+        className="h-[40px] w-[131px] rounded-[40px] gap-2 text-white"
+        style={{ backgroundColor: '#2C2C2C' }}
+        onClick={() => setIsDialogOpen(true)}
+      >
+        <ChevronsUpDown className="w-4 h-4 text-white" />
         {selectedModel && (
           <img
             src={getModelIcon(selectedModel.companyName)}
@@ -31,7 +35,7 @@ export function ModelSelector({ selectedModel, onModelSelect }: ModelSelectorPro
             className="h-5 w-5"
           />
         )}
-        <span>{selectedModel ? selectedModel.modelName : "Select a model"}</span>
+        <span>{selectedModel ? selectedModel.modelName : "Add Model"}</span>
       </Button>
       <ModelSelectorDialog
         open={isDialogOpen}

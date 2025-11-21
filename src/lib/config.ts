@@ -20,3 +20,5 @@ export const CHAT_PINS_ENDPOINT = (chatId: string | number) =>
 export const PIN_DETAIL_ENDPOINT = (pinId: string | number) =>
   `${API_BASE_URL}/pins/${pinId}/`;
 export const TOKENS_ENDPOINT = `${API_BASE_URL}/tokens/`;
+
+export const allTags = ["Finance Research", "Product Analysis Q4", "Marketing Strategy"];

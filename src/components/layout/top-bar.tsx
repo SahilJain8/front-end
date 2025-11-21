@@ -1,15 +1,14 @@
-
 'use client';
 
 import { Button } from "../ui/button";
-import { WandSparkles, BarChart2, UserPlus } from "lucide-react";
+import { Files, BarChart2, UserPlus } from "lucide-react"; // Import Files icon
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 import { CreatePersonaDialog } from "../personas/create-persona-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Logo } from "../icons/logo";
+// import { Logo } from "../icons/logo"; // Remove Logo import from Topbar
 import { ModelSelector } from "../chat/model-selector";
 import { TokenTracker } from "../chat/token-tracker";
 import type { AIModel } from "@/types/ai-model";
@@ -31,49 +30,57 @@ export function Topbar({ children, selectedModel, onModelSelect }: TopbarProps) 
     <header className="flex items-center justify-between p-2 border-b h-[60px] bg-card shrink-0 z-20">
       <div className="flex items-center gap-4">
         {isMobile ? children : (
-         <Link href="/" className="flex items-center gap-2 px-4">
-              <Logo className="text-primary h-6 w-6"/>
-              <h1 className="text-lg font-semibold">Flowting</h1>
-          </Link>
+          // Remove Logo from Topbar, only keep children for mobile if needed
+          // <Link href="/" className="flex items-center gap-2 px-4">
+          //     <Logo className="text-primary h-6 w-6"/>
+          //     <h1 className="text-lg font-semibold">Flowting</h1>
+          // </Link>
+          children // This will render the hamburger menu on mobile
         )}
-        <nav className={cn("items-center gap-2", isMobile ? "hidden" : "flex")}>
-            {tabs.map((tab) => (
-            <Button
-                key={tab.name}
-                variant="ghost"
-                asChild
-                className={cn(
-                    "font-semibold rounded-[25px]",
-                    pathname === tab.href ? "bg-secondary text-accent-foreground" : ""
-                )}
-            >
-                <Link href={tab.href}>
-                <tab.icon className="mr-2 h-4 w-4" />
-                {tab.name}
-                </Link>
-            </Button>
-            ))}
-        </nav>
-      </div>
 
-      <div className={cn("flex-1 justify-center", isMobile ? "hidden" : "flex")}>
-          <div className="flex items-center gap-4 w-full max-w-2xl">
-              <ModelSelector
-                selectedModel={selectedModel}
-                onModelSelect={onModelSelect}
-              />
-              <div className="w-full">
-                  <TokenTracker />
-              </div>
+        {/* Add Model Button and Token Count */} 
+        <div className={cn("flex items-center gap-2 pl-4", isMobile ? "w-full justify-between" : "")}> {/* Adjusted padding and mobile full width */} 
+          <ModelSelector
+            selectedModel={selectedModel}
+            onModelSelect={onModelSelect}
+          />
+          {/* TokenTracker with specified width and height for its progress bar */} 
+          <div className="w-[122px] h-[6px] flex items-center">
+            <TokenTracker />
           </div>
+        </div>
       </div>
 
-      <div className={cn("items-center gap-2 px-4", isMobile ? "hidden" : "flex")}>
-         <div className="flex items-center gap-2">
-            <Button variant="outline" className="rounded-[25px]" asChild>
+      {/* Right-aligned buttons */} 
+      <div className={cn("flex items-center gap-2 pr-4", isMobile ? "hidden" : "flex")}>
+          {/* Files Button */} 
+          <Button 
+            variant="outline" 
+            className="h-[40px] w-[85px] rounded-[40px] gap-2"
+          >
+            <Files className="h-4 w-4" />
+            Files
+          </Button>
+
+          {/* Compare Models Button */} 
+          <Button 
+            variant="outline" 
+            className="h-[40px] rounded-[40px] gap-2"
+            // No specific width given for compare models, letting it adjust
+          >
+            <BarChart2 className="h-4 w-4" />
+            Compare models
+          </Button>
+
+          {/* Create Persona Button */} 
+          <CreatePersonaDialog>
+            <Button 
+              className="h-[40px] w-[165px] rounded-[40px] gap-2 text-white bg-[#767676] hover:bg-[#767676]/90"
+            >
+              <UserPlus className="h-4 w-4" />
+              Create Persona
             </Button>
-            <CreatePersonaDialog />
-         </div>
+          </CreatePersonaDialog>
       </div>
     </header>
   );
