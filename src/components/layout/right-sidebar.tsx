@@ -66,9 +66,7 @@ const samplePins: PinType[] = [
 ];
 
 
-export function RightSidebar({ isCollapsed, onToggle, pins: initialPins, setPins: setInitialPins, chatBoards }: RightSidebarProps) {
-  const [pins, setPins] = useState<PinType[]>(initialPins.length > 0 ? initialPins : samplePins);
-  const [activeTab, setActiveTab] = useState("Pins");
+export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards }: RightSidebarProps) {
   const [filterMode, setFilterMode] = useState<FilterMode>('current-chat');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagSearch, setTagSearch] = useState('');
@@ -76,9 +74,8 @@ export function RightSidebar({ isCollapsed, onToggle, pins: initialPins, setPins
   const layoutContext = useContext(AppLayoutContext);
   const activeChatId = layoutContext?.activeChatId;
 
-  useEffect(() => {
-    setPins(initialPins.length > 0 ? initialPins : samplePins);
-  }, [initialPins]);
+  // Use the pins from props, but fall back to samplePins if the prop is empty.
+  const pinsToDisplay = pins.length > 0 ? pins : samplePins;
 
   const handleUpdatePin = (updatedPin: PinType) => {
     setPins(prevPins => prevPins.map(p => p.id === updatedPin.id ? updatedPin : p));
@@ -96,9 +93,9 @@ export function RightSidebar({ isCollapsed, onToggle, pins: initialPins, setPins
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
-    pins.forEach(pin => pin.tags.forEach(tag => tagSet.add(tag)));
+    pinsToDisplay.forEach(pin => pin.tags.forEach(tag => tagSet.add(tag)));
     return Array.from(tagSet).sort();
-  }, [pins]);
+  }, [pinsToDisplay]);
 
   const filteredTags = useMemo(() => {
     if (!tagSearch) {
@@ -115,10 +112,10 @@ export function RightSidebar({ isCollapsed, onToggle, pins: initialPins, setPins
   };
 
   const sortedAndFilteredPins = useMemo(() => {
-    let filtered = pins;
+    let filtered = pinsToDisplay;
     
     if (selectedTags.length > 0) {
-        filtered = pins.filter(pin => selectedTags.every(tag => pin.tags.includes(tag)));
+        filtered = pinsToDisplay.filter(pin => selectedTags.every(tag => pin.tags.includes(tag)));
     }
 
     switch(filterMode) {
@@ -135,7 +132,7 @@ export function RightSidebar({ isCollapsed, onToggle, pins: initialPins, setPins
       default:
         return filtered;
     }
-  }, [pins, filterMode, activeChatId, selectedTags]);
+  }, [pinsToDisplay, filterMode, activeChatId, selectedTags]);
 
   const getFilterLabel = () => {
     if (selectedTags.length > 0) {
@@ -177,7 +174,7 @@ export function RightSidebar({ isCollapsed, onToggle, pins: initialPins, setPins
                           <X className="h-4 w-4" />
                       </Button>
                   </div>
-                  <Button variant="outline" size="sm" className="w-full justify-center gap-2 rounded-full h-9" onClick={() => setIsOrganizeDialogOpen(true)}>
+                  <Button size="sm" className="w-full justify-center gap-2 rounded-full h-9 bg-[#767676] text-black hover:bg-[#767676]/90" onClick={() => setIsOrganizeDialogOpen(true)}>
                     <FolderPlus className="h-4 w-4" />
                     Organize Pins
                   </Button>
@@ -188,7 +185,7 @@ export function RightSidebar({ isCollapsed, onToggle, pins: initialPins, setPins
                   <div className="mt-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full justify-between rounded-full h-9">
+                            <Button className="w-full justify-between rounded-full h-9 bg-[#D9D9D9] text-black hover:bg-[#D9D9D9]/90">
                                 <span>{getFilterLabel()}</span>
                                 <ChevronDown className="h-4 w-4 opacity-50" />
                             </Button>
@@ -278,4 +275,3 @@ export function RightSidebar({ isCollapsed, onToggle, pins: initialPins, setPins
     />
     </>
   );
-}
