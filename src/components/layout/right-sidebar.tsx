@@ -10,11 +10,11 @@ import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuCheckboxItem } from "../ui/dropdown-menu";
 import type { ChatBoard } from "./app-layout";
 import { PinItem } from "../pinboard/pin-item";
-import { AppLayoutContext } from "./app-layout";
+import { AppLayoutContext } from "@/context/app-layout-context";
 import { Separator } from "../ui/separator";
 import { OrganizePinsDialog } from "../pinboard/organize-pins-dialog";
 
-export interface PinType {
+export interface Pin {
   id: string;
   text: string;
   tags: string[];
@@ -28,14 +28,14 @@ export interface PinType {
 interface RightSidebarProps {
     isCollapsed: boolean;
     onToggle: () => void;
-    pins: PinType[];
-    setPins: React.Dispatch<React.SetStateAction<PinType[]>>;
+    pins: Pin[];
+    setPins: React.Dispatch<React.SetStateAction<Pin[]>>;
     chatBoards: ChatBoard[];
 }
 
 type FilterMode = 'current-chat' | 'newest' | 'oldest' | 'a-z' | 'z-a';
 
-const samplePins: PinType[] = [
+const samplePins: Pin[] = [
     {
       id: 'pin1',
       text: 'This is the first sample pin about project requirements and initial planning.',
@@ -77,7 +77,7 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
   // Use the pins from props, but fall back to samplePins if the prop is empty.
   const pinsToDisplay = pins.length > 0 ? pins : samplePins;
 
-  const handleUpdatePin = (updatedPin: PinType) => {
+  const handleUpdatePin = (updatedPin: Pin) => {
     setPins(prevPins => prevPins.map(p => p.id === updatedPin.id ? updatedPin : p));
   };
   

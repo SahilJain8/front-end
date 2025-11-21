@@ -9,7 +9,6 @@ import { ChatInterface } from '@/components/chat/chat-interface';
 import { type Message } from '@/components/chat/chat-message';
 import { extractThinkingContent } from '@/lib/thinking';
 import { AppLayoutContext } from '@/context/app-layout-context';
-
 import { Logo } from '../icons/logo';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
