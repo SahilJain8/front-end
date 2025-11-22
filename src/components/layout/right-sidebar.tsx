@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useContext, useEffect } from "react";
+import { useState, useMemo, useContext, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,6 +13,8 @@ import { PinItem } from "../pinboard/pin-item";
 import { AppLayoutContext } from "./app-layout";
 import { Separator } from "../ui/separator";
 import { OrganizePinsDialog } from "../pinboard/organize-pins-dialog";
+import { useAuth } from "@/context/auth-context";
+import { createPinFolder, fetchPinFolders, movePinToFolder, type PinFolder } from "@/lib/api/pins";
 
 export interface PinType {
   id: string;
@@ -71,8 +73,10 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagSearch, setTagSearch] = useState('');
   const [isOrganizeDialogOpen, setIsOrganizeDialogOpen] = useState(false);
+  const [pinFolders, setPinFolders] = useState<PinFolder[]>([]);
   const layoutContext = useContext(AppLayoutContext);
   const activeChatId = layoutContext?.activeChatId;
+  const { csrfToken } = useAuth();
 
   // Use the pins from props, but fall back to samplePins if the prop is empty.
   const pinsToDisplay = pins.length > 0 ? pins : samplePins;
@@ -97,6 +101,22 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
     return Array.from(tagSet).sort();
   }, [pinsToDisplay]);
 
+  const loadFolders = useCallback(async () => {
+    try {
+      const folders = await fetchPinFolders(csrfToken);
+      setPinFolders(folders);
+    } catch (error) {
+      console.error("Failed to load pin folders", error);
+      setPinFolders((prev) =>
+        prev.length > 0 ? prev : [{ id: "unorganized", name: "Unorganized" }]
+      );
+    }
+  }, [csrfToken]);
+
+  useEffect(() => {
+    loadFolders();
+  }, [loadFolders]);
+
   const filteredTags = useMemo(() => {
     if (!tagSearch) {
       return allTags.slice(0, 5);
@@ -110,6 +130,46 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     );
   };
+
+  const handleCreateFolder = useCallback(
+    async (name: string) => {
+      const created = await createPinFolder(name, csrfToken);
+      setPinFolders((prev) => [...prev, created]);
+      return created;
+    },
+    [csrfToken]
+  );
+
+  const handleOrganizePinsUpdate = useCallback(
+    async (updatedPins: PinType[]) => {
+      const currentById = new Map(pins.map((p) => [p.id, p]));
+      const moves: { pinId: string; folderId: string | null }[] = [];
+      for (const pin of updatedPins) {
+        const prev = currentById.get(pin.id);
+        const prevFolder = prev?.folderId ?? null;
+        const nextFolder = pin.folderId ?? null;
+        if (prevFolder !== nextFolder) {
+          moves.push({ pinId: pin.id, folderId: nextFolder });
+        }
+      }
+
+      if (moves.length > 0) {
+        try {
+          for (const move of moves) {
+            const folderIdToSend = !move.folderId || move.folderId === "unorganized" ? null : move.folderId;
+            await movePinToFolder(move.pinId, folderIdToSend, csrfToken);
+          }
+          // refresh folders to reflect any server defaults (e.g., unorganized)
+          loadFolders();
+        } catch (error) {
+          console.error("Failed to update pin folders", error);
+        }
+      }
+
+      setPins(updatedPins);
+    },
+    [csrfToken, loadFolders, pins, setPins]
+  );
 
   const sortedAndFilteredPins = useMemo(() => {
     let filtered = pinsToDisplay;
@@ -152,7 +212,7 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
   return (
     <>
     <aside className={cn(
-        "hidden lg:flex flex-col transition-all duration-300 ease-in-out relative border-l border-[#D9D9D9]",
+        "hidden lg:flex flex-col h-full transition-all duration-300 ease-in-out relative border-l border-[#D9D9D9]",
         isCollapsed ? "w-[58px]" : "w-[268px]"
         )}
         style={{ backgroundColor: '#FFFFFF' }}
@@ -164,29 +224,29 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
         
         {!isCollapsed && (
           <div className="flex flex-col h-full">
-              <div className="p-4 border-b shrink-0 space-y-2">
+              <div className="p-3 border-b border-border/30 shrink-0 space-y-2.5">
                   <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                          <Pin className="h-4 w-4" />
-                          <h2 className="font-medium text-base">Pinboard</h2>
+                          <Pin className="h-5 w-5 text-[#79A3B1]" />
+                          <h2 className="font-bold text-base">Pinboard</h2>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={onToggle} className="h-8 w-8 rounded-full">
+                      <Button variant="ghost" size="icon" onClick={onToggle} className="h-8 w-8 rounded-full hover:bg-muted/50">
                           <X className="h-4 w-4" />
                       </Button>
                   </div>
-                  <Button size="sm" className="w-full justify-center gap-2 rounded-full h-9 bg-[#767676] text-black hover:bg-[#767676]/90" onClick={() => setIsOrganizeDialogOpen(true)}>
+                  <Button size="sm" className="w-full justify-center gap-2 rounded-full h-9 bg-muted/80 text-foreground hover:bg-muted font-medium shadow-sm" onClick={() => setIsOrganizeDialogOpen(true)}>
                     <FolderPlus className="h-4 w-4" />
                     Organize Pins
                   </Button>
                   <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Search pins..." className="pl-9 bg-background rounded-full h-9" />
+                      <Input placeholder="Search pins..." className="pl-9 bg-muted/30 rounded-full h-9 border-border/40" />
                   </div>
-                  <div className="mt-2">
+                  <div className="mt-1.5">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button className="w-full justify-between rounded-full h-9 bg-[#D9D9D9] text-black hover:bg-[#D9D9D9]/90">
-                                <span>{getFilterLabel()}</span>
+                            <Button className="w-full justify-between rounded-full h-9 bg-muted/60 text-foreground hover:bg-muted/80 font-medium shadow-sm">
+                                <span className="text-sm">{getFilterLabel()}</span>
                                 <ChevronDown className="h-4 w-4 opacity-50" />
                             </Button>
                         </DropdownMenuTrigger>
@@ -239,14 +299,14 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
                   </div>
               </div>
               <ScrollArea className="flex-1 min-h-0">
-                  <div className="p-4 space-y-3">
+                  <div className="p-3 space-y-2.5">
                   {sortedAndFilteredPins.length > 0 ? sortedAndFilteredPins.map((pin) => {
                       const chatBoard = chatBoards.find(board => board.id.toString() === pin.chatId);
                       return (
                         <PinItem key={pin.id} pin={pin} onUpdatePin={handleUpdatePin} onRemoveTag={handleRemoveTag} chatName={chatBoard?.name} />
                       )
                   }) : (
-                      <div className="text-center text-sm text-muted-foreground py-10 flex flex-col items-center gap-2">
+                      <div className="text-center text-sm text-muted-foreground py-6 flex flex-col items-center gap-2">
                           <Pin className="h-8 w-8 text-muted-foreground" />
                           <p className="font-bold text-base text-foreground">No pins yet</p>
                           <p className="max-w-xs px-4">Pin useful answers or references from your chats to keep them handy for later.</p>
@@ -254,8 +314,8 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
                   )}
                   </div>
               </ScrollArea>
-              <div className="p-4 border-t shrink-0">
-                  <Button variant="outline" className="w-full rounded-full h-9">
+              <div className="p-3 border-t border-border/30 shrink-0">
+                  <Button variant="outline" className="w-full rounded-full h-9 border-border/60 shadow-sm hover:shadow-md transition-shadow font-medium">
                       <Download className="mr-2 h-4 w-4" />
                       Export Pins
                   </Button>
@@ -263,15 +323,19 @@ export function RightSidebar({ isCollapsed, onToggle, pins, setPins, chatBoards 
           </div>
         )}
         {isCollapsed && (
-             <div className="flex flex-col items-center py-4 space-y-4">
+             <div className="flex flex-col items-center py-3 space-y-3">
                   <Pin className="h-6 w-6" />
               </div>
         )}
     </aside>
-    <OrganizePinsDialog 
-        isOpen={isOrganizeDialogOpen} 
+    <OrganizePinsDialog
+        isOpen={isOrganizeDialogOpen}
         onClose={() => setIsOrganizeDialogOpen(false)}
         pins={pins}
+        folders={pinFolders}
+        onCreateFolder={handleCreateFolder}
+        onPinsUpdate={handleOrganizePinsUpdate}
     />
     </>
   );
+}

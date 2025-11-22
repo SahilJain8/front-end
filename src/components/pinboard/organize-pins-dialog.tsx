@@ -28,7 +28,10 @@ interface OrganizePinsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   pins: PinType[];
-  onPinsUpdate: (pins: PinType[]) => void;
+  onPinsUpdate?: (pins: PinType[]) => void;
+  folders?: Folder[];
+  onCreateFolder?: (name: string) => Promise<Folder> | Folder;
+  onMovePins?: (pinIds: string[], folderId: string | null) => Promise<void> | void;
 }
 
 const initialFolders: Folder[] = [
@@ -36,8 +39,16 @@ const initialFolders: Folder[] = [
   { id: "research", name: "Research" },
 ];
 
-export function OrganizePinsDialog({ isOpen, onClose, pins: initialPins, onPinsUpdate }: OrganizePinsDialogProps) {
-  const [folders, setFolders] = useState<Folder[]>(initialFolders);
+export function OrganizePinsDialog({
+  isOpen,
+  onClose,
+  pins: initialPins,
+  onPinsUpdate = () => {},
+  folders: foldersProp,
+  onCreateFolder,
+  onMovePins,
+}: OrganizePinsDialogProps) {
+  const [folders, setFolders] = useState<Folder[]>(foldersProp?.length ? foldersProp : initialFolders);
   const [currentPins, setCurrentPins] = useState(initialPins);
   const [selectedFolderId, setSelectedFolderId] = useState<string>("unorganized");
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,18 +60,35 @@ export function OrganizePinsDialog({ isOpen, onClose, pins: initialPins, onPinsU
     setCurrentPins(initialPins);
   }, [initialPins]);
 
+  useEffect(() => {
+    if (foldersProp && foldersProp.length > 0) {
+      setFolders(foldersProp);
+      const defaultFolder = foldersProp.find((f) => f.id === "unorganized" || f.name.toLowerCase() === "unorganized");
+      if (defaultFolder) {
+        setSelectedFolderId(defaultFolder.id);
+      }
+    }
+  }, [foldersProp]);
+
   const pinsByFolder = useMemo(() => {
     const grouped: Record<string, PinType[]> = {};
+    const defaultFolder = folders.find(
+      (f) => f.isDefault || f.name.toLowerCase() === "unorganized" || f.id === "unorganized"
+    );
+    const defaultFolderId = defaultFolder?.id || "unorganized";
     folders.forEach(folder => {
         grouped[folder.id] = [];
     });
+    if (!grouped[defaultFolderId]) {
+      grouped[defaultFolderId] = [];
+    }
     
     currentPins.forEach(pin => {
-      const folderId = pin.folderId || "unorganized";
+      const folderId = pin.folderId || defaultFolderId;
       if (!grouped[folderId]) {
         // This can happen if a pin's folderId doesn't exist in the folders list
         // For now, let's add it to unorganized
-        grouped["unorganized"].push(pin);
+        grouped[defaultFolderId].push(pin);
       } else {
         grouped[folderId].push(pin);
       }
@@ -77,13 +105,19 @@ export function OrganizePinsDialog({ isOpen, onClose, pins: initialPins, onPinsU
   const selectedFolder = folders.find(f => f.id === selectedFolderId);
   const pinsInSelectedFolder = selectedFolderId ? pinsByFolder[selectedFolderId] : [];
 
-  const handleCreateFolder = () => {
-    if (newFolderName.trim() !== "") {
-      const newFolder: Folder = {
-        id: Date.now().toString(),
-        name: newFolderName.trim(),
-      };
-      setFolders([...folders, newFolder]);
+  const handleCreateFolder = async () => {
+    if (newFolderName.trim() === "") return;
+    const fallbackFolder: Folder = {
+      id: Date.now().toString(),
+      name: newFolderName.trim(),
+    };
+    try {
+      const created = onCreateFolder ? await onCreateFolder(newFolderName.trim()) : fallbackFolder;
+      setFolders([...folders, created]);
+      setSelectedFolderId(created.id);
+    } catch (error) {
+      console.error("Failed to create folder", error);
+    } finally {
       setNewFolderName("");
       setIsCreatingFolder(false);
     }
@@ -94,7 +128,7 @@ export function OrganizePinsDialog({ isOpen, onClose, pins: initialPins, onPinsU
     setCurrentPins(newPins);
   };
 
-  const handleMovePins = (targetFolderId: string) => {
+  const handleMovePins = async (targetFolderId: string) => {
     const newPins = currentPins.map(pin => 
         selectedPinIds.includes(pin.id) 
             ? { ...pin, folderId: targetFolderId } 
@@ -102,6 +136,19 @@ export function OrganizePinsDialog({ isOpen, onClose, pins: initialPins, onPinsU
     );
     setCurrentPins(newPins);
     setSelectedPinIds([]);
+    try {
+      if (onMovePins) {
+        const targetFolder = folders.find((f) => f.id === targetFolderId);
+        const isDefault =
+          targetFolderId === "unorganized" ||
+          targetFolder?.isDefault ||
+          targetFolder?.name.toLowerCase() === "unorganized";
+        const folderValue = isDefault ? null : targetFolderId;
+        await onMovePins(selectedPinIds, folderValue);
+      }
+    } catch (error) {
+      console.error("Failed to move pins", error);
+    }
   };
 
   const toggleSelectAll = () => {

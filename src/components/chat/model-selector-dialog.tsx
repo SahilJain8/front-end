@@ -140,7 +140,11 @@ useEffect(() => {
                     onClick={() => onModelSelect(model)}
                   >
                     <div className="flex items-center gap-3">
-                      <img src={getModelIcon(model.companyName)} alt={`${model.companyName} logo`} className="h-5 w-5" />
+                      <img
+                        src={getModelIcon(model.companyName, model.modelName)}
+                        alt={`${model.companyName || model.modelName} logo`}
+                        className="h-5 w-5"
+                      />
                       <span className="text-sm">{model.modelName}</span>
                     </div>
                     <div className="flex items-center gap-2">

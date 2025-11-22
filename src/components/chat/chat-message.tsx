@@ -273,12 +273,19 @@ export interface Message {
   pinId?: string;
   referencedMessageId?: string | null;
   thinkingContent?: string | null;
+  imageUrl?: string;
+  imageAlt?: string;
   metadata?: {
     modelName?: string;
     providerName?: string;
+    llmModelId?: string | number | null;
     inputTokens?: number;
     outputTokens?: number;
     createdAt?: string;
+    documentId?: string | null;
+    documentUrl?: string | null;
+    pinIds?: string[];
+    userReaction?: string | null;
   };
 }
 
@@ -291,11 +298,12 @@ interface ChatMessageProps {
   onResubmit: (newContent: string, messageId: string) => void;
   onReference?: (message: Message) => void;
   onRegenerate?: (message: Message) => void;
+  onReact?: (message: Message, reaction: string | null) => void;
   referencedMessage?: Message | null;
   isNewMessage: boolean;
 }
 
-export function ChatMessage({ message, isPinned, onPin, onCopy, onDelete, onResubmit, onReference, onRegenerate, referencedMessage, isNewMessage }: ChatMessageProps) {
+export function ChatMessage({ message, isPinned, onPin, onCopy, onDelete, onResubmit, onReference, onRegenerate, onReact, referencedMessage, isNewMessage }: ChatMessageProps) {
   const isUser = message.sender === "user";
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
@@ -500,6 +508,12 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onDelete, onResu
                     <span className="text-card-foreground">{message.metadata.modelName}</span>
                   </div>
                 )}
+                {message.metadata?.providerName && (
+                  <div className="grid grid-cols-[120px_1fr] gap-2">
+                    <span className="font-semibold text-muted-foreground">Provider:</span>
+                    <span className="text-card-foreground">{message.metadata.providerName}</span>
+                  </div>
+                )}
                 {message.metadata?.outputTokens !== undefined && (
                   <div className="grid grid-cols-[120px_1fr] gap-2">
                     <span className="font-semibold text-muted-foreground">Output Tokens:</span>
@@ -540,11 +554,20 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onDelete, onResu
     </div>
   )
 
+  const fallbackText = (() => {
+    if (isUser) return "U";
+    const hint = message.avatarHint || message.metadata?.modelName || message.metadata?.providerName || "";
+    const cleaned = hint.replace(/[^a-z0-9]/gi, "").toUpperCase();
+    if (cleaned.length >= 2) return cleaned.slice(0, 2);
+    if (cleaned.length === 1) return cleaned;
+    return "AI";
+  })();
+
   const AvatarComponent = (
     <Avatar className="h-9 w-9 border border-white/70 bg-white shadow-[0_6px_15px_rgba(15,23,42,0.12)]">
       {message.avatarUrl && <AvatarImage src={message.avatarUrl} alt={isUser ? "User" : "AI"} data-ai-hint={message.avatarHint} />}
-      <AvatarFallback>
-        {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+      <AvatarFallback className="text-xs font-semibold text-slate-700">
+        {fallbackText}
       </AvatarFallback>
     </Avatar>
   );
@@ -552,12 +575,42 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onDelete, onResu
   return (
     <div
       className={cn(
-        "flex items-start gap-4 w-full group",
+        "flex items-start gap-4 w-full group relative",
         isUser ? "justify-end" : "justify-start"
       )}
     >
       {!isUser && AvatarComponent}
-      <div className={cn("flex flex-col gap-1 max-w-[calc(100%-4rem)]", isUser ? 'items-end' : 'items-start')}>
+      <div className={cn("relative flex flex-col gap-1 max-w-[calc(100%-4rem)]", isUser ? 'items-end' : 'items-start')}>
+        {!isUser && (
+          <div className="pointer-events-auto absolute -top-5 right-0 z-10 hidden rounded-full border border-slate-200 bg-white/95 px-2 py-1 text-xs shadow-sm opacity-0 transition duration-200 group-hover:opacity-100 group-focus-within:opacity-100 md:flex">
+            <div className="flex items-center gap-1">
+              {[
+                { key: "like", label: "Good", emoji: "👍" },
+                { key: "love", label: "Love", emoji: "❤️" },
+                { key: "angry", label: "Angry", emoji: "😡" },
+                { key: "dislike", label: "Bad", emoji: "👎" },
+              ].map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() =>
+                    onReact?.(
+                      message,
+                      message.metadata?.userReaction === option.key ? null : option.key
+                    )
+                  }
+                  className={cn(
+                    "flex h-6 w-6 items-center justify-center rounded-full transition hover:bg-slate-100",
+                    message.metadata?.userReaction === option.key && "bg-slate-200"
+                  )}
+                  title={option.label}
+                >
+                  <span className="text-base leading-none">{option.emoji}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div
             className={cn(
             "p-4 rounded-[22px] break-words shadow-[0_12px_30px_rgba(15,23,42,0.08)] border",
@@ -657,12 +710,40 @@ export function ChatMessage({ message, isPinned, onPin, onCopy, onDelete, onResu
                   </div>
                 );
               })}
+              {message.imageUrl && (
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                  <img
+                    src={message.imageUrl}
+                    alt={message.imageAlt || message.content || "Generated image"}
+                    className="w-full h-auto object-contain bg-white"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
         <div className="flex items-center transition-opacity">
             {isUser ? <UserActions /> : <AiActions />}
         </div>
+        {!isUser && message.metadata?.userReaction && (
+          <div className="mt-1 flex items-center gap-1 text-xs text-slate-600">
+            <span className="inline-flex h-6 items-center gap-1 rounded-full bg-slate-100 px-2">
+              <span className="text-base leading-none">
+                {{
+                  like: "👍",
+                  love: "❤️",
+                  angry: "😡",
+                  dislike: "👎",
+                  laugh: "😂",
+                  insightful: "🤔",
+                  confused: "😕",
+                  sad: "😢",
+                }[message.metadata.userReaction] || "👍"}
+              </span>
+              <span className="capitalize">{message.metadata.userReaction}</span>
+            </span>
+          </div>
+        )}
       </div>
       {isUser && AvatarComponent}
     </div>

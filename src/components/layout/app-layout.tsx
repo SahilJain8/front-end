@@ -1,4 +1,3 @@
-
 "use client";
 import type { ReactNode } from "react";
 import React, {
@@ -10,6 +9,7 @@ import React, {
 } from "react";
 import { LeftSidebar } from "./left-sidebar";
 import { RightSidebar, type PinType } from "./right-sidebar";
+import { RightSidebarCollapsed } from "./right-sidebar-collapsed";
 import { Topbar } from "./top-bar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
@@ -51,12 +51,19 @@ interface AppLayoutProps {
   children: React.ReactElement;
 }
 
+export type ChatMetadata = {
+  messageCount?: number | null;
+  lastMessageAt?: string | null;
+  pinCount?: number | null;
+};
+
 export type ChatBoard = {
   id: string;
   name: string;
   time: string;
   isStarred: boolean;
   pinCount: number;
+  metadata?: ChatMetadata;
 };
 
 type ChatHistory = Record<string, Message[]>;
@@ -119,13 +126,55 @@ const extractChatId = (chat: BackendChat): string => {
   return `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 };
 
-const normalizeChatBoard = (chat: BackendChat): ChatBoard => ({
-  id: extractChatId(chat),
-  name: chat.title || chat.name || `Chat ${chat.id ?? "New Chat"}`,
-  time: formatRelativeTime(chat.updated_at || chat.created_at),
-  isStarred: Boolean(chat.is_starred ?? chat.isStarred ?? false),
-  pinCount: chat.pin_count ?? chat.pinCount ?? 0,
-});
+const normalizeChatBoard = (chat: BackendChat): ChatBoard => {
+  const metadata =
+    "metadata" in chat && chat.metadata && typeof chat.metadata === "object"
+      ? (chat.metadata as ChatMetadata)
+      : undefined;
+  return {
+    id: extractChatId(chat),
+    name: chat.title || chat.name || `Chat ${chat.id ?? "New Chat"}`,
+    time: formatRelativeTime(chat.updated_at || chat.created_at),
+    isStarred: Boolean(chat.is_starred ?? chat.isStarred ?? false),
+    pinCount:
+      chat.pin_count ??
+      chat.pinCount ??
+      metadata?.pinCount ??
+      0,
+    metadata,
+  };
+};
+
+const extractMetadata = (msg: BackendMessage) => {
+  const meta = (msg as { metadata?: Record<string, unknown> }).metadata || {};
+  const pinsRaw =
+    Array.isArray((msg as { pins_tagged?: unknown }).pins_tagged) &&
+    (msg as { pins_tagged?: unknown[] }).pins_tagged
+      ? (msg as { pins_tagged: unknown[] }).pins_tagged
+      : Array.isArray((meta as { pinIds?: unknown }).pinIds)
+      ? (meta as { pinIds?: unknown[] }).pinIds
+      : [];
+
+  const pinIds = pinsRaw
+    .map((p) => (p !== undefined && p !== null ? String(p) : null))
+    .filter((p): p is string => Boolean(p));
+
+  return {
+    modelName: (msg as { model_name?: string }).model_name ?? (meta as { modelName?: string }).modelName,
+    providerName: (msg as { provider_name?: string }).provider_name ?? (meta as { providerName?: string }).providerName,
+    llmModelId: (msg as { llm_model_id?: string | number | null }).llm_model_id ?? (meta as { llmModelId?: string | number | null }).llmModelId ?? null,
+    inputTokens: (msg as { input_tokens?: number }).input_tokens ?? (meta as { inputTokens?: number }).inputTokens,
+    outputTokens: (msg as { output_tokens?: number }).output_tokens ?? (meta as { outputTokens?: number }).outputTokens,
+    createdAt: (msg as { created_at?: string }).created_at ?? (meta as { createdAt?: string }).createdAt,
+    documentId: (msg as { document_id?: string | null }).document_id ?? (meta as { documentId?: string | null }).documentId ?? null,
+    documentUrl: (msg as { document_url?: string | null }).document_url ?? (meta as { documentUrl?: string | null }).documentUrl ?? null,
+    pinIds,
+    userReaction:
+      (msg as { user_reaction?: string | null }).user_reaction ??
+      (meta as { userReaction?: string | null }).userReaction ??
+      null,
+  };
+};
 
 const normalizeBackendMessage = (msg: BackendMessage): Message => {
   const senderRaw = (msg.sender || msg.role || "user").toLowerCase();
@@ -136,6 +185,7 @@ const normalizeBackendMessage = (msg: BackendMessage): Message => {
     sender === "ai"
       ? extractThinkingContent(baseContent)
       : { visibleText: baseContent, thinkingText: null };
+  const metadata = extractMetadata(msg);
   return {
     id:
       msg.id !== undefined
@@ -144,6 +194,10 @@ const normalizeBackendMessage = (msg: BackendMessage): Message => {
     sender,
     content: visibleText,
     thinkingContent: thinkingText,
+    metadata,
+    referencedMessageId:
+      (msg as { referenced_message_id?: string | null }).referenced_message_id ??
+      null,
   };
 };
 
@@ -173,6 +227,7 @@ const convertBackendEntryToMessages = (entry: BackendMessage): Message[] => {
       sender: "user",
       content: entry.prompt as string,
       chatMessageId,
+      metadata: extractMetadata(entry),
     });
   }
 
@@ -187,29 +242,39 @@ const convertBackendEntryToMessages = (entry: BackendMessage): Message[] => {
       thinkingContent: sanitized.thinkingText,
       chatMessageId,
       pinId,
+      metadata: extractMetadata(entry),
+      referencedMessageId:
+        (entry as { referenced_message_id?: string | null }).referenced_message_id ??
+        null,
     });
   }
 
   return messages;
 };
 
-const backendPinToLegacy = (pin: BackendPin): PinType => {
+const backendPinToLegacy = (pin: BackendPin, fallback?: Partial<PinType>): PinType => {
   const createdAt = pin.created_at ? new Date(pin.created_at) : new Date();
+  const resolvedFolder =
+    (pin as { folderId?: string | null }).folderId ??
+    (pin as { folder_id?: string | null }).folder_id ??
+    fallback?.folderId ??
+    undefined;
   return {
     id: pin.id,
-    text: pin.content,
-    tags: [],
-    notes: "",
-    chatId: pin.chat,
+    text: pin.content ?? fallback?.text ?? "",
+    tags: fallback?.tags ?? [],
+    notes: fallback?.notes ?? "",
+    chatId: pin.chat ?? fallback?.chatId ?? "",
     time: createdAt,
-    messageId: pin.id, // Use pin ID as messageId since message field was removed
+    messageId: fallback?.messageId,
+    folderId: resolvedFolder || undefined,
   };
 };
 
 const PINS_CACHE_KEY = 'chat-pins-cache';
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(true);
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
@@ -399,11 +464,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
       setPins_(cachedPins);
       setPinsChatId(chatId);
     }
+    const cachedById = new Map(cachedPins.map((pin) => [pin.id, pin]));
 
     // Then fetch from server to sync
     try {
       const backendPins = await fetchPins(chatId, csrfTokenRef.current);
-      const normalized = backendPins.map(backendPinToLegacy);
+      const normalized = backendPins.map((backendPin) =>
+        backendPinToLegacy(backendPin, cachedById.get(backendPin.id))
+      );
       setPins_(normalized);
       setPinsChatId(chatId);
       savePinsToCache(chatId, normalized);
@@ -456,15 +524,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const handlePinMessage = useCallback(
     async (pinRequest: PinType) => {
       const chatId = pinRequest.chatId || activeChatId;
-      const content = pinRequest.text;
-      if (!chatId || !content) {
-        console.warn("Missing chatId or content for pin action");
+      const messageId = pinRequest.messageId || pinRequest.id;
+      if (!chatId || !messageId) {
+        console.warn("Missing chatId or messageId for pin action");
         return;
       }
 
       try {
-        const backendPin = await createPin(chatId, content, csrfTokenRef.current);
-        const normalized = backendPinToLegacy(backendPin);
+        const backendPin = await createPin(chatId, messageId, csrfTokenRef.current);
+        const normalized = backendPinToLegacy(backendPin, pinRequest);
         if (chatId === activeChatId) {
           setPins((prev) => [normalized, ...prev.filter((p) => p.id !== normalized.id)]);
           setPinsChatId(chatId);
@@ -615,86 +683,99 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   if (isMobile) {
     return (
-        <AppLayoutContext.Provider value={contextValue}>
-            <div className="flex flex-col h-screen bg-background w-full">
-                <Topbar
-                  selectedModel={selectedModel}
-                  onModelSelect={setSelectedModel}
+      <AppLayoutContext.Provider value={contextValue}>
+        <div className="h-screen min-h-0 w-full bg-[#f5f5f7]">
+        <div className="mx-auto flex h-full min-h-0 w-full max-w-[1440px] flex-col px-1 py-4 sm:px-3 lg:px-5">
+            <Topbar
+              selectedModel={selectedModel}
+              onModelSelect={setSelectedModel}
+            >
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent
+                  side="left"
+                  className="flex w-[80vw] gap-0 p-0"
                 >
-                    <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                        <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <Menu className="h-5 w-5" />
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="left" className="p-0 flex gap-0 w-[80vw]">
-                             <LeftSidebar {...sidebarProps} isCollapsed={false} />
-                        </SheetContent>
-                    </Sheet>
-                </Topbar>
-                 <main className="flex-1 flex flex-col min-w-0">
-                    {pageContent}
-                </main>
-            </div>
-            <AlertDialog open={!!chatToDelete} onOpenChange={(open) => !open && setChatToDelete(null)}>
-              <AlertDialogContent className="rounded-[25px]">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete this chat board.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel
-                    className="rounded-[25px]"
-                    onClick={() => setChatToDelete(null)}
-                    disabled={isDeletingChatBoard}
-                  >
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    className="rounded-[25px]"
-                    onClick={confirmDelete}
-                    disabled={isDeletingChatBoard}
-                  >
-                    {isDeletingChatBoard ? "Deleting..." : "Delete"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-        </AppLayoutContext.Provider>
-    )
+                  <LeftSidebar {...sidebarProps} isCollapsed={false} />
+                </SheetContent>
+              </Sheet>
+            </Topbar>
+            <main className="mt-6 flex flex-1 flex-col min-w-0 min-h-0 overflow-hidden">
+              {pageContent}
+            </main>
+          </div>
+        </div>
+        <AlertDialog
+          open={!!chatToDelete}
+          onOpenChange={(open) => !open && setChatToDelete(null)}
+        >
+          <AlertDialogContent className="rounded-[25px]">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete this
+                chat board.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                className="rounded-[25px]"
+                onClick={() => setChatToDelete(null)}
+                disabled={isDeletingChatBoard}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="rounded-[25px]"
+                onClick={confirmDelete}
+                disabled={isDeletingChatBoard}
+              >
+                {isDeletingChatBoard ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </AppLayoutContext.Provider>
+    );
   }
 
   return (
     <AppLayoutContext.Provider value={contextValue}>
-      <div className="flex h-screen bg-background w-full">
+      <div className="h-screen min-h-0 w-full bg-[#F5F5F5] flex">
         <LeftSidebar {...sidebarProps} />
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-1 flex-col min-h-0 h-full overflow-hidden">
           <Topbar
             selectedModel={selectedModel}
             onModelSelect={setSelectedModel}
           />
-          <div className="flex flex-1 overflow-hidden">
-            <main className="flex-1 flex flex-col min-w-0">
-                {pageContent}
-            </main>
-            <RightSidebar
-                isCollapsed={isRightSidebarCollapsed}
-                onToggle={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
-                pins={pins}
-                setPins={setPins}
-                chatBoards={chatBoards}
-            />
-          </div>
+          <main className="flex flex-1 flex-col min-w-0 min-h-0 overflow-hidden">
+            {pageContent}
+          </main>
         </div>
+        <RightSidebar
+          isCollapsed={isRightSidebarCollapsed}
+          onToggle={() =>
+            setIsRightSidebarCollapsed(!isRightSidebarCollapsed)
+          }
+          pins={pins}
+          setPins={setPins}
+          chatBoards={chatBoards}
+        />
       </div>
-      <AlertDialog open={!!chatToDelete} onOpenChange={(open) => !open && setChatToDelete(null)}>
+      <AlertDialog
+        open={!!chatToDelete}
+        onOpenChange={(open) => !open && setChatToDelete(null)}
+      >
         <AlertDialogContent className="rounded-[25px]">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this chat board.
+              This action cannot be undone. This will permanently delete this
+              chat board.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

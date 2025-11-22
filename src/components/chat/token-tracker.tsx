@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Progress } from "@/components/ui/progress";
-import { fetchTokenStats, type TokenStats } from "@/lib/api/tokens";
-import { useAuth } from "@/context/auth-context";
+import { useMemo } from "react";
+import { useTokenUsage } from "@/context/token-context";
 
 // Assuming a max token budget for display purposes, adjust as needed.
 // For example, if '2m' means 2 million.
-const MAX_TOKEN_BUDGET = 2_000_000; 
+const MAX_TOKEN_BUDGET = 2_000_000;
 
 const formatLargeNumber = (num: number): string => {
   if (num >= 1_000_000) {
@@ -20,71 +18,43 @@ const formatLargeNumber = (num: number): string => {
 };
 
 export function TokenTracker() {
-  const { csrfToken } = useAuth();
-  const [stats, setStats] = useState<TokenStats>({
-    availableTokens: 0,
-    totalTokensUsed: 0,
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const { usagePercent, isLoading, stats } = useTokenUsage();
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadStats = async () => {
-      setIsLoading(true);
-      try {
-        const data = await fetchTokenStats(csrfToken);
-        if (isMounted) {
-          setStats(data);
-        }
-      } catch (error) {
-        console.error("Failed to load token stats", error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-    loadStats();
-    const interval = setInterval(loadStats, 30_000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [csrfToken]);
-
-  const { usagePercent, formattedTotalUsed, formattedBudget } = useMemo(() => {
-    const totalUsed = stats.totalTokensUsed;
-    const totalBudget = MAX_TOKEN_BUDGET; // Use the predefined max budget for display
-    
-    const percent = Math.min(
-      100,
-      (totalUsed / totalBudget) * 100
-    );
-
+  const { formattedTotalUsed, formattedBudget } = useMemo(() => {
     return {
-      usagePercent: Math.round(percent),
-      formattedTotalUsed: formatLargeNumber(totalUsed),
-      formattedBudget: formatLargeNumber(totalBudget),
+      formattedTotalUsed: formatLargeNumber(stats.totalTokensUsed),
+      formattedBudget: formatLargeNumber(MAX_TOKEN_BUDGET),
     };
   }, [stats.totalTokensUsed]);
 
   return (
-    <div className="flex flex-col gap-1 w-full text-sm">
-      <div className="flex items-center justify-between text-muted-foreground">
-        <span>Token count</span>
-        <span className="font-mono text-xs">
-          {isLoading ? "…" : `${usagePercent}%`}
-        </span>
+    <div className="w-[235px] flex flex-col items-start gap-[3px]">
+      {/* Token count label + percentage */}
+      <div className="flex items-end gap-[124px]">
+        <div className="relative text-[14px] leading-[129%] text-[#1E1E1E]">
+          Token count
+        </div>
+        <div className="relative text-[14px] leading-[129%] text-[#757575] text-right">
+          {isLoading ? "--" : `${usagePercent}%`}
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        <Progress
-          value={usagePercent}
-          className="h-[6px] flex-grow rounded-[40px]"
-          indicatorClassName="bg-green-500"
-        />
-        <span className="text-xs text-muted-foreground whitespace-nowrap">
-          {isLoading ? "…" : `${formattedTotalUsed}/${formattedBudget}`}
-        </span>
+
+      {/* Progress bar */}
+      <div className="w-[235px] h-[8px] relative">
+        <div className="absolute top-0 left-0 w-[235px] h-[8px] overflow-hidden">
+          {/* Background */}
+          <div className="absolute h-full w-full top-0 right-0 bottom-0 left-0 rounded-[10px] bg-[#D4D4D4]" />
+          {/* Progress fill */}
+          <div
+            className="absolute h-full top-0 bottom-0 left-0 rounded-[10px] bg-[#14AE5C]"
+            style={{ width: `${Math.max(0, Math.min(100, usagePercent))}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Token usage text */}
+      <div className="self-stretch relative text-[10px] leading-[129%] text-[#757575] text-right">
+        {isLoading ? "Updating..." : `${formattedTotalUsed}/${formattedBudget}`}
       </div>
     </div>
   );

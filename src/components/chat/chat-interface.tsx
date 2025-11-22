@@ -1,22 +1,23 @@
-
 "use client";
 
 import { useState, useRef, useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Paperclip, Send, Mic, Library, Trash2, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Send,
+  Trash2,
+  X,
+  Loader2,
+  Plus,
+  Mic,
+  Square,
+} from "lucide-react";
 import { ChatMessage, type Message } from "./chat-message";
 import { InitialPrompts } from "./initial-prompts";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { ReferenceBanner } from "./reference-banner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Pin } from "../layout/right-sidebar";
 import type { AIModel } from "@/types/ai-model";
@@ -41,7 +42,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/auth-context";
+import { useTokenUsage } from "@/context/token-context";
 import {
   CHAT_COMPLETION_ENDPOINT,
   CHAT_DETAIL_ENDPOINT,
@@ -49,6 +52,9 @@ import {
 } from "@/lib/config";
 import { extractThinkingContent } from "@/lib/thinking";
 import { getModelIcon } from "@/lib/model-icons";
+import { uploadDocument } from "@/lib/api/documents";
+import { generateImage } from "@/lib/api/images";
+import { addReaction, removeReaction } from "@/lib/api/messages";
 
 interface ChatInterfaceProps {
   onPinMessage?: (pin: Pin) => Promise<void> | void;
@@ -87,24 +93,87 @@ export function ChatInterface({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userAvatar = PlaceHolderImages.find((p) => p.id === "user-avatar");
   const defaultAiAvatar = PlaceHolderImages.find((p) => p.id === "ai-avatar");
+  const qwenAvatarUrl = "/Qwen.svg";
   const resolveModelAvatar = (modelOverride?: AIModel | null): MessageAvatar => {
     if (modelOverride) {
       const hintParts = [modelOverride.modelName, modelOverride.companyName].filter(Boolean);
       return {
-        avatarUrl: getModelIcon(modelOverride.modelName || modelOverride.companyName),
+        avatarUrl: getModelIcon(
+          modelOverride.companyName,
+          modelOverride.modelName
+        ),
         avatarHint: hintParts.join(" ").trim(),
       };
     }
     return {
-      avatarUrl: defaultAiAvatar?.imageUrl,
-      avatarHint: defaultAiAvatar?.imageHint,
+      avatarUrl: defaultAiAvatar?.imageUrl ?? qwenAvatarUrl,
+      avatarHint: defaultAiAvatar?.imageHint ?? "AI model",
     };
+  };
+  const resolveAvatarFromMetadata = (message: Message): MessageAvatar | null => {
+    if (message.sender !== "ai") return null;
+    const provider = message.metadata?.providerName || null;
+    const modelName = message.metadata?.modelName || null;
+    if (!provider && !modelName) return null;
+    const hintParts = [modelName, provider].filter(Boolean);
+    return {
+      avatarUrl: getModelIcon(provider, modelName),
+      avatarHint: hintParts.join(" ").trim() || undefined,
+    };
+  };
+
+  const handleReact = async (message: Message, reaction: string | null) => {
+    if (message.sender !== "ai") return;
+    const chatId = layoutContext?.activeChatId;
+    const messageId = message.chatMessageId || message.id;
+    if (!chatId || !messageId) return;
+
+    const current = message.metadata?.userReaction || null;
+    const isRemoving = reaction === null || current === reaction;
+
+    try {
+      if (isRemoving) {
+        await removeReaction({ chatId, messageId, csrfToken });
+      } else {
+        await addReaction({ chatId, messageId, reaction: reaction as any, csrfToken });
+      }
+
+      setMessages((prev = []) =>
+        prev.map((m) =>
+          m.id === message.id
+            ? {
+                ...m,
+                metadata: {
+                  ...m.metadata,
+                  userReaction: isRemoving ? null : reaction,
+                },
+              }
+            : m
+        ),
+        chatId
+      );
+    } catch (error) {
+      console.error("Reaction failed", error);
+      toast({
+        title: "Reaction failed",
+        description:
+          error instanceof Error ? error.message : "Unable to update reaction.",
+        variant: "destructive",
+      });
+    }
   };
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [isResponding, setIsResponding] = useState(false);
   const layoutContext = useContext(AppLayoutContext);
   const { user, csrfToken } = useAuth();
+  const { usagePercent, isLoading: isTokenUsageLoading } = useTokenUsage();
+  const getCsrfToken = () => {
+    if (csrfToken) return csrfToken;
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  };
 
   const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
   const [lastMessageId, setLastMessageId] = useState<string | null>(null);
@@ -116,9 +185,16 @@ export function ChatInterface({
   const [isRegeneratingResponse, setIsRegeneratingResponse] = useState(false);
   const [isChatDeleteDialogOpen, setIsChatDeleteDialogOpen] = useState(false);
   const [isDeletingChat, setIsDeletingChat] = useState(false);
-  const activeChatBoard = layoutContext?.chatBoards.find(
-    (board) => board.id === layoutContext?.activeChatId
-  );
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadSourceUrl, setUploadSourceUrl] = useState("");
+  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const composerPlaceholder = selectedModel
+    ? "Let's Play..."
+    : "Choose a model to start chatting";
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -181,8 +257,9 @@ export function ChatInterface({
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (csrfToken) {
-        headers["X-CSRFToken"] = csrfToken;
+      const token = getCsrfToken();
+      if (token) {
+        headers["X-CSRFToken"] = token;
       }
 
       const payload: Record<string, unknown> = {
@@ -531,9 +608,173 @@ export function ChatInterface({
     setMentionedPins(prev => prev.filter(mp => mp.id !== pinId));
   };
 
-  const handlePromptClick = (prompt: string) => {
-    setInput(prompt);
-    textareaRef.current?.focus();
+  const handleOpenUploadDialog = () => {
+    if (!layoutContext?.activeChatId) {
+      toast({
+        title: "Open or start a chat",
+        description: "Select a chat before uploading a document.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsUploadDialogOpen(true);
+  };
+
+  const handleUploadDocument = async () => {
+    if (!layoutContext?.activeChatId) {
+      toast({
+        title: "Open or start a chat",
+        description: "Select a chat before uploading a document.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!uploadFile) {
+      toast({
+        title: "Choose a file",
+        description: "Select a document to upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setUploadingDocument(true);
+    try {
+      const result = await uploadDocument({
+        file: uploadFile,
+        chatId: layoutContext.activeChatId,
+        sourceUrl: uploadSourceUrl || undefined,
+        csrfToken,
+      });
+      toast({
+        title: "Document uploaded",
+        description:
+          result.message ||
+          `Saved as ${result.documentId ?? "document"}${
+            result.fileLink ? ` (${result.fileLink})` : ""
+          }`,
+      });
+      setIsUploadDialogOpen(false);
+      setUploadFile(null);
+      setUploadSourceUrl("");
+    } catch (error) {
+      console.error("Document upload failed", error);
+      toast({
+        title: "Upload failed",
+        description:
+          error instanceof Error ? error.message : "Unable to upload document.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingDocument(false);
+    }
+  };
+
+  const handleOpenImageDialog = () => {
+    if (!layoutContext?.activeChatId) {
+      toast({
+        title: "Open or start a chat",
+        description: "Select a chat before generating an image.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsImageDialogOpen(true);
+  };
+
+  const handleGenerateImage = async () => {
+    const targetChatId = layoutContext?.activeChatId;
+    const trimmedPrompt = imagePrompt.trim();
+    if (!targetChatId) {
+      toast({
+        title: "Open or start a chat",
+        description: "Select a chat before generating an image.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!trimmedPrompt) {
+      toast({
+        title: "Enter a prompt",
+        description: "Add a short description for the image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    const requestAvatar = resolveModelAvatar(selectedModel);
+    const imageMessageId = `img-${Date.now()}`;
+
+    // Optimistic placeholder while the image is generating
+    setMessages(
+      (prev = []) => [
+        ...prev,
+        {
+          id: imageMessageId,
+          sender: "ai",
+          content: `Generating image: ${trimmedPrompt}`,
+          avatarUrl: requestAvatar.avatarUrl,
+          avatarHint: requestAvatar.avatarHint,
+          isLoading: true,
+        },
+      ],
+      targetChatId
+    );
+
+    try {
+      const { imageUrl } = await generateImage({
+        prompt: trimmedPrompt,
+        chatId: targetChatId,
+        csrfToken,
+      });
+
+      setMessages(
+        (prev = []) =>
+          prev.map((msg) =>
+            msg.id === imageMessageId
+              ? {
+                  ...msg,
+                  isLoading: false,
+                  content: trimmedPrompt,
+                  imageUrl,
+                }
+              : msg
+          ),
+        targetChatId
+      );
+      toast({
+        title: "Image ready",
+        description: "Added to the conversation.",
+      });
+      setIsImageDialogOpen(false);
+      setImagePrompt("");
+    } catch (error) {
+      console.error("Image generation failed", error);
+      setMessages(
+        (prev = []) =>
+          prev.map((msg) =>
+            msg.id === imageMessageId
+              ? {
+                  ...msg,
+                  isLoading: false,
+                  content:
+                    error instanceof Error
+                      ? error.message
+                      : "Unable to generate image.",
+                }
+              : msg
+          ),
+        targetChatId
+      );
+      toast({
+        title: "Image generation failed",
+        description:
+          error instanceof Error ? error.message : "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
   };
 
   const handleReference = (message: Message) => {
@@ -775,8 +1016,9 @@ export function ChatInterface({
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (csrfToken) {
-        headers["X-CSRFToken"] = csrfToken;
+      const token = getCsrfToken();
+      if (token) {
+        headers["X-CSRFToken"] = token;
       }
 
       const response = await fetch(DELETE_MESSAGE_ENDPOINT(chatId, identifier), {
@@ -844,8 +1086,9 @@ export function ChatInterface({
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (csrfToken) {
-        headers["X-CSRFToken"] = csrfToken;
+      const token = getCsrfToken();
+      if (token) {
+        headers["X-CSRFToken"] = token;
       }
 
       const response = await fetch(CHAT_DETAIL_ENDPOINT(chatId), {
@@ -916,65 +1159,72 @@ export function ChatInterface({
     return messages.slice(messageIndex);
   };
 
-  const isSendDisabled = !selectedModel || !input.trim() || isResponding;
-
   return (
-    <div className="flex flex-col flex-1 bg-background overflow-hidden">
-      <div className="border-b border-slate-200 bg-white/70 backdrop-blur-sm px-4 py-2 sm:px-6 lg:px-10 flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Active Chat
-          </p>
-          <p className="text-sm font-semibold text-card-foreground truncate">
-            {activeChatBoard?.name ?? "Untitled chat"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full"
-            onClick={() => setIsChatDeleteDialogOpen(true)}
-            disabled={!layoutContext?.activeChatId || isDeletingChat}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-      <ScrollArea
-        className="flex-1"
-        viewportRef={scrollViewportRef}
-        onScroll={handleScroll}
-      >
-        <div className="mx-auto w-full max-w-[min(1400px,100%)] space-y-6 px-4 py-4 sm:px-6 lg:px-10">
-          {(messages || []).length === 0 ? (
-            <InitialPrompts onPromptClick={handlePromptClick} />
-          ) : (
-            messages.map((msg) => {
-              // Find the referenced message if this message references one
-              const refMsg = msg.referencedMessageId
-                ? messages.find(m => (m.chatMessageId || m.id) === msg.referencedMessageId)
-                : null;
+    <div className="relative flex flex-1 min-h-0 h-full flex-col overflow-hidden bg-[#F5F5F5]">
+      {/* Empty state: centered prompt box */}
+      {(messages || []).length === 0 ? (
+        <section className="flex flex-1 items-center justify-center bg-[#F5F5F5] px-4 py-8">
+          <InitialPrompts userName={user?.name ?? user?.email ?? null} />
+        </section>
+      ) : (
+        <div
+          className="flex-1 min-h-0 overflow-y-auto"
+          ref={scrollViewportRef}
+          onScroll={handleScroll}
+        >
+          <div className="mx-auto w-full max-w-[1280px] space-y-6 px-4 py-10 sm:px-6 lg:px-0">
+            <div className="rounded-[32px] border border-[#D9D9D9] bg-white p-6 shadow-[0px_2px_4px_rgba(25,33,61,0.08)]">
+              <div className="space-y-6">
+                {messages.map((msg) => {
+                  const refMsg = msg.referencedMessageId
+                    ? messages.find(
+                        (m) => (m.chatMessageId || m.id) === msg.referencedMessageId
+                      )
+                    : null;
+                  const metadataAvatar = resolveAvatarFromMetadata(msg);
+                  const enrichedMessage =
+                    msg.sender === "ai"
+                      ? {
+                          ...msg,
+                          avatarUrl:
+                            msg.avatarUrl ||
+                            metadataAvatar?.avatarUrl ||
+                            getModelIcon(
+                              msg.metadata?.providerName,
+                              msg.metadata?.modelName
+                            ) ||
+                            qwenAvatarUrl,
+                          avatarHint:
+                            msg.avatarHint ||
+                            metadataAvatar?.avatarHint ||
+                            "AI model",
+                        }
+                      : msg;
 
-              return (
-                <ChatMessage
-                  key={msg.id}
-                  message={msg}
-                  isPinned={isMessagePinned(msg)}
-                  onPin={handlePin}
-                  onCopy={handleCopy}
-                  onDelete={handleDeleteRequest}
-                  onResubmit={handleSend}
-                  onRegenerate={msg.sender === "ai" ? handleRegenerateRequest : undefined}
-                  onReference={msg.sender === "ai" ? handleReference : undefined}
-                  referencedMessage={refMsg}
-                  isNewMessage={msg.id === lastMessageId}
-                />
-              );
-            })
-          )}
+                return (
+                  <ChatMessage
+                    key={msg.id}
+                    message={enrichedMessage}
+                    isPinned={isMessagePinned(msg)}
+                    onPin={handlePin}
+                    onCopy={handleCopy}
+                    onDelete={handleDeleteRequest}
+                    onResubmit={handleSend}
+                    onRegenerate={
+                      msg.sender === "ai" ? handleRegenerateRequest : undefined
+                    }
+                    onReference={msg.sender === "ai" ? handleReference : undefined}
+                    onReact={msg.sender === "ai" ? handleReact : undefined}
+                    referencedMessage={refMsg}
+                    isNewMessage={msg.id === lastMessageId}
+                  />
+                );
+              })}
+              </div>
+            </div>
+          </div>
         </div>
-      </ScrollArea>
+      )}
 
       {(messages || []).length > 0 && (
         <div className="absolute bottom-24 right-4 flex-col gap-2 hidden md:flex z-10">
@@ -1027,39 +1277,33 @@ export function ChatInterface({
         </div>
       )}
 
-      <footer className="shrink-0 border-t bg-white/80 backdrop-blur-sm p-4">
-        {referencedMessage && (
-          <ReferenceBanner
-            referencedMessage={referencedMessage}
-            onClear={handleClearReference}
-          />
-        )}
-        <div className="relative mx-auto w-full max-w-[min(1400px,100%)]">
-          {/* @ Pin Dropdown */}
+      {/* Chat Input Footer */}
+      <footer className="shrink-0 bg-[#F5F5F5] px-4 pb-6 pt-4 sm:px-8 lg:px-10">
+        <div className="relative mx-auto w-full max-w-[1280px]">
           {showPinDropdown && availablePins.length > 0 && (
             <div
               ref={dropdownRef}
-              className="absolute bottom-full mb-2 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg max-h-64 overflow-y-auto z-50"
+              className="absolute bottom-full left-0 right-0 z-50 mb-3 max-h-64 overflow-y-auto rounded-2xl border border-[#D9D9D9] bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
             >
-              <div className="p-2 border-b bg-slate-50">
-                <p className="text-xs font-medium text-slate-600">Select a pin to mention</p>
+              <div className="border-b border-[#F0F0F0] bg-[#F9F9F9] px-4 py-3 text-left text-xs font-semibold text-[#555555]">
+                Select a pin to mention
               </div>
               {availablePins.map((pin) => (
                 <button
                   key={pin.id}
                   type="button"
                   onClick={() => handleSelectPin(pin)}
-                  className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0"
+                  className="w-full border-b border-[#F5F5F5] px-4 py-3 text-left text-sm hover:bg-[#F8F8F8]"
                 >
-                  <p className="text-sm font-medium text-slate-900 truncate">
+                  <p className="truncate font-medium text-[#1E1E1E]">
                     {pin.text.slice(0, 60) || "Untitled Pin"}
                   </p>
                   {pin.tags && pin.tags.length > 0 && (
-                    <div className="flex gap-1 mt-1.5">
+                    <div className="mt-1 flex gap-1">
                       {pin.tags.slice(0, 3).map((tag, i) => (
                         <span
                           key={i}
-                          className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full"
+                          className="rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] text-[#767676]"
                         >
                           {tag}
                         </span>
@@ -1071,20 +1315,27 @@ export function ChatInterface({
             </div>
           )}
 
-          <div className="relative flex flex-col p-3 rounded-[28px] border border-input/60 bg-white shadow-[0_20px_45px_rgba(15,23,42,0.08)] focus-within:ring-2 focus-within:ring-ring">
-            {/* Mentioned Pins Chips */}
+          <div className="rounded-[24px] border border-[#D9D9D9] bg-white shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+            {referencedMessage && (
+              <div className="px-5 pt-4">
+                <ReferenceBanner
+                  referencedMessage={referencedMessage}
+                  onClear={handleClearReference}
+                />
+              </div>
+            )}
             {mentionedPins.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2 px-2">
+              <div className="flex flex-wrap gap-2 px-5 pt-4">
                 {mentionedPins.map((mp) => (
                   <div
                     key={mp.id}
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                    className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F5] px-3 py-1 text-sm text-[#1E1E1E]"
                   >
-                    <span className="font-medium">@{mp.label}</span>
+                    <span>@{mp.label}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveMention(mp.id)}
-                      className="hover:bg-blue-100 rounded-full p-0.5"
+                      className="rounded-full p-0.5 hover:bg-white"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -1093,80 +1344,203 @@ export function ChatInterface({
               </div>
             )}
 
-            <Textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape" && showPinDropdown) {
-                  e.preventDefault();
-                  setShowPinDropdown(false);
-                } else if (e.key === "Enter" && !e.shiftKey && !isResponding && !showPinDropdown) {
-                  e.preventDefault();
-                  handleSend(input);
-                }
-              }}
-              placeholder={
-                selectedModel ? "Type @ to mention pins..." : "Select a model to start chatting"
-              }
-              className="pr-12 text-base resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-2 min-h-[48px]"
-              rows={1}
-              disabled={isResponding}
-            />
-            <div className="flex items-center justify-between mt-1 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button variant="ghost" className="rounded-[25px] h-8 px-3">
-                  <Library className="mr-2 h-4 w-4" />
-                  Library
-                </Button>
-                <Select>
-                  <SelectTrigger className="rounded-[25px] bg-transparent w-auto gap-2 h-8 px-3 border-0">
-                    <SelectValue placeholder="Choose Persona" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="researcher">Researcher</SelectItem>
-                    <SelectItem value="writer">Creative Writer</SelectItem>
-                    <SelectItem value="technical">Technical Expert</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select>
-                  <SelectTrigger className="rounded-[25px] bg-transparent w-auto gap-2 h-8 px-3 border-0">
-                    <SelectValue placeholder="Add Context" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="file">From File</SelectItem>
-                    <SelectItem value="url">From URL</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                >
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                >
-                  <Mic className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="flex items-start gap-3 px-5 py-4">
               <Button
-                size={isMobile ? "icon" : "lg"}
-                onClick={() => handleSend(input)}
-                disabled={isSendDisabled}
-                className="bg-primary text-primary-foreground h-9 rounded-[25px] px-4 flex items-center gap-2"
-                title={!selectedModel ? "Select a model to send a message" : undefined}
+                variant="ghost"
+                onClick={handleOpenUploadDialog}
+                className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E5E5E5] bg-white p-0 hover:bg-[#F5F5F5] hover:border-[#D9D9D9]"
               >
-                {!isMobile && "Send Message"}
-                <Send className="h-4 w-4" />
+                <Plus className="h-5 w-5 text-[#555555]" />
               </Button>
+
+              <div className="flex-1">
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape" && showPinDropdown) {
+                      e.preventDefault();
+                      setShowPinDropdown(false);
+                    } else if (
+                      e.key === "Enter" &&
+                      !e.shiftKey &&
+                      !isResponding &&
+                      !showPinDropdown
+                    ) {
+                      e.preventDefault();
+                      handleSend(input);
+                    }
+                  }}
+                  placeholder={composerPlaceholder}
+                  className="min-h-[40px] w-full resize-none border-0 bg-transparent px-0 py-2 text-[15px] leading-relaxed text-[#1E1E1E] placeholder:text-[#AAAAAA] focus-visible:ring-0 focus-visible:ring-offset-0"
+                  rows={1}
+                  disabled={isResponding}
+                />
+              </div>
+
+              <div className="flex shrink-0 items-center gap-4">
+                <span className="text-sm font-medium text-[#888888]">
+                  {isTokenUsageLoading ? "--" : `${usagePercent}%`}
+                </span>
+                {isResponding ? (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      // TODO: Implement stop generation logic
+                      setIsResponding(false);
+                    }}
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1E1E1E] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] hover:bg-[#0A0A0A]"
+                    title="Stop generation"
+                  >
+                    <Square className="h-[18px] w-[18px] fill-white" />
+                  </Button>
+                ) : input.trim() ? (
+                  <Button
+                    type="button"
+                    onClick={() => handleSend(input)}
+                    disabled={!selectedModel}
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1E1E1E] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] hover:bg-[#0A0A0A] disabled:bg-[#CCCCCC] disabled:shadow-none"
+                    title={!selectedModel ? "Select a model to send a message" : "Send message"}
+                  >
+                    <Send className="h-[18px] w-[18px]" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      // TODO: Implement voice input logic
+                      toast({
+                        title: "Voice input",
+                        description: "Voice input feature coming soon!",
+                      });
+                    }}
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1E1E1E] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] hover:bg-[#0A0A0A]"
+                    title="Voice input"
+                  >
+                    <Mic className="h-[18px] w-[18px]" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </footer>
+
+      <Dialog
+        open={isUploadDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !uploadingDocument) {
+            setIsUploadDialogOpen(false);
+          }
+        }}
+      >
+        <DialogContent className="rounded-[25px]">
+          <DialogHeader>
+            <DialogTitle>Upload document</DialogTitle>
+            <DialogDescription>
+              Attach a file to this chat so the backend can use it for RAG.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="chat-upload-file">File</Label>
+              <Input
+                id="chat-upload-file"
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,.md,.csv,.json,.xlsx,.xls"
+                onChange={(event) =>
+                  setUploadFile(event.target.files?.item(0) ?? null)
+                }
+              />
+              {uploadFile && (
+                <p className="text-xs text-muted-foreground">
+                  Selected: {uploadFile.name}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="chat-upload-source">Source URL (optional)</Label>
+              <Input
+                id="chat-upload-source"
+                placeholder="https://example.com/document"
+                value={uploadSourceUrl}
+                onChange={(e) => setUploadSourceUrl(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              className="rounded-[25px]"
+              onClick={() => setIsUploadDialogOpen(false)}
+              disabled={uploadingDocument}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="rounded-[25px]"
+              onClick={handleUploadDocument}
+              disabled={uploadingDocument}
+            >
+              {uploadingDocument && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {uploadingDocument ? "Uploading..." : "Upload"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isImageDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !isGeneratingImage) {
+            setIsImageDialogOpen(false);
+          }
+        }}
+      >
+        <DialogContent className="rounded-[25px]">
+          <DialogHeader>
+            <DialogTitle>Generate image</DialogTitle>
+            <DialogDescription>
+              Send an image generation request tied to this chat.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="image-prompt">Prompt</Label>
+              <Textarea
+                id="image-prompt"
+                rows={3}
+                value={imagePrompt}
+                onChange={(e) => setImagePrompt(e.target.value)}
+                placeholder="e.g., astronaut riding a horse"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              className="rounded-[25px]"
+              onClick={() => setIsImageDialogOpen(false)}
+              disabled={isGeneratingImage}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="rounded-[25px]"
+              onClick={handleGenerateImage}
+              disabled={isGeneratingImage}
+            >
+              {isGeneratingImage && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {isGeneratingImage ? "Generating..." : "Generate"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={!!regenerationState}
@@ -1301,5 +1675,3 @@ export function ChatInterface({
     </div>
   );
 }
-
-    
