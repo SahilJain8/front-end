@@ -7,6 +7,9 @@ import { ModelSelector } from "../chat/model-selector";
 import { TokenTracker } from "../chat/token-tracker";
 import type { AIModel } from "@/types/ai-model";
 import { useTokenUsage } from "@/context/token-context";
+import { useAuth } from "@/context/auth-context";
+import { UserRoundPen } from "lucide-react";
+import Link from "next/link";
 
 interface TopbarProps {
   children?: ReactNode;
@@ -20,6 +23,7 @@ export function Topbar({
   onModelSelect,
 }: TopbarProps) {
   const { usagePercent, isLoading } = useTokenUsage();
+  const { user } = useAuth();
   const showUpgradePlan = !isLoading && usagePercent >= 80;
 
   return (
@@ -46,8 +50,19 @@ export function Topbar({
           </div>
         </div>
 
-        <div className="flex flex-shrink-0 items-center">
-          <CreatePersonaDialog triggerClassName="border-[#D4D4D4] bg-white text-[#1E1E1E] hover:bg-[#F5F5F5]" />
+        <div className="flex flex-shrink-0 items-center gap-3">
+          <CreatePersonaDialog triggerClassName="border-[#D4D4D4] bg-white text-[#1E1E1E] hover:bg-[#F5F5F5] hover:text-[#1E1E1E] font-bold" />
+          {!user && (
+            <Link href="/auth/login">
+              <Button
+                className="flex h-[38px] min-h-[32px] items-center justify-center gap-2 rounded-full bg-[#1E1E1E] px-1.5 py-[8.5px] text-sm font-medium text-white hover:bg-[#2E2E2E]"
+                style={{ width: '126.25px' }}
+              >
+                <UserRoundPen className="h-4 w-4" />
+                Sign In
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

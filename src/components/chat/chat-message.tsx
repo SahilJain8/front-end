@@ -416,11 +416,11 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
             <Button
               variant="ghost"
               size="icon"
-              className={cn(actionButtonClasses, isPinned && "bg-[#E4E4E7] text-[#111827]")}
+              className={cn(actionButtonClasses, isPinned && "bg-[#4A4A4A] text-white hover:bg-[#4A4A4A]")}
               onClick={() => onPin(message)}
               aria-pressed={isPinned}
             >
-              <Pin className={cn("h-4 w-4", isPinned && "fill-current text-current")} />
+              <Pin className={cn("h-4 w-4", isPinned && "fill-white")} />
             </Button>
           </TooltipTrigger>
           <TooltipContent><p>{isPinned ? "Unpin" : "Pin"} message</p></TooltipContent>

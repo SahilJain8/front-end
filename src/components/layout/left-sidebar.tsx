@@ -8,6 +8,9 @@ import {
   Layers,
   Bot,
   Search,
+  HelpCircle,
+  TrendingUp,
+  User,
 } from "lucide-react";
 import { TableColumnIcon } from "@/components/icons/table-column";
 import { useRouter } from "next/navigation";
@@ -492,36 +495,75 @@ export function LeftSidebar({
         </div>
       {/* 5) User footer */}
       <div className="border-t border-[#D9D9D9] px-3 py-2">
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex h-[35px] w-full items-center gap-2 rounded-[10px] px-2.5 text-left transition-colors hover:bg-[#EDEDED] focus:outline-none"
-        >
-          <Avatar className="h-[28px] w-[28px] rounded-full">
-            {userAvatar ? (
-              <AvatarImage
-                src={userAvatar.imageUrl}
-                alt="User avatar"
-                data-ai-hint={userAvatar.imageHint}
-              />
-            ) : null}
-            <AvatarFallback>
-              {user?.name
-                ? user.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2)
-                : "AP"}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col justify-center">
-            <span className="text-[15px] font-medium text-[#1E1E1E]">
-              {user?.name || "Avnish Poonia"}
-            </span>
-          </div>
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex h-[35px] w-full items-center gap-2 rounded-[10px] px-2.5 text-left transition-colors hover:bg-[#EDEDED] focus:outline-none"
+            >
+              <Avatar className="h-[28px] w-[28px] rounded-full">
+                {userAvatar ? (
+                  <AvatarImage
+                    src={userAvatar.imageUrl}
+                    alt="User avatar"
+                    data-ai-hint={userAvatar.imageHint}
+                  />
+                ) : null}
+                <AvatarFallback>
+                  {user?.name
+                    ? user.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)
+                    : "AP"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col justify-center">
+                <span className="text-[15px] font-medium text-[#1E1E1E]">
+                  {user?.name || "Avnish Poonia"}
+                </span>
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align="end" 
+            side="top" 
+            className="bg-white border-[#E5E5E5] rounded-lg p-1.5"
+            style={{ width: '222px', gap: '8px' }}
+          >
+            {user && (
+              <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed flex items-center gap-2 rounded-md text-[#1E1E1E]">
+                <User className="h-4 w-4 text-[#1E1E1E]" />
+                Profile
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed flex items-center gap-2 rounded-md text-[#1E1E1E]">
+              <TrendingUp className="h-4 w-4 text-[#1E1E1E]" />
+              Upgrade Plan
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed flex items-center gap-2 rounded-md text-[#1E1E1E]">
+              <Settings className="h-4 w-4 text-[#1E1E1E]" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed flex items-center gap-2 rounded-md text-[#1E1E1E]">
+              <HelpCircle className="h-4 w-4 text-[#1E1E1E]" />
+              Help
+            </DropdownMenuItem>
+            {user ? (
+              <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 rounded-md text-[#1E1E1E]">
+                <LogOut className="h-4 w-4 text-[#1E1E1E]" />
+                Logout
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => router.push("/auth/login")} className="flex items-center gap-2 rounded-md text-[#1E1E1E]">
+                <LogOut className="h-4 w-4 text-[#1E1E1E]" />
+                Sign In
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </aside>
   </TooltipProvider>
