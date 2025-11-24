@@ -13,7 +13,7 @@ import {
   User,
 } from "lucide-react";
 import { TableColumnIcon } from "@/components/icons/table-column";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -113,9 +113,14 @@ export function LeftSidebar({
 }: LeftSidebarProps) {
   const userAvatar = PlaceHolderImages.find((img) => img.id === "user-avatar");
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Determine if user is on chat board route
+  const isOnChatBoard = pathname === "/" || pathname?.startsWith("/chat");
+  const chatBoardButtonText = isOnChatBoard ? "New Chat Board" : "Chat Board";
   const [dummyBoards, setDummyBoards] = useState<ChatBoard[]>(() =>
     dummyChatBoards.map((board) => ({ ...board }))
   );
@@ -192,23 +197,35 @@ export function LeftSidebar({
           </Tooltip>
           {/* Only show icons, not text, when collapsed */}
           <div className="flex flex-1 flex-col items-center gap-3 py-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Chat board"
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#D9D9D9] bg-white shadow-none hover:bg-white focus-visible:ring-0 focus-visible:ring-offset-0"
-              onClick={() => {
-                if (chatBoards.length > 0) {
-                  setActiveChatId(chatBoards[0].id);
-                }
-              }}
-            >
-              <img
-                src="/icons/chatboard.svg"
-                alt="Chat board"
-                className="h-6 w-6 filter brightness-0"
-              />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={isOnChatBoard ? "New Chat Board" : "Chat Board"}
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#D9D9D9] bg-white shadow-none hover:bg-white focus-visible:ring-0 focus-visible:ring-offset-0"
+                  onClick={() => {
+                    if (isOnChatBoard) {
+                      onAddChat();
+                    }
+                    router.push("/");
+                  }}
+                >
+                  <img
+                    src="/icons/chatboard.svg"
+                    alt="Chat board"
+                    className="h-5 w-5 filter brightness-0"
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                sideOffset={8}
+                className="pointer-events-none px-2 py-1 text-xs font-medium"
+              >
+                {isOnChatBoard ? "New Chat Board" : "Chat Board"}
+              </TooltipContent>
+            </Tooltip>
             <Button
               variant="ghost"
               size="icon"
@@ -309,14 +326,16 @@ export function LeftSidebar({
               variant="ghost"
               className="sidebar-primary-action-button"
               onClick={() => {
-                onAddChat();
+                if (isOnChatBoard) {
+                  onAddChat();
+                }
                 router.push("/");
               }}
             >
               <span className="sidebar-primary-action-icon">
                 <img src="/icons/chatboard.svg" alt="Chat board" />
               </span>
-              <span className="sidebar-primary-action-label">Chat Board</span>
+              <span className="sidebar-primary-action-label">{chatBoardButtonText}</span>
             </Button>
 
             {/* Secondary button - Workflows (disabled/coming soon) */}

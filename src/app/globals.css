@@ -330,12 +330,15 @@
 
   .sidebar-primary-action-button {
     display: flex;
-    height: 45px !important;
     width: 210px;
+    height: 45px;
+    padding-left: 0 !important;
+    padding-right: 60px !important; /* to keep it aligned with the rest of the sidebar items */
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
     align-items: center;
     justify-content: flex-start;
-    gap: var(--sds-size-space-200);
-    padding: var(--sds-size-space-300) 88px var(--sds-size-space-300) var(--sds-size-space-300) !important;
+    gap: 6px !important;
     border-radius: var(--sds-size-radius-400) !important;
     border: var(--sds-size-stroke-border) solid var(--sds-color-icon-danger-on-danger) !important;
     background: var(--sds-color-background-brand-default) !important;
@@ -367,8 +370,8 @@
   }
 
   .sidebar-primary-action-label {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 500;
     color: inherit;
     letter-spacing: 0;
   }

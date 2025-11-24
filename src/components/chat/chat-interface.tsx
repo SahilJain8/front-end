@@ -1446,7 +1446,7 @@ export function ChatInterface({
                     attachment.type === 'pdf' ? (
                       <div
                         key={attachment.id}
-                        className="relative flex-shrink-0 flex items-center gap-2.5 rounded-[10px] border border-[#E5E5E5] bg-[#FAFAFA] p-1.5 overflow-hidden"
+                        className="group relative flex-shrink-0 flex items-center gap-2.5 rounded-[10px] border border-[#E5E5E5] bg-[#FAFAFA] p-1.5 overflow-hidden"
                         style={{ width: '180.3px', height: '60px' }}
                       >
                         {attachment.isUploading && (
@@ -1467,15 +1467,15 @@ export function ChatInterface({
                         <button
                           type="button"
                           onClick={() => setAttachments(prev => prev.filter(a => a.id !== attachment.id))}
-                          className="flex-shrink-0 rounded-full p-1 hover:bg-[#E5E5E5] transition-colors"
+                          className="absolute top-0.5 right-0.5 rounded-full bg-white border border-[#E5E5E5] p-0.5 hover:bg-[#F5F5F5] shadow-sm transition-colors z-10 opacity-0 group-hover:opacity-100"
                         >
-                          <X className="h-3.5 w-3.5 text-[#666666]" />
+                          <X className="h-3 w-3 text-[#666666]" />
                         </button>
                       </div>
                     ) : (
                       <div
                         key={attachment.id}
-                        className="relative flex-shrink-0 rounded-[11px] border border-[#E5E5E5] bg-[#FAFAFA] overflow-hidden"
+                        className="group relative flex-shrink-0 rounded-[11px] border border-[#E5E5E5] bg-[#FAFAFA] overflow-hidden"
                         style={{ width: '60px', height: '60px', padding: '1.08px' }}
                       >
                         <img 
@@ -1503,7 +1503,7 @@ export function ChatInterface({
                         <button
                           type="button"
                           onClick={() => setAttachments(prev => prev.filter(a => a.id !== attachment.id))}
-                          className="absolute top-0.5 right-0.5 rounded-full bg-white border border-[#E5E5E5] p-0.5 hover:bg-[#F5F5F5] shadow-sm transition-colors z-10"
+                          className="absolute top-0.5 right-0.5 rounded-full bg-white border border-[#E5E5E5] p-0.5 hover:bg-[#F5F5F5] shadow-sm transition-colors z-10 opacity-0 group-hover:opacity-100"
                         >
                           <X className="h-3 w-3 text-[#666666]" />
                         </button>
