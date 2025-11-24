@@ -5,6 +5,7 @@ import { Check, Loader2, MoreHorizontal, Star, X, Edit, Trash2 } from "lucide-re
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Input } from "../ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 export interface ChatHistoryItemProps {
   title: string;
@@ -117,36 +118,54 @@ export function ChatHistoryItem({
           </div>
         </form>
       ) : (
-        <span className="mr-2 max-w-[142px] truncate font-normal leading-[18px]">
+        <span className="flex-1 min-w-0 mr-2 truncate font-normal leading-[18px]">
           {title}
         </span>
       )}
-      <div className="flex items-center gap-1.5">
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#5B5B5B] text-[10px] font-semibold text-white">
-          {pinnedCount}
-        </span>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onToggleStar();
-          }}
-          className={cn(
-            "flex h-5 w-5 items-center justify-center rounded-full text-[#5B5B5B] transition-colors",
-            isStarred && "text-[#F5C04E]",
-            (isRenaming || isStarPending) && "pointer-events-none opacity-40"
+      <TooltipProvider delayDuration={300}>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {pinnedCount > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex h-[17px] w-[17px] items-center justify-center rounded-full bg-[#5B5B5B] text-[9px] font-semibold text-white">
+                  {pinnedCount}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">
+                <p>Pins in this chat</p>
+              </TooltipContent>
+            </Tooltip>
           )}
-          aria-pressed={isStarred}
-          aria-label={isStarred ? "Unstar chat" : "Star chat"}
-          disabled={isRenamePending || isRenaming || isStarPending}
-          aria-busy={isStarPending}
-        >
-          {isStarPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Star className={cn("h-4 w-4", isStarred && "fill-current")} />
-          )}
-        </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleStar();
+                }}
+                className={cn(
+                  "flex h-5 w-5 items-center justify-center rounded-full text-[#5B5B5B] transition-colors",
+                  isStarred && "text-[#F5C04E]",
+                  (isRenaming || isStarPending) && "pointer-events-none opacity-40"
+                )}
+                aria-pressed={isStarred}
+                aria-label={isStarred ? "Unstar chat" : "Star chat"}
+                disabled={isRenamePending || isRenaming || isStarPending}
+                aria-busy={isStarPending}
+              >
+                {isStarPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Star className={cn("h-4 w-4", isStarred && "fill-current")} />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              <p>Star this chat</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -188,7 +207,7 @@ export function ChatHistoryItem({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </TooltipProvider>
     </div>
   );
 }

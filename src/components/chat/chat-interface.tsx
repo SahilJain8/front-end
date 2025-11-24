@@ -14,6 +14,7 @@ import {
   Mic,
   Square,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   FileText,
   Image as ImageIcon,
@@ -157,17 +158,19 @@ export function ChatInterface({
   const [referencedMessage, setReferencedMessage] = useState<Message | null>(null);
   const [mentionedPins, setMentionedPins] = useState<MentionedPin[]>([]);
   const [showPinDropdown, setShowPinDropdown] = useState(false);
-  const [attachments, setAttachments] = useState<Array<{id: string; type: 'pdf' | 'image'; name: string; url: string}>>([]);
+  const [attachments, setAttachments] = useState<Array<{id: string; type: 'pdf' | 'image'; name: string; url: string; isUploading?: boolean; uploadProgress?: number}>>([]);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [showLeftScrollButton, setShowLeftScrollButton] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const attachMenuRef = useRef<HTMLDivElement>(null);
   
   // Temporary test attachments - remove later
   useEffect(() => {
+    // Add initial attachments with uploading state
     setAttachments([
-      {id: '1', type: 'pdf', name: 'Project_Requirements_Document.pdf', url: '/test.pdf'},
+      {id: '1', type: 'pdf', name: 'Project_Requirements_Document.pdf', url: '/test.pdf', isUploading: true, uploadProgress: 0},
       {id: '2', type: 'pdf', name: 'Technical_Specifications.pdf', url: '/test2.pdf'},
-      {id: '3', type: 'image', name: 'Screenshot.png', url: 'https://picsum.photos/200/200?random=1'},
+      {id: '3', type: 'image', name: 'Screenshot.png', url: 'https://picsum.photos/200/200?random=1', isUploading: true, uploadProgress: 0},
       {id: '4', type: 'image', name: 'Chart.jpg', url: 'https://picsum.photos/200/200?random=2'},
       {id: '5', type: 'pdf', name: 'Meeting_Notes.pdf', url: '/test3.pdf'},
       {id: '6', type: 'image', name: 'Diagram.png', url: 'https://picsum.photos/200/200?random=3'},
@@ -180,8 +183,28 @@ export function ChatInterface({
       {id: '13', type: 'pdf', name: 'Architecture_Design.pdf', url: '/test7.pdf'},
       {id: '14', type: 'image', name: 'Prototype.png', url: 'https://picsum.photos/200/200?random=7'},
     ]);
+    
+    // Simulate upload progress for first PDF and first image
+    const interval = setInterval(() => {
+      setAttachments(prev => prev.map(att => {
+        if ((att.id === '1' || att.id === '3') && att.isUploading) {
+          const newProgress = (att.uploadProgress || 0) + 10;
+          if (newProgress >= 100) {
+            return { ...att, isUploading: false, uploadProgress: 100 };
+          }
+          return { ...att, uploadProgress: newProgress };
+        }
+        return att;
+      }));
+    }, 300);
+    
     // Force scroll button to show for testing
     setTimeout(() => setShowScrollButton(true), 100);
+    
+    // Cleanup interval after upload completes
+    setTimeout(() => clearInterval(interval), 3500);
+    
+    return () => clearInterval(interval);
   }, []);
   
   // Close attach menu when clicking outside
@@ -1415,6 +1438,7 @@ export function ChatInterface({
                   className="flex gap-2 overflow-x-auto scrollbar-hidden"
                   onScroll={(e) => {
                     const el = e.currentTarget;
+                    setShowLeftScrollButton(el.scrollLeft > 10);
                     setShowScrollButton(el.scrollWidth > el.clientWidth && el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
                   }}
                 >
@@ -1422,15 +1446,23 @@ export function ChatInterface({
                     attachment.type === 'pdf' ? (
                       <div
                         key={attachment.id}
-                        className="flex-shrink-0 flex items-center gap-2.5 rounded-[10px] border border-[#E5E5E5] bg-[#FAFAFA] p-1.5"
+                        className="relative flex-shrink-0 flex items-center gap-2.5 rounded-[10px] border border-[#E5E5E5] bg-[#FAFAFA] p-1.5 overflow-hidden"
                         style={{ width: '180.3px', height: '60px' }}
                       >
+                        {attachment.isUploading && (
+                          <div 
+                            className="absolute bottom-0 left-0 h-1 bg-[#22C55E] transition-all duration-300"
+                            style={{ width: `${attachment.uploadProgress || 0}%` }}
+                          />
+                        )}
                         <div className="flex h-full w-12 items-center justify-center rounded-lg bg-[#F5F5F5]">
                           <FileText className="h-5 w-5 text-[#666666]" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="truncate text-xs font-medium text-[#1E1E1E]">{attachment.name}</p>
-                          <p className="text-[10px] text-[#888888]">PDF Document</p>
+                          <p className="text-[10px] text-[#888888]">
+                            {attachment.isUploading ? `Uploading... ${attachment.uploadProgress || 0}%` : 'PDF Document'}
+                          </p>
                         </div>
                         <button
                           type="button"
@@ -1449,12 +1481,29 @@ export function ChatInterface({
                         <img 
                           src={attachment.url} 
                           alt={attachment.name}
-                          className="w-full h-full object-cover rounded-[10px]"
+                          className={`w-full h-full object-cover rounded-[10px] transition-all duration-300 ${attachment.isUploading ? 'blur-sm' : 'blur-0'}`}
                         />
+                        {attachment.isUploading && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-[10px]">
+                            <svg className="w-8 h-8" viewBox="0 0 36 36">
+                              <circle
+                                cx="18"
+                                cy="18"
+                                r="16"
+                                fill="none"
+                                stroke="#22C55E"
+                                strokeWidth="3"
+                                strokeDasharray={`${(attachment.uploadProgress || 0) * 100.48 / 100}, 100.48`}
+                                strokeLinecap="round"
+                                transform="rotate(-90 18 18)"
+                              />
+                            </svg>
+                          </div>
+                        )}
                         <button
                           type="button"
                           onClick={() => setAttachments(prev => prev.filter(a => a.id !== attachment.id))}
-                          className="absolute top-0.5 right-0.5 rounded-full bg-white border border-[#E5E5E5] p-0.5 hover:bg-[#F5F5F5] shadow-sm transition-colors"
+                          className="absolute top-0.5 right-0.5 rounded-full bg-white border border-[#E5E5E5] p-0.5 hover:bg-[#F5F5F5] shadow-sm transition-colors z-10"
                         >
                           <X className="h-3 w-3 text-[#666666]" />
                         </button>
@@ -1462,6 +1511,20 @@ export function ChatInterface({
                     )
                   ))}
                 </div>
+                {showLeftScrollButton && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (attachmentScrollRef.current) {
+                        attachmentScrollRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+                      }
+                    }}
+                    //left caret for attached files
+                    className="absolute left-3 top-1/2 translate-y-[-25%] flex h-8 w-8 items-center justify-center rounded-full bg-white border border-[#D9D9D9] shadow-md hover:bg-[#F5F5F5] transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4 text-[#666666]" />
+                  </button>
+                )}
                 {showScrollButton && (
                   <button
                     type="button"
@@ -1470,7 +1533,8 @@ export function ChatInterface({
                         attachmentScrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
                       }
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white border border-[#D9D9D9] shadow-md hover:bg-[#F5F5F5] transition-colors"
+                    //right caret for attached files
+                    className="absolute right-3 top-1/2 translate-y-[-25%] flex h-8 w-8 items-center justify-center rounded-full bg-white border border-[#D9D9D9] shadow-md hover:bg-[#F5F5F5] transition-colors"
                   >
                     <ChevronRight className="h-4 w-4 text-[#666666]" />
                   </button>
@@ -1598,7 +1662,8 @@ export function ChatInterface({
                     className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1E1E1E] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] hover:bg-[#0A0A0A]"
                     title="Voice input"
                   >
-                    <Mic className="h-[20px] w-[20px]" />
+                    {/* mic icon button  */}
+                    <Mic className="h-[25px] w-[25px]" strokeWidth={2} style={{ minWidth: '18px', minHeight: '20px' }} />
                   </Button>
                 )}
                 </div>
@@ -1607,7 +1672,7 @@ export function ChatInterface({
           </div>
           
           <div className="mt-1 text-center text-xs text-[#888888]">
-            Models can make mistakes. Check important info.
+            Models can make mistakes. Check important information.
           </div>
         </div>
       </footer>
