@@ -51,6 +51,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/context/auth-context";
 import { useTokenUsage } from "@/context/token-context";
 import {
@@ -296,6 +302,10 @@ export function ChatInterface({
     }
   };
   const isMobile = useIsMobile();
+  // Prevent hydration mismatch: don't render until isMobile is known
+  if (typeof isMobile === "undefined") {
+    return null;
+  }
   const { toast } = useToast();
   const [isResponding, setIsResponding] = useState(false);
   const layoutContext = useContext(AppLayoutContext);
@@ -1640,15 +1650,25 @@ export function ChatInterface({
                     <Square className="h-[18px] w-[18px] fill-white" />
                   </Button>
                 ) : input.trim() ? (
-                  <Button
-                    type="button"
-                    onClick={() => handleSend(input)}
-                    disabled={!selectedModel}
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1E1E1E] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] hover:bg-[#0A0A0A] disabled:bg-[#CCCCCC] disabled:shadow-none"
-                    title={!selectedModel ? "Select a model to send a message" : "Send message"}
-                  >
-                    <Send className="h-[18px] w-[18px]" />
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip delayDuration={200}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          onClick={() => handleSend(input)}
+                          disabled={!selectedModel}
+                          className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1E1E1E] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] hover:bg-[#0A0A0A] disabled:bg-[#CCCCCC] disabled:shadow-none"
+                        >
+                          <Send className="h-[18px] w-[18px]" />
+                        </Button>
+                      </TooltipTrigger>
+                      {!selectedModel && (
+                        <TooltipContent side="top" className="bg-[#1E1E1E] text-white px-3 py-2 text-sm">
+                          Please select a model to start the conversation
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 ) : (
                   <Button
                     type="button"
@@ -1847,24 +1867,24 @@ export function ChatInterface({
           }
         }}
       >
-        <AlertDialogContent className="rounded-[25px]">
+        <AlertDialogContent className="rounded-[25px] bg-white border border-[#D4D4D4]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete entire chat?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-black">Delete entire chat?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#6B7280]">
               This action removes every message in this conversation. It cannot
               be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
-              className="rounded-[25px]"
+              className="rounded-[25px] bg-white border border-[#D4D4D4] text-black hover:bg-[#f5f5f5]"
               onClick={() => setIsChatDeleteDialogOpen(false)}
               disabled={isDeletingChat}
             >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-[25px] bg-destructive hover:bg-destructive/90"
+              className="rounded-[25px] bg-white border border-[#D4D4D4] text-red-600 hover:bg-[#f5f5f5]"
               onClick={handleConfirmChatDelete}
               disabled={isDeletingChat}
             >
@@ -1878,10 +1898,10 @@ export function ChatInterface({
         open={!!messageToDelete}
         onOpenChange={(open) => !open && setMessageToDelete(null)}
       >
-        <AlertDialogContent className="rounded-[25px]">
+        <AlertDialogContent className="rounded-[25px] bg-white border border-[#D4D4D4]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Message?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-black">Delete Message?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#6B7280]">
               {messageToDelete && (() => {
                 const messagesToDelete = getMessagesToDelete(messageToDelete);
                 const count = messagesToDelete.length;
@@ -1898,7 +1918,7 @@ export function ChatInterface({
 
               if (pinnedMessages.length > 0) {
                 return (
-                  <div className="font-semibold text-destructive mt-2 text-sm">
+                  <div className="font-semibold text-red-600 mt-2 text-sm">
                     ⚠️ {pinnedMessages.length} pinned message(s) will be affected.
                   </div>
                 );
@@ -1908,13 +1928,13 @@ export function ChatInterface({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
-              className="rounded-[25px]"
+              className="rounded-[25px] bg-white border border-[#D4D4D4] text-black hover:bg-[#f5f5f5]"
               onClick={() => setMessageToDelete(null)}
             >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-[25px] bg-destructive hover:bg-destructive/90"
+              className="rounded-[25px] bg-white border border-[#D4D4D4] text-red-600 hover:bg-[#f5f5f5]"
               onClick={confirmDelete}
             >
               Delete

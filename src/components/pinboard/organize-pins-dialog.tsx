@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Folder, Unlink, MoreVertical, Trash2, Edit, Move, FolderPlus, Search } from "lucide-react";
+import { Folder, Unlink, MoreVertical, Trash2, Edit, Move, FolderPlus, Search, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -177,11 +177,10 @@ export function OrganizePinsDialog({
     if (initialPins.length > 0) {
       onPinsUpdate(initialPins.filter(p => p.id !== pinId));
     } else {
-      // For dummy pins, remove from the array
-      const index = dummyPins.findIndex(p => p.id === pinId);
-      if (index > -1) {
-        dummyPins.splice(index, 1);
-      }
+      // For dummy pins, create new array and replace contents to trigger re-render
+      const remainingPins = dummyPins.filter(p => p.id !== pinId);
+      dummyPins.length = 0;
+      dummyPins.push(...remainingPins);
     }
   };
 
@@ -284,10 +283,10 @@ export function OrganizePinsDialog({
     if (initialPins.length > 0) {
       onPinsUpdate(initialPins.filter(p => !selectedPinIds.includes(p.id)));
     } else {
-      // For dummy pins, we need to force a re-render by filtering them out
+      // For dummy pins, create new array and replace contents to trigger re-render
       const remainingPins = dummyPins.filter(p => !selectedPinIds.includes(p.id));
-      // Since we can't modify dummyPins, we just clear selection
-      // In real usage with actual pins, onPinsUpdate will handle deletion
+      dummyPins.length = 0;
+      dummyPins.push(...remainingPins);
     }
     setSelectedPinIds([]);
   };
@@ -301,24 +300,24 @@ export function OrganizePinsDialog({
       );
       onPinsUpdate(updatedPins);
     } else {
-      // For dummy pins, update folderId directly (for testing)
-      dummyPins.forEach(pin => {
-        if (selectedPinIds.includes(pin.id)) {
-          pin.folderId = targetFolderId === 'unorganized' ? undefined : targetFolderId;
-        }
-      });
+      // For dummy pins, create new array with updated pins (for testing)
+      const updatedDummyPins = dummyPins.map(pin => 
+        selectedPinIds.includes(pin.id)
+          ? { ...pin, folderId: targetFolderId === 'unorganized' ? undefined : targetFolderId }
+          : pin
+      );
+      // Replace dummyPins array contents to trigger re-render
+      dummyPins.length = 0;
+      dummyPins.push(...updatedDummyPins);
     }
     setSelectedPinIds([]);
-    // Force component update by changing selected folder if needed
-    if (targetFolderId !== selectedFolderId) {
-      // Stay on current folder to show the pins were moved
-    }
+    // Stay on current folder to show the pins were moved
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        style={{ width: "min(619px, 95vw)", maxWidth: "619px", height: "min(692px, 90vh)", maxHeight: "692px", borderRadius: "10px", border: "1px solid #e6e6e6", paddingLeft: "18px", paddingRight: "18px" }}
+        style={{ width: "min(750px, 95vw)", maxWidth: "750px", height: "min(692px, 90vh)", maxHeight: "692px", borderRadius: "10px", border: "1px solid #e6e6e6", paddingLeft: "18px", paddingRight: "18px" }}
         className="flex flex-col bg-white p-0 text-[#171717] gap-0"
       >
         <DialogHeader className="border-b bg-white py-4 text-[#171717] space-y-3">
@@ -370,7 +369,7 @@ export function OrganizePinsDialog({
                   className="h-6 w-6 rounded hover:bg-[#e5e5e5] group"
                   title="New folder"
                 >
-                  <FolderPlus className="h-4 w-4 text-[#666666]" />
+                  <FolderPlus className="h-4 w-4 text-[#666666]" strokeWidth={2.5} />
                 </Button>
               )}
             </div>
@@ -447,28 +446,73 @@ export function OrganizePinsDialog({
                       <Button variant="outline" size="sm" className="rounded-lg border-[#d4d4d4] text-[#171717] hover:bg-[#f5f5f5] h-7 px-2 text-xs">
                         <Move className="h-3 w-3 mr-1"/>
                         Move
+                        <ChevronDown className="h-3 w-3 ml-1" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[160px] border border-[#e6e6e6] bg-white">
-                      {folders
-                        .filter(f => f.id !== selectedFolderId)
-                        .map(f => (
-                        <DropdownMenuItem 
-                          key={f.id} 
-                          onClick={() => handleMovePins(f.id)} 
-                          className="text-[#171717] hover:bg-[#E5E5E5] text-sm cursor-pointer"
-                        >
-                          {f.id === 'unorganized' ? <Unlink className="h-3.5 w-3.5 mr-2 text-[#666666]" /> : <Folder className="h-3.5 w-3.5 mr-2 text-[#666666]" />}
-                          {f.name}
-                        </DropdownMenuItem>
-                      ))}
+                    <DropdownMenuContent align="end" className="w-[200px] border border-[#e6e6e6] bg-white p-2">
+                      <div className="mb-2">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8a8a8a]" />
+                          <Input
+                            placeholder="Search folders..."
+                            className="h-8 pl-8 text-xs rounded-md border-[#e2e2e2]"
+                            onChange={(e) => {
+                              const searchValue = e.target.value.toLowerCase();
+                              const items = document.querySelectorAll('[data-folder-item]');
+                              items.forEach((item) => {
+                                const folderName = item.getAttribute('data-folder-name')?.toLowerCase() || '';
+                                const element = item as HTMLElement;
+                                element.style.display = folderName.includes(searchValue) ? 'flex' : 'none';
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <ScrollArea className="max-h-[200px]">
+                        <div className="space-y-0.5">
+                          {folders
+                            .filter(f => f.id !== selectedFolderId)
+                            .slice(0, 5)
+                            .map(f => (
+                            <DropdownMenuItem 
+                              key={f.id} 
+                              onClick={() => handleMovePins(f.id)} 
+                              className="text-[#171717] hover:bg-[#E5E5E5] text-sm cursor-pointer rounded-md"
+                              data-folder-item
+                              data-folder-name={f.name}
+                            >
+                              {f.id === 'unorganized' ? <Unlink className="h-3.5 w-3.5 mr-2 text-[#666666]" /> : <Folder className="h-3.5 w-3.5 mr-2 text-[#666666]" />}
+                              <span className="truncate">{f.name}</span>
+                            </DropdownMenuItem>
+                          ))}
+                          {folders.filter(f => f.id !== selectedFolderId).length > 5 && (
+                            <>
+                              {folders
+                                .filter(f => f.id !== selectedFolderId)
+                                .slice(5)
+                                .map(f => (
+                                <DropdownMenuItem 
+                                  key={f.id} 
+                                  onClick={() => handleMovePins(f.id)} 
+                                  className="text-[#171717] hover:bg-[#E5E5E5] text-sm cursor-pointer rounded-md"
+                                  data-folder-item
+                                  data-folder-name={f.name}
+                                >
+                                  {f.id === 'unorganized' ? <Unlink className="h-3.5 w-3.5 mr-2 text-[#666666]" /> : <Folder className="h-3.5 w-3.5 mr-2 text-[#666666]" />}
+                                  <span className="truncate">{f.name}</span>
+                                </DropdownMenuItem>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      </ScrollArea>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={handleBulkDelete}
-                    className="rounded-lg text-red-600 hover:bg-[#ffecec] h-7 px-2 text-xs"
+                    className="rounded-lg text-red-600 hover:bg-[#fee2e2] hover:text-black h-7 px-2 text-xs"
                   >
                     <Trash2 className="h-3 w-3 mr-1"/>
                     Delete
@@ -530,7 +574,7 @@ export function OrganizePinsDialog({
           </div>
         </div>
 
-        <DialogFooter className="justify-end gap-2 border-t bg-white pt-2">
+        <DialogFooter className="justify-end gap-2 bg-white pt-2 pb-6">
           <Button onClick={onClose} className="rounded-lg bg-[#2c2c2c] text-white hover:bg-[#1f1f1f]">
             Done
           </Button>

@@ -212,7 +212,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                             <p className="text-[#1e1e1e]" style={{ fontFamily: 'Inter', fontWeight: 500, fontSize: '16px', lineHeight: '140%' }}>
                                 {isExpanded || pin.text.length <= 50 ? pin.text : `${pin.text.substring(0, 50)}...`}
                                 {pin.text.length > 50 && (
-                                    <Button variant="link" className="h-auto p-0 ml-1 text-xs" onClick={() => setIsExpanded(!isExpanded)}>
+                                    <Button variant="link" className="h-auto p-0 ml-1 text-xs text-[#3b82f6] hover:text-[#2563eb]" onClick={() => setIsExpanded(!isExpanded)}>
                                         {isExpanded ? "Read less" : "Read more"}
                                     </Button>
                                 )}

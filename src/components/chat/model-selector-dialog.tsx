@@ -67,22 +67,182 @@ useEffect(() => {
 
   const fetchModels = async () => {
     setIsLoading(true);
+    
+    let raw: AIModel[] = [];
     try {
       const response = await fetch(MODELS_ENDPOINT, {
         credentials: "include",
       });
       if (!response.ok) {
-        throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+        console.warn(`Backend not available: ${response.status} ${response.statusText}`);
+      } else {
+        raw = await response.json();
+        console.log("Raw models from backend:", raw);
       }
-      const raw: AIModel[] = await response.json();
-      console.log("Raw models from backend:", raw);
+    } catch (fetchError) {
+      console.warn("Failed to fetch models from backend, using dummy data:", fetchError);
+    }
+    
+    try {
 
-      setModels(raw);
+      // Add 9 dummy models for testing (3 paid + 6 new: 2 paid + 4 free)
+      const dummyModels: AIModel[] = [
+        {
+          companyName: "OpenAI",
+          modelName: "GPT-4",
+          version: "turbo",
+          modelType: "paid",
+          inputLimit: 128000,
+          outputLimit: 4096,
+        },
+        {
+          companyName: "Anthropic",
+          modelName: "Claude 3.5 Sonnet",
+          version: "latest",
+          modelType: "paid",
+          inputLimit: 200000,
+          outputLimit: 8192,
+        },
+        {
+          companyName: "Google",
+          modelName: "Gemini Pro",
+          version: "1.5",
+          modelType: "free",
+          inputLimit: 32000,
+          outputLimit: 2048,
+        },
+        {
+          companyName: "Meta",
+          modelName: "Llama 3.1",
+          version: "70B",
+          modelType: "free",
+          inputLimit: 128000,
+          outputLimit: 4096,
+        },
+        {
+          companyName: "Mistral AI",
+          modelName: "Mistral Large",
+          version: "2",
+          modelType: "paid",
+          inputLimit: 32000,
+          outputLimit: 8192,
+        },
+        {
+          companyName: "Cohere",
+          modelName: "Command R+",
+          version: "latest",
+          modelType: "paid",
+          inputLimit: 128000,
+          outputLimit: 4096,
+        },
+        {
+          companyName: "OpenAI",
+          modelName: "GPT-3.5 Turbo",
+          version: "latest",
+          modelType: "free",
+          inputLimit: 16000,
+          outputLimit: 4096,
+        },
+        {
+          companyName: "Google",
+          modelName: "PaLM 2",
+          version: "bison",
+          modelType: "free",
+          inputLimit: 8000,
+          outputLimit: 1024,
+        },
+        {
+          companyName: "Anthropic",
+          modelName: "Claude 3 Haiku",
+          version: "latest",
+          modelType: "free",
+          inputLimit: 200000,
+          outputLimit: 4096,
+        },
+      ];
+
+      const combinedModels = [...dummyModels, ...raw];
+      setModels(combinedModels);
       // ✅ cache in sessionStorage
-      sessionStorage.setItem("aiModels", JSON.stringify(raw));
+      sessionStorage.setItem("aiModels", JSON.stringify(combinedModels));
     } catch (error) {
       console.error("Error fetching models:", error);
-      setModels([]);
+      // If fetch fails, at least show dummy models
+      const dummyModels: AIModel[] = [
+        {
+          companyName: "OpenAI",
+          modelName: "GPT-4",
+          version: "turbo",
+          modelType: "paid",
+          inputLimit: 128000,
+          outputLimit: 4096,
+        },
+        {
+          companyName: "Anthropic",
+          modelName: "Claude 3.5 Sonnet",
+          version: "latest",
+          modelType: "paid",
+          inputLimit: 200000,
+          outputLimit: 8192,
+        },
+        {
+          companyName: "Google",
+          modelName: "Gemini Pro",
+          version: "1.5",
+          modelType: "free",
+          inputLimit: 32000,
+          outputLimit: 2048,
+        },
+        {
+          companyName: "Meta",
+          modelName: "Llama 3.1",
+          version: "70B",
+          modelType: "free",
+          inputLimit: 128000,
+          outputLimit: 4096,
+        },
+        {
+          companyName: "Mistral AI",
+          modelName: "Mistral Large",
+          version: "2",
+          modelType: "paid",
+          inputLimit: 32000,
+          outputLimit: 8192,
+        },
+        {
+          companyName: "Cohere",
+          modelName: "Command R+",
+          version: "latest",
+          modelType: "paid",
+          inputLimit: 128000,
+          outputLimit: 4096,
+        },
+        {
+          companyName: "OpenAI",
+          modelName: "GPT-3.5 Turbo",
+          version: "latest",
+          modelType: "free",
+          inputLimit: 16000,
+          outputLimit: 4096,
+        },
+        {
+          companyName: "Google",
+          modelName: "PaLM 2",
+          version: "bison",
+          modelType: "free",
+          inputLimit: 8000,
+          outputLimit: 1024,
+        },
+        {
+          companyName: "Anthropic",
+          modelName: "Claude 3 Haiku",
+          version: "latest",
+          modelType: "free",
+          inputLimit: 200000,
+          outputLimit: 4096,
+        },
+      ];
+      setModels(dummyModels);
     } finally {
       setIsLoading(false);
     }
@@ -160,6 +320,9 @@ useEffect(() => {
           border: "1px solid #E5E5E5"
         }}
       >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Choose Your Model</DialogTitle>
+        </DialogHeader>
         {/* Title */}
         <div className="dialog-title-wrapper">
           <h2 className="dialog-title">Choose Your Model</h2>

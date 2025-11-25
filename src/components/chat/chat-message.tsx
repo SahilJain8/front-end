@@ -410,98 +410,105 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
 
   const AiActions = ({ className }: { className?: string } = {}) => (
     <TooltipProvider>
-      <div className={cn("inline-flex items-center gap-1", className)}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(actionButtonClasses, isPinned && "bg-[#4A4A4A] text-white hover:bg-[#4A4A4A]")}
-              onClick={() => onPin(message)}
-              aria-pressed={isPinned}
-            >
-              <Pin className={cn("h-4 w-4", isPinned && "fill-white")} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent><p>{isPinned ? "Unpin" : "Pin"} message</p></TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onCopy(message.content)}>
-              <Copy className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent><p>Copy</p></TooltipContent>
-        </Tooltip>
-        {onRegenerate && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onRegenerate(message)}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>Regenerate</p></TooltipContent>
-          </Tooltip>
-        )}
-        {onReference && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onReference(message)}>
-                <CornerDownRight className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>Reply to this message</p></TooltipContent>
-          </Tooltip>
-        )}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onDelete(message)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent><p>Delete</p></TooltipContent>
-        </Tooltip>
-        {onReact && (
+      <div className={cn("inline-flex items-center gap-1 w-full justify-between", className)}>
+        <div className="inline-flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(actionButtonClasses, message.metadata?.userReaction === "like" && "bg-[#E4E4E7] text-[#111827]")}
-                onClick={() =>
-                  onReact(
-                    message,
-                    message.metadata?.userReaction === "like" ? null : "like"
-                  )
-                }
-                aria-pressed={message.metadata?.userReaction === "like"}
+                className={cn(actionButtonClasses, isPinned && "bg-[#4A4A4A] text-white hover:bg-[#4A4A4A]")}
+                onClick={() => onPin(message)}
+                aria-pressed={isPinned}
               >
-                <ThumbsUp className="h-4 w-4" />
+                <Pin className={cn("h-4 w-4", isPinned && "fill-white")} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent><p>Good response</p></TooltipContent>
+            <TooltipContent><p>{isPinned ? "Unpin" : "Pin"} message</p></TooltipContent>
           </Tooltip>
-        )}
-        {onReact && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(actionButtonClasses, message.metadata?.userReaction === "dislike" && "bg-[#E4E4E7] text-[#111827]")}
-                onClick={() =>
-                  onReact(
-                    message,
-                    message.metadata?.userReaction === "dislike" ? null : "dislike"
-                  )
-                }
-                aria-pressed={message.metadata?.userReaction === "dislike"}
-              >
-                <ThumbsDown className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onCopy(message.content)}>
+                <Copy className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent><p>Needs improvement</p></TooltipContent>
+            <TooltipContent><p>Copy</p></TooltipContent>
           </Tooltip>
+          {onRegenerate && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onRegenerate(message)}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Regenerate</p></TooltipContent>
+            </Tooltip>
+          )}
+          {onReference && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onReference(message)}>
+                  <CornerDownRight className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Reply to this message</p></TooltipContent>
+            </Tooltip>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className={actionButtonClasses} onClick={() => onDelete(message)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent><p>Delete</p></TooltipContent>
+          </Tooltip>
+          {onReact && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(actionButtonClasses, message.metadata?.userReaction === "like" && "bg-[#E4E4E7] text-[#111827]")}
+                  onClick={() =>
+                    onReact(
+                      message,
+                      message.metadata?.userReaction === "like" ? null : "like"
+                    )
+                  }
+                  aria-pressed={message.metadata?.userReaction === "like"}
+                >
+                  <ThumbsUp className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Good response</p></TooltipContent>
+            </Tooltip>
+          )}
+          {onReact && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(actionButtonClasses, message.metadata?.userReaction === "dislike" && "bg-[#E4E4E7] text-[#111827]")}
+                  onClick={() =>
+                    onReact(
+                      message,
+                      message.metadata?.userReaction === "dislike" ? null : "dislike"
+                    )
+                  }
+                  aria-pressed={message.metadata?.userReaction === "dislike"}
+                >
+                  <ThumbsDown className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Needs improvement</p></TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+        {message.metadata?.modelName && (
+          <span className="text-xs text-[#8a8a8a] font-medium pr-[5px]">
+            {message.metadata.modelName}
+          </span>
         )}
       </div>
     </TooltipProvider>

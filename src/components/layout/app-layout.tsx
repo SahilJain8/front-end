@@ -442,7 +442,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }, [resetRenameState, renameInputRef]);
 
   const loadChatBoards = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('[loadChatBoards] Skipped: No user logged in');
+      return;
+    }
     try {
       const { chats: backendChats, csrfToken: freshToken } =
         await fetchChatBoards(csrfTokenRef.current);
@@ -459,6 +462,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             !normalized.some((chat) => chat.id === board.id)
         );
         combinedBoards = [...tempBoards, ...normalized];
+        console.log('[loadChatBoards] Previous boards:', prev.length, 'Backend chats:', normalized.length, 'Temp boards:', tempBoards.length, 'Combined:', combinedBoards.length);
         return combinedBoards;
       });
       setActiveChatId((prev) => {
@@ -844,6 +848,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const handleAddChat = () => {
     handleRenameCancel();
+    
+    // Check if there's already a temp chat
     const existingTemp = chatBoards.find((board) =>
       board.id.startsWith("temp-")
     );
@@ -858,6 +864,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       return;
     }
 
+    // Create new temp chat
     const tempId = `temp-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2, 8)}`;
@@ -870,7 +877,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
       metadata: { messageCount: 0, pinCount: 0 },
     };
 
-    setChatBoards_((prev) => [placeholder, ...prev]);
+    // Add new chat while preserving all existing chats
+    setChatBoards_((prev) => {
+      console.log('[handleAddChat] Current boards:', prev.length, 'Adding new temp chat:', tempId);
+      return [placeholder, ...prev];
+    });
     setChatHistory((prev) => ({ ...prev, [tempId]: [] }));
     setActiveChatId(tempId);
     router.push('/');
@@ -968,24 +979,43 @@ export default function AppLayout({ children }: AppLayoutProps) {
           open={!!chatToDelete}
           onOpenChange={(open) => !open && setChatToDelete(null)}
         >
-          <AlertDialogContent className="rounded-[25px]">
+          <AlertDialogContent className="rounded-[25px] bg-white">
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete this
-                chat board.
+              <AlertDialogTitle className="text-[#171717] text-lg font-semibold">
+                Delete Chat Board?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-[#6B7280] space-y-3">
+                <p>
+                  Are you sure you want to delete <span className="font-semibold text-[#171717]">"{chatToDelete?.name}"</span>?
+                </p>
+                <p className="text-sm">
+                  This action cannot be undone. This will permanently delete this chat board and all its messages.
+                </p>
+                {chatToDelete && (chatToDelete.isStarred || (chatToDelete.pinCount && chatToDelete.pinCount > 0)) && (
+                  <div className="mt-3 space-y-2 rounded-lg bg-[#FEF3C7] border border-[#FDE047] p-3">
+                    <p className="text-sm font-medium text-[#92400E]">⚠️ Warning:</p>
+                    <ul className="text-sm text-[#92400E] space-y-1 ml-4 list-disc">
+                      {chatToDelete.isStarred && (
+                        <li>This chat is <strong>starred</strong></li>
+                      )}
+                      {chatToDelete.pinCount && chatToDelete.pinCount > 0 && (
+                        <li>This chat contains <strong>{chatToDelete.pinCount} pinned {chatToDelete.pinCount === 1 ? 'message' : 'messages'}</strong></li>
+                      )}
+                    </ul>
+                  </div>
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+            <AlertDialogFooter className="gap-2">
               <AlertDialogCancel
-                className="rounded-[25px]"
+                className="rounded-lg px-4 text-[#171717] hover:bg-[#f5f5f5] border-[#d4d4d4]"
                 onClick={() => setChatToDelete(null)}
                 disabled={isDeletingChatBoard}
               >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
-                className="rounded-[25px]"
+                className="rounded-lg px-4 bg-red-600 text-white hover:bg-red-700"
                 onClick={confirmDelete}
                 disabled={isDeletingChatBoard}
               >

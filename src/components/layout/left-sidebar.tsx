@@ -455,9 +455,9 @@ export function LeftSidebar({
 
           <div className="h-px w-full bg-[#D9D9D9]" />
 
-          <div className="px-4 pt-2.5 pb-3">
+          <div className="px-4 pt-2.5 pb-3 flex-1 flex flex-col overflow-hidden">
             {/* Section header - accordion trigger style */}
-            <div className="flex h-[31px] w-full items-center gap-2 rounded-[8px]">
+            <div className="flex h-[31px] w-full items-center gap-2 rounded-[8px] flex-shrink-0">
               <span className="flex-1 text-sm font-medium leading-[150%] tracking-[0.01em] text-[#0A0A0A]">
                 Recent Chat boards
               </span>
@@ -468,7 +468,7 @@ export function LeftSidebar({
               </div>
             </div>
 
-            <div className="mt-2">
+            <div className="mt-2 flex-shrink-0">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9F9F9F]" />
                 <Input
@@ -483,7 +483,7 @@ export function LeftSidebar({
             </div>
 
             {boardsToDisplay.length > 0 ? (
-              <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto pr-1 scrollbar-hidden">
+              <div className="mt-4 flex-1 space-y-2 overflow-y-auto pr-1 scrollbar-hidden">
                 {boardsToDisplay.map((board) => {
                   const isDummy = usingDummyBoards;
                   const isActive = !isDummy && activeChatId === board.id;

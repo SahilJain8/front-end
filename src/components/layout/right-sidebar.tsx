@@ -16,7 +16,7 @@ import {
   File,
   UserPlus,
   GitCompare,
-  MessageSquare,
+  MessagesSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -65,7 +65,7 @@ interface RightSidebarProps {
   onInsertToChat?: (text: string) => void;
 }
 
-type FilterMode = "all" | "current-chat" | "newest" | "oldest" | "a-z" | "z-a";
+type FilterMode = "all" | "current-chat" | "newest" | "oldest" | "by-folder" | "unorganized";
 
 const samplePins: PinType[] = [
   {
@@ -305,10 +305,10 @@ export function RightSidebar({
         return [...filtered].sort(
           (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
         );
-      case "a-z":
-        return [...filtered].sort((a, b) => a.text.localeCompare(b.text));
-      case "z-a":
-        return [...filtered].sort((a, b) => b.text.localeCompare(a.text));
+      case "by-folder":
+        return filtered.filter((p) => p.folderId && p.folderId !== "unorganized");
+      case "unorganized":
+        return filtered.filter((p) => !p.folderId || p.folderId === "unorganized");
       default:
         return filtered;
     }
@@ -327,10 +327,10 @@ export function RightSidebar({
         return "Sort by Newest";
       case "oldest":
         return "Sort by Oldest";
-      case "a-z":
-        return "Sort A-Z";
-      case "z-a":
-        return "Sort Z-A";
+      case "by-folder":
+        return "Filter by Folder";
+      case "unorganized":
+        return "Filter by Unorganized Pins";
       default:
         return "Filter & Sort";
     }
@@ -355,7 +355,7 @@ export function RightSidebar({
     <div className="flex h-full flex-col">
       <div className="px-4 py-2 border-b border-[#d9d9d9]" style={{ paddingBottom: '5px' }}>
         {isSearchOpen ? (
-          <div className="relative">
+          <div className="relative" style={{ paddingBottom: '5px' }}>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8a8a]" />
             <Input
               value={searchTerm}
@@ -371,7 +371,7 @@ export function RightSidebar({
             <DropdownMenuTrigger asChild>
               <Button className="flex h-9 w-full items-center justify-between rounded-[8px] bg-[#f5f5f5] px-3 text-sm font-medium text-[#171717] shadow-none hover:bg-[#E5E5E5] hover:shadow-none">
                 <span className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-[#6a6a6a]" />
+                  <MessagesSquare className="h-4 w-4 text-[#6a6a6a]" />
                   <span>{getFilterLabel()}</span>
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-60" />
@@ -410,15 +410,15 @@ export function RightSidebar({
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="rounded-md px-3 py-2 text-[#171717] hover:bg-[#f5f5f5]"
-                onSelect={() => setFilterMode("a-z")}
+                onSelect={() => setFilterMode("by-folder")}
               >
-                Sort A-Z
+                Filter by Folder
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="rounded-md px-3 py-2 text-[#171717] hover:bg-[#f5f5f5]"
-                onSelect={() => setFilterMode("z-a")}
+                onSelect={() => setFilterMode("unorganized")}
               >
-                Sort Z-A
+                Filter by Unorganized Pins
               </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="rounded-md px-3 py-2 text-[#171717] hover:bg-[#f5f5f5] data-[state=open]:bg-[#f5f5f5]">
@@ -472,7 +472,7 @@ export function RightSidebar({
         </div>
       </div>
       <ScrollArea className="flex-1">
-        <div className="space-y-2.5 px-4 pt-2 pb-4">
+        <div className="space-y-2.5 pt-2 pb-4 flex flex-col items-center" style={{ paddingLeft: '21.5px', paddingRight: '21.5px' }}>
           {sortedAndFilteredPins.length > 0 ? (
             sortedAndFilteredPins.map((pin) => {
               const chatBoard = chatBoards.find((board) => board.id.toString() === pin.chatId);
@@ -570,22 +570,22 @@ export function RightSidebar({
                 onClick={() => setIsSearchOpen((prev) => !prev)}
                 aria-pressed={isSearchOpen}
                 className={cn(
-                  "border border-transparent bg-[#f5f5f5] text-[#1e1e1e] hover:bg-[#e8e8e8]",
+                  "border border-transparent bg-[#f5f5f5] text-[#1e1e1e] hover:bg-[#e8e8e8] group",
                   isSearchOpen && "border-[#1e1e1e]"
                 )}
                 style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', borderRadius: '8px', padding: '7px' }}
               >
-                <Search className="h-full w-full" />
+                <Search className="h-full w-full text-[#1e1e1e] group-hover:text-black" strokeWidth={1.5} style={{ strokeWidth: '1.5' }} />
                 <span className="sr-only">Toggle search</span>
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="bg-[#f5f5f5] text-[#1e1e1e] hover:bg-[#e8e8e8]"
+                className="bg-[#f5f5f5] text-[#1e1e1e] hover:bg-[#e8e8e8] group"
                 style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', borderRadius: '8px', padding: '7px' }}
               >
-                <X className="h-full w-full" />
+                <X className="h-full w-full text-[#1e1e1e] group-hover:text-black" strokeWidth={1.5} style={{ strokeWidth: '1.5' }} />
                 <span className="sr-only">Close sidebar</span>
               </Button>
             </div>
