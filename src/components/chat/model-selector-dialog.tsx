@@ -1,4 +1,4 @@
-
+﻿
 "use client";
 
 import { useState, useEffect } from "react";
@@ -161,8 +161,8 @@ useEffect(() => {
         },
       ];
 
-      const combinedModels = [...dummyModels, ...raw];
-      setModels(combinedModels);
+      const combinedModels = [...raw];
+      setModels(raw);
       // ✅ cache in sessionStorage
       sessionStorage.setItem("aiModels", JSON.stringify(combinedModels));
     } catch (error) {
@@ -242,7 +242,7 @@ useEffect(() => {
           outputLimit: 4096,
         },
       ];
-      setModels(dummyModels);
+      setModels([]);
     } finally {
       setIsLoading(false);
     }

@@ -5,12 +5,18 @@ import { apiFetch } from "./client";
 
 export interface BackendPin {
   id: string;
-  chat: string;
-  content: string;
-  model_name?: string;
-  created_at?: string;
+  chat?: string;
+  sourceChatId?: string | null;
+  sourceMessageId?: string | null;
   folderId?: string | null;
   folder_id?: string | null;
+  folderName?: string | null;
+  title?: string | null;
+  content?: string | null;
+  formattedContent?: string | null;
+  tags?: string[];
+  model_name?: string;
+  created_at?: string;
 }
 
 export async function fetchPins(
@@ -35,13 +41,24 @@ export async function fetchPins(
 export async function createPin(
   chatId: string,
   messageId: string,
-  csrfToken?: string | null
+  csrfToken?: string | null,
+  options?: { folderId?: string | null; tags?: string[] }
 ): Promise<BackendPin> {
+  const payload: Record<string, unknown> = {
+    messageId,
+  };
+  if (options?.folderId !== undefined) {
+    payload.folderId = options.folderId;
+  }
+  if (options?.tags) {
+    payload.tags = options.tags;
+  }
+
   const response = await apiFetch(
     CHAT_PINS_ENDPOINT(chatId),
     {
       method: "POST",
-      body: JSON.stringify({ messageId }),
+      body: JSON.stringify(payload),
     },
     csrfToken
   );

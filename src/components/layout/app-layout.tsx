@@ -74,12 +74,14 @@ export type RightSidebarPanel = "pinboard" | "files" | "personas" | "compare";
 interface EnsureChatOptions {
   firstMessage: string;
   selectedModel?: AIModel | null;
+  pinIds?: string[];
 }
 
 interface EnsureChatResult {
   chatId: string;
   initialResponse?: string | null;
   initialMessageId?: string | null;
+  initialMetadata?: Message["metadata"];
 }
 
 interface AppLayoutContextType {
@@ -152,30 +154,59 @@ const normalizeChatBoard = (chat: BackendChat): ChatBoard => {
 const extractMetadata = (msg: BackendMessage) => {
   const meta = (msg as { metadata?: Record<string, unknown> }).metadata || {};
   const pinsRaw: unknown[] =
-    Array.isArray((msg as { pins_tagged?: unknown }).pins_tagged) &&
-    (msg as { pins_tagged?: unknown[] }).pins_tagged
+    Array.isArray((msg as { pins_tagged?: unknown[] }).pins_tagged)
       ? ((msg as { pins_tagged: unknown[] }).pins_tagged as unknown[])
-      : Array.isArray((meta as { pinIds?: unknown }).pinIds)
+      : Array.isArray((meta as { pinIds?: unknown[] }).pinIds)
       ? ((meta as { pinIds: unknown[] }).pinIds as unknown[])
-      : ([] as unknown[]);
+      : Array.isArray((meta as { pin_ids?: unknown[] }).pin_ids)
+      ? ((meta as { pin_ids: unknown[] }).pin_ids as unknown[])
+      : [];
 
   const pinIds = pinsRaw
     .map((p) => (p !== undefined && p !== null ? String(p) : null))
     .filter((p): p is string => Boolean(p));
 
   return {
-    modelName: (msg as { model_name?: string }).model_name ?? (meta as { modelName?: string }).modelName,
-    providerName: (msg as { provider_name?: string }).provider_name ?? (meta as { providerName?: string }).providerName,
-    llmModelId: (msg as { llm_model_id?: string | number | null }).llm_model_id ?? (meta as { llmModelId?: string | number | null }).llmModelId ?? null,
-    inputTokens: (msg as { input_tokens?: number }).input_tokens ?? (meta as { inputTokens?: number }).inputTokens,
-    outputTokens: (msg as { output_tokens?: number }).output_tokens ?? (meta as { outputTokens?: number }).outputTokens,
-    createdAt: (msg as { created_at?: string }).created_at ?? (meta as { createdAt?: string }).createdAt,
-    documentId: (msg as { document_id?: string | null }).document_id ?? (meta as { documentId?: string | null }).documentId ?? null,
-    documentUrl: (msg as { document_url?: string | null }).document_url ?? (meta as { documentUrl?: string | null }).documentUrl ?? null,
+    modelName:
+      (msg as { model_name?: string }).model_name ??
+      (meta as { modelName?: string }).modelName ??
+      (meta as { model_name?: string }).model_name,
+    providerName:
+      (msg as { provider_name?: string }).provider_name ??
+      (meta as { providerName?: string }).providerName ??
+      (meta as { provider_name?: string }).provider_name,
+    llmModelId:
+      (msg as { llm_model_id?: string | number | null }).llm_model_id ??
+      (meta as { llmModelId?: string | number | null }).llmModelId ??
+      (meta as { llm_model_id?: string | number | null }).llm_model_id ??
+      null,
+    inputTokens:
+      (msg as { input_tokens?: number }).input_tokens ??
+      (meta as { inputTokens?: number }).inputTokens ??
+      (meta as { input_tokens?: number }).input_tokens,
+    outputTokens:
+      (msg as { output_tokens?: number }).output_tokens ??
+      (meta as { outputTokens?: number }).outputTokens ??
+      (meta as { output_tokens?: number }).output_tokens,
+    createdAt:
+      (msg as { created_at?: string }).created_at ??
+      (meta as { createdAt?: string }).createdAt ??
+      (meta as { created_at?: string }).created_at,
+    documentId:
+      (msg as { document_id?: string | null }).document_id ??
+      (meta as { documentId?: string | null }).documentId ??
+      (meta as { document_id?: string | null }).document_id ??
+      null,
+    documentUrl:
+      (msg as { document_url?: string | null }).document_url ??
+      (meta as { documentUrl?: string | null }).documentUrl ??
+      (meta as { document_url?: string | null }).document_url ??
+      null,
     pinIds,
     userReaction:
       (msg as { user_reaction?: string | null }).user_reaction ??
       (meta as { userReaction?: string | null }).userReaction ??
+      (meta as { user_reaction?: string | null }).user_reaction ??
       null,
   };
 };
@@ -184,21 +215,32 @@ const normalizeBackendMessage = (msg: BackendMessage): Message => {
   const senderRaw = (msg.sender || msg.role || "user").toLowerCase();
   const sender: Message["sender"] =
     senderRaw === "ai" || senderRaw === "assistant" ? "ai" : "user";
-  const baseContent = msg.content || msg.message || "";
+  const baseContent =
+    msg.content ||
+    msg.message ||
+    (msg as { response?: string }).response ||
+    (msg as { prompt?: string }).prompt ||
+    "";
   const { visibleText, thinkingText } =
     sender === "ai"
       ? extractThinkingContent(baseContent)
       : { visibleText: baseContent, thinkingText: null };
   const metadata = extractMetadata(msg);
+  const rawId =
+    msg.id !== undefined && msg.id !== null
+      ? msg.id
+      : (msg as { message_id?: string | number | null }).message_id ?? null;
+  const resolvedId =
+    rawId !== null && rawId !== undefined
+      ? String(rawId)
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   return {
-    id:
-      msg.id !== undefined
-        ? String(msg.id)
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: resolvedId,
     sender,
     content: visibleText,
     thinkingContent: thinkingText,
     metadata,
+    chatMessageId: rawId !== null && rawId !== undefined ? String(rawId) : undefined,
     referencedMessageId:
       (msg as { referenced_message_id?: string | null }).referenced_message_id ??
       null,
@@ -214,10 +256,12 @@ const convertBackendEntryToMessages = (entry: BackendMessage): Message[] => {
     return [normalizeBackendMessage(entry)];
   }
 
-  const baseId =
+  const baseIdRaw =
     entry.id !== undefined && entry.id !== null
-      ? String(entry.id)
-      : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      ? entry.id
+      : (entry as { message_id?: string | number | null }).message_id ??
+        `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const baseId = String(baseIdRaw);
   const messages: Message[] = [];
   const chatMessageId = baseId;
   const pinId =
@@ -263,15 +307,42 @@ const backendPinToLegacy = (pin: BackendPin, fallback?: Partial<PinType>): PinTy
     (pin as { folder_id?: string | null }).folder_id ??
     fallback?.folderId ??
     undefined;
+  const resolvedChatId =
+    (pin as { chat?: string | null }).chat ??
+    (pin as { sourceChatId?: string | null }).sourceChatId ??
+    fallback?.sourceChatId ??
+    fallback?.chatId ??
+    "";
+  const resolvedMessageId =
+    (pin as { sourceMessageId?: string | null }).sourceMessageId ??
+    fallback?.sourceMessageId ??
+    fallback?.messageId ??
+    null;
+  const resolvedTitle =
+    (pin as { title?: string | null }).title ??
+    fallback?.title ??
+    fallback?.text ??
+    "Untitled Pin";
+  const resolvedText =
+    (pin as { formattedContent?: string | null }).formattedContent ??
+    pin.content ??
+    fallback?.formattedContent ??
+    fallback?.text ??
+    resolvedTitle;
   return {
     id: pin.id,
-    text: pin.content ?? fallback?.text ?? "",
-    tags: fallback?.tags ?? [],
+    text: resolvedTitle,
+    title: resolvedTitle,
+    tags: pin.tags ?? fallback?.tags ?? [],
     notes: fallback?.notes ?? "",
-    chatId: pin.chat ?? fallback?.chatId ?? "",
+    chatId: resolvedChatId,
     time: createdAt,
-    messageId: fallback?.messageId,
+    messageId: resolvedMessageId ?? undefined,
     folderId: resolvedFolder || undefined,
+    folderName: (pin as { folderName?: string | null }).folderName ?? null,
+    sourceChatId: resolvedChatId,
+    sourceMessageId: resolvedMessageId ?? null,
+    formattedContent: (pin as { formattedContent?: string | null }).formattedContent ?? null,
   };
 };
 
@@ -725,7 +796,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
       }
 
       try {
-        const backendPin = await createPin(chatId, messageId, csrfTokenRef.current);
+        const backendPin = await createPin(chatId, messageId, csrfTokenRef.current, {
+          folderId: pinRequest.folderId ?? null,
+          tags: pinRequest.tags,
+        });
         const normalized = backendPinToLegacy(backendPin, pinRequest);
         if (chatId === activeChatId) {
           setPins((prev) => [normalized, ...prev.filter((p) => p.id !== normalized.id)]);
@@ -780,6 +854,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     async ({
       firstMessage,
       selectedModel,
+      pinIds,
     }: EnsureChatOptions): Promise<EnsureChatResult | null> => {
       const currentActiveId = activeChatId;
       const isTempChat = currentActiveId?.startsWith("temp-") ?? false;
@@ -797,6 +872,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             }
           : null,
         user,
+        pinIds,
       };
       try {
         const {
@@ -804,6 +880,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
           csrfToken: freshToken,
           initialResponse,
           initialMessageId,
+          initialMessageMetadata,
+          message,
         } = await createChat(payload, csrfTokenRef.current);
         if (freshToken && freshToken !== csrfTokenRef.current) {
           csrfTokenRef.current = freshToken;
@@ -837,6 +915,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
           chatId: normalized.id,
           initialResponse: initialResponse ?? null,
           initialMessageId: initialMessageId ?? null,
+          initialMetadata:
+            initialMessageMetadata && typeof initialMessageMetadata === "object"
+              ? (initialMessageMetadata as Message["metadata"])
+              : message
+              ? extractMetadata(message as BackendMessage)
+              : undefined,
         };
       } catch (error) {
         console.error("Failed to create chat on server", error);

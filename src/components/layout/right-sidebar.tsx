@@ -39,18 +39,24 @@ import {
   createPinFolder,
   fetchPinFolders,
   movePinToFolder,
+  deletePin,
   type PinFolder,
 } from "@/lib/api/pins";
 
 export interface PinType {
   id: string;
-  text: string;
+  text: string; // display title
+  title?: string | null;
   tags: string[];
   notes: string;
   chatId: string;
   time: Date;
   messageId?: string;
   folderId?: string;
+  folderName?: string | null;
+  sourceChatId?: string | null;
+  sourceMessageId?: string | null;
+  formattedContent?: string | null;
   comments?: string[];
 }
 
@@ -66,36 +72,6 @@ interface RightSidebarProps {
 }
 
 type FilterMode = "all" | "current-chat" | "newest" | "oldest" | "by-folder" | "unorganized";
-
-const samplePins: PinType[] = [
-  {
-    id: "pin1",
-    text: "This is the first sample pin about project requirements and initial planning.",
-    tags: ["planning", "urgent"],
-    notes: "Remember to follow up with the design team.",
-    chatId: "1",
-    time: new Date(Date.now() - 3600000),
-    folderId: "unorganized",
-  },
-  {
-    id: "pin2",
-    text: "A second pin containing technical details for the API implementation.",
-    tags: ["technical", "api"],
-    notes: "",
-    chatId: "2",
-    time: new Date(Date.now() - 86400000),
-    folderId: "research",
-  },
-  {
-    id: "pin3",
-    text: "Here is a third one related to marketing copy and campaign ideas.",
-    tags: ["marketing"],
-    notes: "Check the new copy deck.",
-    chatId: "1",
-    time: new Date(Date.now() - 172800000),
-    folderId: "research",
-  },
-];
 
 const PANEL_METADATA: Record<RightSidebarPanel, { title: string; description?: string }> = {
   pinboard: {
@@ -151,7 +127,7 @@ export function RightSidebar({
   const activeChatId = layoutContext?.activeChatId;
   const { csrfToken } = useAuth();
 
-  const pinsToDisplay = pins.length > 0 ? pins : samplePins;
+  const pinsToDisplay = pins;
 
   const handleUpdatePin = (updatedPin: PinType) => {
     setPins((prevPins) => prevPins.map((p) => (p.id === updatedPin.id ? updatedPin : p)));
@@ -169,9 +145,17 @@ export function RightSidebar({
     );
   };
 
-  const handleDeletePin = (pinId: string) => {
-    setPins((prevPins) => prevPins.filter((p) => p.id !== pinId));
-  };
+  const handleDeletePin = useCallback(
+    async (pinId: string) => {
+      try {
+        await deletePin(pinId, csrfToken);
+      } catch (error) {
+        console.error("Failed to delete pin", error);
+      }
+      setPins((prevPins) => prevPins.filter((p) => p.id !== pinId));
+    },
+    [csrfToken, setPins]
+  );
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
