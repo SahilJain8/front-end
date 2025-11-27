@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const fetchCsrfToken = async () => {
@@ -127,7 +129,7 @@ export default function LoginPage() {
               placeholder="Email address"
               value={identifier}
               onChange={(event) => setIdentifier(event.target.value)}
-              className="rounded-lg border-[#D4D4D4] text-[#1E1E1E]"
+              className="rounded-lg border border-black bg-[#F5F5F5] text-[#1E1E1E]"
               style={{ 
                 width: '100%', 
                 height: '40px',
@@ -142,20 +144,47 @@ export default function LoginPage() {
             <Label htmlFor="password" className="text-sm font-medium text-[#1E1E1E]">
               Password
             </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="rounded-lg border-[#D4D4D4] text-[#1E1E1E]"
-              style={{ 
-                width: '100%', 
-                height: '40px',
-                padding: '8px 12px'
-              }}
-              required
-            />
+            <div style={{ position: 'relative', width: '100%' }}>
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="rounded-lg border border-black bg-[#F5F5F5] text-[#1E1E1E] pr-10"
+                style={{ 
+                  width: '100%', 
+                  height: '40px',
+                  padding: '8px 12px'
+                }}
+                required
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword((v) => !v)}
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  margin: 0,
+                  cursor: 'pointer',
+                  color: '#888',
+                  height: 24,
+                  width: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           {/* Error Message */}
@@ -177,7 +206,7 @@ export default function LoginPage() {
           <Button
             type="button"
             variant="outline"
-            className="w-full bg-white text-[#1E1E1E] hover:bg-[#F5F5F5] border border-[#767676] rounded-lg flex items-center justify-center gap-3"
+            className="w-full bg-white text-[#1E1E1E] hover:bg-[#F5F5F5] hover:text-[#1E1E1E] border border-[#767676] rounded-lg flex items-center justify-center gap-3"
             style={{ 
               height: '48px',
               paddingLeft: '215px',
@@ -188,16 +217,16 @@ export default function LoginPage() {
             <span>Log in with Google</span>
           </Button>
 
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Footer Link */}
-          <p className="text-center text-sm text-[#666666]">
+          {/* Footer Link - moved directly under Google login */}
+          <p className="text-center text-sm text-[#666666] mt-2">
             Don't have an account?{" "}
             <Link href="/auth/signup" className="text-[#1E1E1E] font-medium hover:underline">
               Sign up
             </Link>
           </p>
+
+          {/* Spacer */}
+          <div className="flex-1" />
         </form>
       </div>
     </main>

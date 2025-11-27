@@ -543,19 +543,18 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
     return extractInitials(hint, "AI");
   })();
 
-  const AvatarComponent = (
+  // Remove user avatar/logo from chat interface
+  const AvatarComponent = !isUser ? (
     <Avatar
       className={cn(
         "h-9 w-9 text-xs font-semibold",
-        isUser
-          ? "border border-[#111827] bg-transparent text-[#111827]"
-          : "border border-transparent bg-transparent text-[#111827]"
+        "border border-transparent bg-transparent text-[#111827]"
       )}
     >
       {message.avatarUrl && (
         <AvatarImage
           src={message.avatarUrl}
-          alt={isUser ? "User" : "AI"}
+          alt="AI"
           data-ai-hint={message.avatarHint}
         />
       )}
@@ -563,7 +562,7 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
         {fallbackText}
       </AvatarFallback>
     </Avatar>
-  );
+  ) : null;
 
   const renderActions = (className?: string) => (
     isUser ? <UserActions className={className} /> : <AiActions className={className} />
@@ -577,7 +576,8 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
           isUser ? "flex-row-reverse" : "flex-row"
         )}
       >
-        <div className="mt-1 shrink-0">{AvatarComponent}</div>
+        {/* Only show avatar for AI, not for user */}
+        {AvatarComponent && <div className="mt-1 shrink-0">{AvatarComponent}</div>}
         <div
           className={cn(
             "flex flex-1 flex-col gap-2",
@@ -592,11 +592,21 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
           >
             <div
               className={cn(
-                "group/bubble chat-message-bubble relative rounded-[28px] px-6 py-5 leading-relaxed",
+                "group/bubble chat-message-bubble relative px-4 py-2 leading-relaxed",
                 isUser
                   ? "chat-message-bubble--user bg-white text-[#111827] border border-[#E4E4E7]"
                   : "chat-message-bubble--ai bg-[#F7F7F8] text-[#111827]"
               )}
+              style={
+                isUser
+                  ? {
+                      borderTopLeftRadius: '400px',
+                      borderTopRightRadius: '200px',
+                      borderBottomRightRadius: '400px',
+                      borderBottomLeftRadius: '400px',
+                    }
+                  : undefined
+              }
             >
               {message.referencedMessageId && referencedMessage && (
                 <div className="mb-3 border-b border-slate-200 pb-3">
@@ -634,17 +644,17 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
               )}
 
               {isEditing && isUser ? (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Textarea
                     ref={textareaRef}
                     value={editedContent}
                     onChange={(e) => setEditedContent(e.target.value)}
                     onKeyDown={handleEditKeyDown}
-                    className="min-h-[1.5em] resize-none overflow-hidden border-0 bg-transparent text-sm text-[#171717] ring-0 shadow-none focus-visible:ring-0"
+                    className="min-h-[1.5em] resize-none overflow-hidden border-0 bg-transparent text-sm text-[#171717] ring-0 shadow-none focus-visible:ring-0 mb-1"
                     style={{ width: 'auto', maxWidth: '100%' }}
                     rows={1}
                   />
-                  <div className="flex justify-end gap-1">
+                  <div className="flex justify-end gap-1 mt-0">
                     <Button size="icon" variant="ghost" onClick={handleSaveAndResubmit} className="h-7 w-7"><Check className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={handleCancelEdit} className="h-7 w-7"><X className="h-4 w-4" /></Button>
                   </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -17,9 +18,12 @@ export default function SignupPage() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const fetchCsrfToken = async () => {
@@ -46,14 +50,12 @@ export default function SignupPage() {
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
-
-    // Test credentials bypass for development - auto-approve test account
-    if (email === "admin@gmail.com" && password === "admintesting@4321") {
-      setSuccessMessage("Test account created! Redirecting to login…");
-      setTimeout(() => router.replace("/auth/login"), 1500);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       setIsSubmitting(false);
       return;
     }
+
 
     try {
       const response = await fetch(SIGNUP_ENDPOINT, {
@@ -76,8 +78,8 @@ export default function SignupPage() {
         return;
       }
 
-      setSuccessMessage("Signup successful! Redirecting to login…");
-      setTimeout(() => router.replace("/auth/login"), 1500);
+      setSuccessMessage("Signup successful! Welcome onboard, redirecting you to the application…");
+      setTimeout(() => router.replace("/"), 1500);
     } catch (err) {
       console.error("Signup failed", err);
       setError("Unexpected error. Please try again.");
@@ -159,7 +161,7 @@ export default function SignupPage() {
               placeholder="Email address"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="rounded-lg border-[#D4D4D4] text-[#1E1E1E]"
+              className="rounded-lg border border-black bg-[#F5F5F5] text-[#1E1E1E]"
               style={{ 
                 width: '100%', 
                 height: '40px',
@@ -174,20 +176,95 @@ export default function SignupPage() {
             <Label htmlFor="password" className="text-sm font-medium text-[#1E1E1E]">
               Password
             </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="rounded-lg border-[#D4D4D4] text-[#1E1E1E]"
-              style={{ 
-                width: '100%', 
-                height: '40px',
-                padding: '8px 12px'
-              }}
-              required
-            />
+            <div style={{ position: 'relative', width: '100%' }}>
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="rounded-lg border border-black bg-[#F5F5F5] text-[#1E1E1E] pr-10"
+                style={{ 
+                  width: '100%', 
+                  height: '40px',
+                  padding: '8px 12px'
+                }}
+                required
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword((v) => !v)}
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  margin: 0,
+                  cursor: 'pointer',
+                  color: '#888',
+                  height: 24,
+                  width: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password Field */}
+          <div className="flex flex-col" style={{ gap: '8px' }}>
+            <Label htmlFor="confirmPassword" className="text-sm font-medium text-[#1E1E1E]">
+              Confirm Password
+            </Label>
+            <div style={{ position: 'relative', width: '100%' }}>
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                className="rounded-lg border border-black bg-[#F5F5F5] text-[#1E1E1E] pr-10"
+                style={{ 
+                  width: '100%', 
+                  height: '40px',
+                  padding: '8px 12px'
+                }}
+                required
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  margin: 0,
+                  cursor: 'pointer',
+                  color: '#888',
+                  height: 24,
+                  width: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           {/* Error/Success Messages */}
@@ -219,16 +296,16 @@ export default function SignupPage() {
             <span>Sign up with Google</span>
           </Button>
 
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Footer Link */}
-          <p className="text-center text-sm text-[#666666]">
+          {/* Footer Link - moved directly under Google signup */}
+          <p className="text-center text-sm text-[#666666] mt-2">
             Already have an account?{" "}
             <Link href="/auth/login" className="text-[#1E1E1E] font-medium hover:underline">
               Log in
             </Link>
           </p>
+
+          {/* Spacer */}
+          <div className="flex-1" />
         </form>
       </div>
     </main>

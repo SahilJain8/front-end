@@ -466,7 +466,7 @@ export function LeftSidebar({
               </Avatar>
               <div className="flex flex-col justify-center">
                 <span className="text-[15px] font-medium text-[#1E1E1E]">
-                  {user?.name || "Avnish Poonia"}
+                  {user?.name || user?.username || user?.email || "User"}
                 </span>
               </div>
             </button>

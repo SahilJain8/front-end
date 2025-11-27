@@ -18,7 +18,7 @@ const Frame1171275887: NextPage<Frame117Props> = ({ userName }) => {
     return clean.charAt(0).toUpperCase() + clean.slice(1);
   })();
 
-  const formattedName = `${normalized}(username)`;
+  const formattedName = `${normalized}?`;
 
   return (
     <div className={styles.frameParent}>
@@ -35,13 +35,12 @@ const Frame1171275887: NextPage<Frame117Props> = ({ userName }) => {
       </div>
       <div className={styles.whatWouldYouLikeToExploreParent}>
         <div className={styles.whatWouldYou}>
-          What would you like to explore today?
+          What would you like to explore today,
           <br />
           {formattedName}
         </div>
         <div className={styles.yourIntelligentAssistant}>
-          Your intelligent assistant for reports, automation, and creative
-          workflows.
+          Work smarter with pinned insights, tailored personas, and model-to-model conversations
         </div>
       </div>
     </div>

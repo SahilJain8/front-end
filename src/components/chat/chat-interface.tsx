@@ -95,6 +95,8 @@ export function ChatInterface({
   selectedModel = null,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
+  // For pin mention dropdown keyboard navigation
+  const [highlightedPinIndex, setHighlightedPinIndex] = useState(0);
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
   const [referencedMessage, setReferencedMessage] = useState<Message | null>(null);
   const [mentionedPins, setMentionedPins] = useState<MentionedPin[]>([]);
@@ -252,6 +254,13 @@ export function ChatInterface({
 
   // Get available pins
   const availablePins = layoutContext?.pins || [];
+
+  // Reset highlighted index when dropdown opens or availablePins changes
+  useEffect(() => {
+    if (showPinDropdown && availablePins.length > 0) {
+      setHighlightedPinIndex(0);
+    }
+  }, [showPinDropdown, availablePins.length]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1231,18 +1240,25 @@ export function ChatInterface({
             <div
               ref={dropdownRef}
               className="absolute bottom-full left-0 right-0 z-50 mb-3 max-h-64 overflow-y-auto rounded-2xl border border-[#D9D9D9] bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+              style={{ maxWidth: 500, minWidth: 220, left: 0, right: 'auto' }}
             >
-              <div className="border-b border-[#F0F0F0] bg-[#F9F9F9] px-4 py-3 text-left text-xs font-semibold text-[#555555]">
+              <div className="border-b border-[#F0F0F0] bg-[#F9F9F9] px-4 py-3 text-left text-xs font-semibold text-[#555555] rounded-t-2xl">
                 Select a pin to mention
               </div>
-              {availablePins.map((pin) => (
+              {availablePins.map((pin, idx) => (
                 <button
                   key={pin.id}
                   type="button"
                   onClick={() => handleSelectPin(pin)}
-                  className="w-full border-b border-[#F5F5F5] px-4 py-3 text-left text-sm hover:bg-[#F8F8F8]"
+                  className={
+                    `w-full border-b border-[#F5F5F5] px-4 py-2 text-left text-[13px] rounded-none last:rounded-b-2xl transition-colors ` +
+                    (idx === highlightedPinIndex
+                      ? 'bg-[#d2d2d2] text-black font-semibold shadow-inner'
+                      : 'hover:bg-[#d2d2d2] text-black')
+                  }
+                  style={{ borderRadius: idx === highlightedPinIndex ? 16 : 0 }}
                 >
-                  <p className="truncate font-medium text-[#1E1E1E]">
+                  <p className="truncate font-medium text-inherit text-black text-[13px]">
                     {pin.text.slice(0, 60) || "Untitled Pin"}
                   </p>
                   {pin.tags && pin.tags.length > 0 && (
@@ -1416,10 +1432,23 @@ export function ChatInterface({
                   value={input}
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Escape" && showPinDropdown) {
-                      e.preventDefault();
-                      setShowPinDropdown(false);
-                    } else if (
+                    if (showPinDropdown && availablePins.length > 0) {
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setHighlightedPinIndex((prev) => (prev + 1) % availablePins.length);
+                      } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setHighlightedPinIndex((prev) => (prev - 1 + availablePins.length) % availablePins.length);
+                      } else if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSelectPin(availablePins[highlightedPinIndex]);
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        setShowPinDropdown(false);
+                      }
+                      return;
+                    }
+                    if (
                       e.key === "Enter" &&
                       !e.shiftKey &&
                       !isResponding &&
