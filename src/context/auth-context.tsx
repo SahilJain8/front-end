@@ -63,8 +63,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     if (csrfToken) {
       localStorage.setItem(CSRF_STORAGE_KEY, csrfToken);
+      try {
+        // Mirror token into a cookie so Django's CSRF check sees both header + cookie in cross-site calls.
+        document.cookie = `csrftoken=${encodeURIComponent(
+          csrfToken
+        )}; path=/; SameSite=None; Secure`;
+      } catch (error) {
+        console.warn("Failed to set CSRF cookie", error);
+      }
     } else {
       localStorage.removeItem(CSRF_STORAGE_KEY);
+      try {
+        document.cookie = "csrftoken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure";
+      } catch (error) {
+        console.warn("Failed to clear CSRF cookie", error);
+      }
     }
   }, [csrfToken]);
 

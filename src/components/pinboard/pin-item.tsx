@@ -52,7 +52,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
     const [noteInput, setNoteInput] = useState(pin.notes);
     const [isEditingNotes, setIsEditingNotes] = useState(false);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
-    const [titleInput, setTitleInput] = useState(pin.text);
+    const [titleInput, setTitleInput] = useState(pin.title ?? pin.text);
     const [showComments, setShowComments] = useState(false);
     const [commentInput, setCommentInput] = useState('');
     const [hoveredTagIndex, setHoveredTagIndex] = useState<number | null>(null);
@@ -117,13 +117,13 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
 
     const handleSaveTitle = () => {
         if (titleInput.trim()) {
-            const updatedPin = { ...pin, text: titleInput.trim() };
+            const updatedPin = { ...pin, title: titleInput.trim(), text: titleInput.trim() };
             onUpdatePin(updatedPin);
             setIsEditingTitle(false);
             toast({ title: "Title updated!" });
         } else {
             // If empty, cancel edit and restore original
-            setTitleInput(pin.text);
+            setTitleInput(pin.title ?? pin.text);
             setIsEditingTitle(false);
         }
     };
@@ -135,7 +135,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
         }
         if (event.key === 'Escape') {
             setIsEditingTitle(false);
-            setTitleInput(pin.text);
+            setTitleInput(pin.title ?? pin.text);
         }
     };
 
@@ -163,9 +163,24 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
         toast({ title: "Navigating to chat..." });
     };
 
+    const cleanContent = (raw: string) => {
+        if (!raw) return "";
+        let content = raw;
+        // Remove one or more leading "Pinned response (model: ...):" prefixes
+        content = content.replace(/^(Pinned response\s*\(model:[^)]+\):\s*)+/i, "");
+        content = content
+            .replace(/\*\*/g, "")
+            .replace(/`/g, "")
+            .replace(/#+\s*/g, "")
+            .replace(/\|/g, " ")
+            .replace(/[\u2022-\u2023]/g, "-");
+        return content.replace(/\s+/g, " ").trim();
+    };
+
+    const bodyContent = cleanContent(pin.formattedContent ?? pin.text);
     const handleInsertToChat = () => {
         if (onInsertToChat) {
-            onInsertToChat(pin.text);
+            onInsertToChat(bodyContent);
             toast({ title: "Pin inserted to chat" });
         }
     };
@@ -198,7 +213,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                                     <Button 
                                         onClick={() => {
                                             setIsEditingTitle(false);
-                                            setTitleInput(pin.text);
+                                            setTitleInput(pin.title ?? pin.text);
                                         }} 
                                         size="sm" 
                                         variant="ghost"
@@ -210,12 +225,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                             </div>
                         ) : (
                             <p className="text-[#1e1e1e]" style={{ fontFamily: 'Inter', fontWeight: 500, fontSize: '16px', lineHeight: '140%' }}>
-                                {isExpanded || pin.text.length <= 50 ? pin.text : `${pin.text.substring(0, 50)}...`}
-                                {pin.text.length > 50 && (
-                                    <Button variant="link" className="h-auto p-0 ml-1 text-xs text-[#3b82f6] hover:text-[#2563eb]" onClick={() => setIsExpanded(!isExpanded)}>
-                                        {isExpanded ? "Read less" : "Read more"}
-                                    </Button>
-                                )}
+                                {pin.title ?? pin.text}
                             </p>
                         )}
                     </div>
@@ -240,6 +250,22 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                </div>
+
+                {/* Body snippet */}
+                <div className="text-sm text-[#3f3f3f]" style={{ lineHeight: '150%' }}>
+                    {isExpanded || bodyContent.length <= 120
+                      ? bodyContent
+                      : `${bodyContent.substring(0, 120)}...`}
+                    {bodyContent.length > 120 && (
+                      <Button
+                        variant="link"
+                        className="h-auto p-0 ml-1 text-xs text-[#3b82f6] hover:text-[#2563eb]"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                      >
+                        {isExpanded ? "Show less" : "Show more"}
+                      </Button>
+                    )}
                 </div>
 
                 {/* Tags section */}

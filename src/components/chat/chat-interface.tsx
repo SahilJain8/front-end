@@ -17,7 +17,6 @@ import {
   ChevronLeft,
   ChevronDown,
   FileText,
-  Image as ImageIcon,
   UserPlus,
   Paperclip,
   ScanText,
@@ -67,71 +66,7 @@ import {
 import { extractThinkingContent } from "@/lib/thinking";
 import { getModelIcon } from "@/lib/model-icons";
 import { uploadDocument } from "@/lib/api/documents";
-import { generateImage } from "@/lib/api/images";
 import { addReaction, removeReaction } from "@/lib/api/messages";
-
-const FALLBACK_MESSAGES: Message[] = [
-  {
-    id: "layout-demo-user-1",
-    sender: "user",
-    content:
-      "Morning! I need you to synthesize the last sprint's experimentation metrics into something story-driven for the exec readout. Call out the lifts we saw on the onboarding flows and highlight anything that might spook finance about burn. Give me specific numbers so I can copy them straight into the deck.",
-    metadata: {
-      createdAt: "2024-06-10T14:18:00Z",
-    },
-  },
-  {
-    id: "layout-demo-ai-1",
-    sender: "ai",
-    content:
-      "Absolutely. Over the last seven days, blended win rate rose 6.2% while latency decreased 14.3%, so we are finally under the two-second mark across the board. The onboarding control lost to the variation on activation, but only by 0.7%, so I would call that statistically neutral. I can group the highlights into a narrative around faster answers, cleaner guardrails, and a clear finance-friendly cost reduction if that helps with your slides.",
-    metadata: {
-      modelName: "Qwen 2.5 72B",
-      providerName: "Alibaba Cloud",
-      createdAt: "2024-06-10T14:18:12Z",
-    },
-  },
-  {
-    id: "layout-demo-user-2",
-    sender: "user",
-    content:
-      "Perfect. While you are at it, audit the finance summarizer persona because the PMs keep pinging me about volatility in the valuation scenarios. I want at least two concrete transcripts we can use as pull quotes, plus a short list of gaps that need follow-up work this sprint. Prioritize anything that would land poorly in front of the CFO.",
-    metadata: {
-      createdAt: "2024-06-10T14:19:05Z",
-    },
-  },
-  {
-    id: "layout-demo-ai-2",
-    sender: "ai",
-    content:
-      "On it. Finance summarizer accuracy dipped 3.5%, almost entirely on long-horizon equity dilution cases where the prompt failed to pin the vesting schedule. I pulled two transcripts showing the issue and added inline annotations so you can drop screenshots into the deck. To stabilize it, we either expand the conditioning window by 15% or ship the pending retrieval rules; I penciled both options into the action plan.",
-    metadata: {
-      modelName: "Claude 3 Opus",
-      providerName: "Anthropic",
-      createdAt: "2024-06-10T14:19:34Z",
-    },
-  },
-  {
-    id: "layout-demo-user-3",
-    sender: "user",
-    content:
-      "Great, thanks. Last piece: draft a forward-looking blurb that sets expectations for the multi-model routing pilot kicking off next week. I need language that balances optimism with a clear ask for headcount so we can actually run the vendor comparison. Think of it like the closer slide before the appendix.",
-    metadata: {
-      createdAt: "2024-06-10T14:20:11Z",
-    },
-  },
-  {
-    id: "layout-demo-ai-3",
-    sender: "ai",
-    content:
-      "Done. The closer slide now tees up the routing pilot as the fastest path to lower response times without sacrificing domain accuracy, ending with a specific ask for one additional applied scientist and a shared infra block. I also left a note suggesting an appendix table that compares vendor SLAs and token pricing so you can defend the investment if procurement raises eyebrows. Ready for any final polish whenever you are.",
-    metadata: {
-      modelName: "Gemini 1.5 Pro",
-      providerName: "Google",
-      createdAt: "2024-06-10T14:20:38Z",
-    },
-  },
-];
 
 interface ChatInterfaceProps {
   onPinMessage?: (pin: PinType) => Promise<void> | void;
@@ -141,7 +76,7 @@ interface ChatInterfaceProps {
     messages: Message[] | ((prev: Message[]) => Message[]),
     chatIdOverride?: string
   ) => void;
-  selectedModel?: AIModel | null; // 👈 
+  selectedModel?: AIModel | null;
 }
 
 type MessageAvatar = Pick<Message, "avatarUrl" | "avatarHint">;
@@ -169,49 +104,6 @@ export function ChatInterface({
   const [showLeftScrollButton, setShowLeftScrollButton] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const attachMenuRef = useRef<HTMLDivElement>(null);
-  
-  // Temporary test attachments - remove later
-  useEffect(() => {
-    // Add initial attachments with uploading state
-    setAttachments([
-      {id: '1', type: 'pdf', name: 'Project_Requirements_Document.pdf', url: '/test.pdf', isUploading: true, uploadProgress: 0},
-      {id: '2', type: 'pdf', name: 'Technical_Specifications.pdf', url: '/test2.pdf'},
-      {id: '3', type: 'image', name: 'Screenshot.png', url: 'https://picsum.photos/200/200?random=1', isUploading: true, uploadProgress: 0},
-      {id: '4', type: 'image', name: 'Chart.jpg', url: 'https://picsum.photos/200/200?random=2'},
-      {id: '5', type: 'pdf', name: 'Meeting_Notes.pdf', url: '/test3.pdf'},
-      {id: '6', type: 'image', name: 'Diagram.png', url: 'https://picsum.photos/200/200?random=3'},
-      {id: '7', type: 'pdf', name: 'API_Documentation.pdf', url: '/test4.pdf'},
-      {id: '8', type: 'image', name: 'Mockup.jpg', url: 'https://picsum.photos/200/200?random=4'},
-      {id: '9', type: 'pdf', name: 'User_Research_Report.pdf', url: '/test5.pdf'},
-      {id: '10', type: 'image', name: 'Wireframe.png', url: 'https://picsum.photos/200/200?random=5'},
-      {id: '11', type: 'pdf', name: 'Sprint_Planning.pdf', url: '/test6.pdf'},
-      {id: '12', type: 'image', name: 'Analytics.jpg', url: 'https://picsum.photos/200/200?random=6'},
-      {id: '13', type: 'pdf', name: 'Architecture_Design.pdf', url: '/test7.pdf'},
-      {id: '14', type: 'image', name: 'Prototype.png', url: 'https://picsum.photos/200/200?random=7'},
-    ]);
-    
-    // Simulate upload progress for first PDF and first image
-    const interval = setInterval(() => {
-      setAttachments(prev => prev.map(att => {
-        if ((att.id === '1' || att.id === '3') && att.isUploading) {
-          const newProgress = (att.uploadProgress || 0) + 10;
-          if (newProgress >= 100) {
-            return { ...att, isUploading: false, uploadProgress: 100 };
-          }
-          return { ...att, uploadProgress: newProgress };
-        }
-        return att;
-      }));
-    }, 300);
-    
-    // Force scroll button to show for testing
-    setTimeout(() => setShowScrollButton(true), 100);
-    
-    // Cleanup interval after upload completes
-    setTimeout(() => clearInterval(interval), 3500);
-    
-    return () => clearInterval(interval);
-  }, []);
   
   // Close attach menu when clicking outside
   useEffect(() => {
@@ -249,6 +141,7 @@ export function ChatInterface({
       avatarHint: defaultAiAvatar?.imageHint ?? "AI model",
     };
   };
+
   const resolveAvatarFromMetadata = (message: Message): MessageAvatar | null => {
     if (message.sender !== "ai") return null;
     const provider = message.metadata?.providerName || null;
@@ -309,9 +202,7 @@ export function ChatInterface({
   const { toast } = useToast();
   const [isResponding, setIsResponding] = useState(false);
   const layoutContext = useContext(AppLayoutContext);
-  const isUsingFallbackMessages =
-    messages.length === 0 && !layoutContext?.activeChatId;
-  const displayMessages = isUsingFallbackMessages ? FALLBACK_MESSAGES : messages;
+  const displayMessages = messages;
   const { user, csrfToken } = useAuth();
   const { usagePercent, isLoading: isTokenUsageLoading } = useTokenUsage();
   const pinsById = useMemo(() => {
@@ -339,9 +230,6 @@ export function ChatInterface({
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadSourceUrl, setUploadSourceUrl] = useState("");
-  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
-  const [imagePrompt, setImagePrompt] = useState("");
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const composerPlaceholder = selectedModel
     ? "Let's Play..."
     : "Choose a model to start chatting";
@@ -471,8 +359,74 @@ export function ChatInterface({
 
       const data = await response.json();
 
+      const messageText =
+        typeof data.message === "string"
+          ? data.message
+          : typeof data.response === "string"
+          ? data.response
+          : typeof data.message?.response === "string"
+          ? data.message.response
+          : typeof data.message?.content === "string"
+          ? data.message.content
+          : typeof data.message?.message === "string"
+          ? data.message.message
+          : "";
+
+      const messageMeta =
+        (data.metadata && typeof data.metadata === "object" ? data.metadata : null) ||
+        (data.message?.metadata && typeof data.message.metadata === "object"
+          ? data.message.metadata
+          : null);
+
+      const resolvedMessageId =
+        data.messageId ??
+        data.message_id ??
+        (data.message?.message_id ?? data.message?.id) ??
+        null;
+
+      const metadata: Message["metadata"] | undefined = messageMeta
+        ? {
+            modelName:
+              (messageMeta as { modelName?: string }).modelName ??
+              (messageMeta as { model_name?: string }).model_name,
+            providerName:
+              (messageMeta as { providerName?: string }).providerName ??
+              (messageMeta as { provider_name?: string }).provider_name,
+            inputTokens:
+              (messageMeta as { inputTokens?: number }).inputTokens ??
+              (messageMeta as { input_tokens?: number }).input_tokens,
+            outputTokens:
+              (messageMeta as { outputTokens?: number }).outputTokens ??
+              (messageMeta as { output_tokens?: number }).output_tokens,
+            createdAt:
+              (messageMeta as { createdAt?: string }).createdAt ??
+              (messageMeta as { created_at?: string }).created_at,
+            documentId:
+              (messageMeta as { documentId?: string | null }).documentId ??
+              (messageMeta as { document_id?: string | null }).document_id ??
+              null,
+            documentUrl:
+              (messageMeta as { documentUrl?: string | null }).documentUrl ??
+              (messageMeta as { document_url?: string | null }).document_url ??
+              null,
+            llmModelId:
+              (messageMeta as { llmModelId?: string | number | null }).llmModelId ??
+              (messageMeta as { llm_model_id?: string | number | null }).llm_model_id ??
+              null,
+            pinIds: Array.isArray((messageMeta as { pinIds?: unknown[] }).pinIds)
+              ? ((messageMeta as { pinIds: unknown[] }).pinIds as unknown[]).map(String)
+              : Array.isArray((messageMeta as { pin_ids?: unknown[] }).pin_ids)
+              ? ((messageMeta as { pin_ids: unknown[] }).pin_ids as unknown[]).map(String)
+              : undefined,
+            userReaction:
+              (messageMeta as { userReaction?: string | null }).userReaction ??
+              (messageMeta as { user_reaction?: string | null }).user_reaction ??
+              null,
+          }
+        : undefined;
+
       const sanitized = extractThinkingContent(
-        data.message || "API didn't respond"
+        messageText || "API didn't respond"
       );
 
       const aiResponse: Message = {
@@ -484,15 +438,12 @@ export function ChatInterface({
         thinkingContent: sanitized.thinkingText,
         avatarUrl: avatarForRequest.avatarUrl,
         avatarHint: avatarForRequest.avatarHint,
-        chatMessageId: data.messageId ?? undefined,
+        chatMessageId:
+          resolvedMessageId !== null && resolvedMessageId !== undefined
+            ? String(resolvedMessageId)
+            : undefined,
         referencedMessageId: referencedMessageId ?? null,
-        metadata: data.metadata ? {
-          modelName: data.metadata.modelName,
-          providerName: data.metadata.providerName,
-          inputTokens: data.metadata.inputTokens,
-          outputTokens: data.metadata.outputTokens,
-          createdAt: data.metadata.createdAt,
-        } : undefined,
+        metadata,
       };
 
       setMessages(
@@ -501,13 +452,19 @@ export function ChatInterface({
             if (msg.id === loadingMessageId) {
               return {
                 ...aiResponse,
-                chatMessageId: data.messageId ?? aiResponse.chatMessageId,
+                chatMessageId:
+                  resolvedMessageId !== null && resolvedMessageId !== undefined
+                    ? String(resolvedMessageId)
+                    : aiResponse.chatMessageId,
               };
             }
             if (userMessageId && msg.id === userMessageId) {
               return {
                 ...msg,
-                chatMessageId: data.messageId ?? msg.chatMessageId,
+                chatMessageId:
+                  resolvedMessageId !== null && resolvedMessageId !== undefined
+                    ? String(resolvedMessageId)
+                    : msg.chatMessageId,
               };
             }
             return msg;
@@ -570,16 +527,22 @@ export function ChatInterface({
     let chatId = layoutContext?.activeChatId ?? null;
     let initialAiResponse: string | null = null;
     let initialAiMessageId: string | null = null;
+    let initialAiMetadata: Message["metadata"] | undefined;
 
-    if (!chatId && layoutContext?.ensureChatOnServer) {
+    let isTempChat = chatId?.startsWith("temp-");
+
+    if ((!chatId || isTempChat) && layoutContext?.ensureChatOnServer) {
       try {
         const ensured = await layoutContext.ensureChatOnServer({
           firstMessage: trimmedContent,
           selectedModel: activeModel,
+          pinIds: pinIdsToSend,
         });
         chatId = ensured?.chatId ?? null;
+        isTempChat = chatId?.startsWith("temp-");
         initialAiResponse = ensured?.initialResponse ?? null;
         initialAiMessageId = ensured?.initialMessageId ?? null;
+        initialAiMetadata = ensured?.initialMetadata ?? undefined;
       } catch (error) {
         console.error("Failed to create chat", error);
         toast({
@@ -592,7 +555,7 @@ export function ChatInterface({
       }
     }
 
-    if (!chatId) {
+    if (!chatId || isTempChat) {
       toast({
         title: "Chat unavailable",
         description: "We couldn't determine which chat to use.",
@@ -689,6 +652,7 @@ export function ChatInterface({
           avatarUrl: requestAvatar.avatarUrl,
           avatarHint: requestAvatar.avatarHint,
           chatMessageId: initialAiMessageId ?? undefined,
+          metadata: initialAiMetadata,
           referencedMessageId: refMessageId,
         };
         setMessages(
@@ -816,114 +780,6 @@ export function ChatInterface({
       });
     } finally {
       setUploadingDocument(false);
-    }
-  };
-
-  const handleOpenImageDialog = () => {
-    if (!layoutContext?.activeChatId) {
-      toast({
-        title: "Open or start a chat",
-        description: "Select a chat before generating an image.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsImageDialogOpen(true);
-  };
-
-  const handleGenerateImage = async () => {
-    const targetChatId = layoutContext?.activeChatId;
-    const trimmedPrompt = imagePrompt.trim();
-    if (!targetChatId) {
-      toast({
-        title: "Open or start a chat",
-        description: "Select a chat before generating an image.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!trimmedPrompt) {
-      toast({
-        title: "Enter a prompt",
-        description: "Add a short description for the image.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGeneratingImage(true);
-    const requestAvatar = resolveModelAvatar(selectedModel);
-    const imageMessageId = `img-${Date.now()}`;
-
-    // Optimistic placeholder while the image is generating
-    setMessages(
-      (prev = []) => [
-        ...prev,
-        {
-          id: imageMessageId,
-          sender: "ai",
-          content: `Generating image: ${trimmedPrompt}`,
-          avatarUrl: requestAvatar.avatarUrl,
-          avatarHint: requestAvatar.avatarHint,
-          isLoading: true,
-        },
-      ],
-      targetChatId
-    );
-
-    try {
-      const { imageUrl } = await generateImage({
-        prompt: trimmedPrompt,
-        chatId: targetChatId,
-        csrfToken,
-      });
-
-      setMessages(
-        (prev = []) =>
-          prev.map((msg) =>
-            msg.id === imageMessageId
-              ? {
-                  ...msg,
-                  isLoading: false,
-                  content: trimmedPrompt,
-                  imageUrl,
-                }
-              : msg
-          ),
-        targetChatId
-      );
-      toast({
-        title: "Image ready",
-        description: "Added to the conversation.",
-      });
-      setIsImageDialogOpen(false);
-      setImagePrompt("");
-    } catch (error) {
-      console.error("Image generation failed", error);
-      setMessages(
-        (prev = []) =>
-          prev.map((msg) =>
-            msg.id === imageMessageId
-              ? {
-                  ...msg,
-                  isLoading: false,
-                  content:
-                    error instanceof Error
-                      ? error.message
-                      : "Unable to generate image.",
-                }
-              : msg
-          ),
-        targetChatId
-      );
-      toast({
-        title: "Image generation failed",
-        description:
-          error instanceof Error ? error.message : "Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingImage(false);
     }
   };
 
@@ -1763,56 +1619,6 @@ export function ChatInterface({
       </Dialog>
 
       <Dialog
-        open={isImageDialogOpen}
-        onOpenChange={(open) => {
-          if (!open && !isGeneratingImage) {
-            setIsImageDialogOpen(false);
-          }
-        }}
-      >
-        <DialogContent className="rounded-[25px]">
-          <DialogHeader>
-            <DialogTitle>Generate image</DialogTitle>
-            <DialogDescription>
-              Send an image generation request tied to this chat.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="image-prompt">Prompt</Label>
-              <Textarea
-                id="image-prompt"
-                rows={3}
-                value={imagePrompt}
-                onChange={(e) => setImagePrompt(e.target.value)}
-                placeholder="e.g., astronaut riding a horse"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              className="rounded-[25px]"
-              onClick={() => setIsImageDialogOpen(false)}
-              disabled={isGeneratingImage}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="rounded-[25px]"
-              onClick={handleGenerateImage}
-              disabled={isGeneratingImage}
-            >
-              {isGeneratingImage && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {isGeneratingImage ? "Generating..." : "Generate"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
         open={!!regenerationState}
         onOpenChange={(open) => {
           if (!open) {
@@ -1888,7 +1694,7 @@ export function ChatInterface({
               onClick={handleConfirmChatDelete}
               disabled={isDeletingChat}
             >
-              {isDeletingChat ? "Deleting…" : "Delete chat"}
+              {isDeletingChat ? "Deleting..." : "Delete chat"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1919,7 +1725,7 @@ export function ChatInterface({
               if (pinnedMessages.length > 0) {
                 return (
                   <div className="font-semibold text-red-600 mt-2 text-sm">
-                    ⚠️ {pinnedMessages.length} pinned message(s) will be affected.
+                    Warning: {pinnedMessages.length} pinned message(s) will be affected.
                   </div>
                 );
               }

@@ -25,6 +25,8 @@ export interface BackendChat {
 
 export interface BackendMessage {
   id?: number | string;
+  message_id?: number | string;
+  chat_id?: number | string;
   sender?: string;
   role?: string;
   content?: string;
@@ -36,10 +38,13 @@ export interface BackendMessage {
   provider_name?: string;
   input_tokens?: number;
   output_tokens?: number;
+  metadata?: Record<string, unknown>;
+  pins_tagged?: unknown[];
   document_id?: string | number | null;
   document_url?: string | null;
   is_pinned?: boolean;
   pin?: BackendPin | null;
+  referenced_message_id?: string | number | null;
 }
 
 const extractCsrfToken = (data: unknown): string | undefined => {
@@ -120,6 +125,7 @@ export interface CreateChatPayload {
   firstMessage: string;
   model?: Pick<AIModel, "companyName" | "modelName" | "version"> | null;
   user?: AuthUser | null;
+  pinIds?: string[];
 }
 
 export interface CreateChatResult {
@@ -127,6 +133,8 @@ export interface CreateChatResult {
   csrfToken?: string;
   initialResponse?: string | null;
   initialMessageId?: string | null;
+  initialMessageMetadata?: Record<string, unknown> | null;
+  message?: BackendMessage | null;
 }
 
 export async function createChat(
@@ -149,22 +157,39 @@ export async function createChat(
 
   const data = await response.json();
   const chat = (data?.chat ?? data) as BackendChat;
+  const messagePayload =
+    data?.message && typeof data.message === "object" ? (data.message as BackendMessage) : null;
   const initialResponse =
     typeof data?.response === "string"
       ? data.response
       : typeof data?.chat?.response === "string"
       ? data.chat.response
+      : typeof messagePayload?.response === "string"
+      ? messagePayload.response
+      : typeof messagePayload?.content === "string"
+      ? messagePayload.content
+      : typeof messagePayload?.message === "string"
+      ? messagePayload.message
       : undefined;
+  const initialMessageIdRaw =
+    data?.messageId ??
+    data?.message_id ??
+    data?.chat?.messageId ??
+    data?.chat?.message_id ??
+    (messagePayload?.message_id ?? messagePayload?.id);
   const initialMessageId =
-    typeof data?.messageId === "string"
-      ? data.messageId
-      : typeof data?.chat?.messageId === "string"
-      ? data.chat.messageId
+    initialMessageIdRaw !== undefined && initialMessageIdRaw !== null
+      ? String(initialMessageIdRaw)
       : undefined;
   return {
     chat,
     csrfToken: extractCsrfToken(data),
     initialResponse: initialResponse ?? null,
     initialMessageId: initialMessageId ?? null,
+    initialMessageMetadata:
+      messagePayload && typeof messagePayload.metadata === "object"
+        ? (messagePayload.metadata as Record<string, unknown>)
+        : null,
+    message: messagePayload,
   };
 }

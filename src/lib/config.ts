@@ -1,6 +1,6 @@
 "use client";
 
-const DEFAULT_API_BASE_URL = "http://localhost:8000";
+const DEFAULT_API_BASE_URL = "https://jellyfish-app-7brqd.ondigitalocean.app";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ?? DEFAULT_API_BASE_URL;
@@ -26,7 +26,6 @@ export const PINS_ENDPOINT = `${API_BASE_URL}/pins/`;
 export const PIN_FOLDERS_ENDPOINT = `${API_BASE_URL}/pin-folders/`;
 export const DOCUMENTS_ENDPOINT = `${API_BASE_URL}/documents/`;
 export const DOCUMENT_SEARCH_ENDPOINT = `${API_BASE_URL}/documents/search/`;
-export const GENERATE_IMAGE_ENDPOINT = `${API_BASE_URL}/generate-image/`;
 export const TOKENS_ENDPOINT = `${API_BASE_URL}/tokens/`;
 
 export const allTags = ["Finance Research", "Product Analysis Q4", "Marketing Strategy"];

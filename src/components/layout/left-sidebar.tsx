@@ -35,8 +35,6 @@ import {
 } from "../ui/tooltip";
 import type { ChatBoard } from "./app-layout";
 import { useAuth } from "@/context/auth-context";
-import { useToast } from "@/hooks/use-toast";
-
 interface LeftSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
@@ -57,128 +55,6 @@ interface LeftSidebarProps {
   starUpdatingChatId: string | null;
 }
 
-const dummyChatBoards: ChatBoard[] = [
-  {
-    id: "demo-chat-1",
-    name: "Exec Briefing Prep",
-    time: "3m ago",
-    isStarred: false,
-    pinCount: 3,
-    metadata: { messageCount: 24, pinCount: 3 },
-  },
-  {
-    id: "demo-chat-2",
-    name: "Persona Workshop Notes",
-    time: "12m ago",
-    isStarred: false,
-    pinCount: 1,
-    metadata: { messageCount: 18, pinCount: 1 },
-  },
-  {
-    id: "demo-chat-3",
-    name: "Latency Bench Triage",
-    time: "1h ago",
-    isStarred: false,
-    pinCount: 2,
-    metadata: { messageCount: 42, pinCount: 2 },
-  },
-  {
-    id: "demo-chat-4",
-    name: "Pricing FAQ Refresh",
-    time: "2h ago",
-    isStarred: false,
-    pinCount: 0,
-    metadata: { messageCount: 15, pinCount: 0 },
-  },
-  {
-    id: "demo-chat-5",
-    name: "Q4 Marketing Strategy",
-    time: "3h ago",
-    isStarred: true,
-    pinCount: 5,
-    metadata: { messageCount: 36, pinCount: 5 },
-  },
-  {
-    id: "demo-chat-6",
-    name: "API Documentation Review",
-    time: "5h ago",
-    isStarred: false,
-    pinCount: 2,
-    metadata: { messageCount: 28, pinCount: 2 },
-  },
-  {
-    id: "demo-chat-7",
-    name: "Customer Feedback Analysis",
-    time: "Yesterday",
-    isStarred: true,
-    pinCount: 8,
-    metadata: { messageCount: 54, pinCount: 8 },
-  },
-  {
-    id: "demo-chat-8",
-    name: "Design System Updates",
-    time: "Yesterday",
-    isStarred: false,
-    pinCount: 1,
-    metadata: { messageCount: 22, pinCount: 1 },
-  },
-  {
-    id: "demo-chat-9",
-    name: "Security Audit Findings",
-    time: "2 days ago",
-    isStarred: false,
-    pinCount: 4,
-    metadata: { messageCount: 31, pinCount: 4 },
-  },
-  {
-    id: "demo-chat-10",
-    name: "Product Roadmap Discussion",
-    time: "2 days ago",
-    isStarred: true,
-    pinCount: 6,
-    metadata: { messageCount: 48, pinCount: 6 },
-  },
-  {
-    id: "demo-chat-11",
-    name: "Onboarding Flow Improvements",
-    time: "3 days ago",
-    isStarred: false,
-    pinCount: 3,
-    metadata: { messageCount: 19, pinCount: 3 },
-  },
-  {
-    id: "demo-chat-12",
-    name: "Infrastructure Cost Optimization",
-    time: "3 days ago",
-    isStarred: false,
-    pinCount: 2,
-    metadata: { messageCount: 27, pinCount: 2 },
-  },
-  {
-    id: "demo-chat-13",
-    name: "Mobile App Feature Planning",
-    time: "4 days ago",
-    isStarred: false,
-    pinCount: 7,
-    metadata: { messageCount: 45, pinCount: 7 },
-  },
-  {
-    id: "demo-chat-14",
-    name: "User Research Synthesis",
-    time: "5 days ago",
-    isStarred: true,
-    pinCount: 4,
-    metadata: { messageCount: 33, pinCount: 4 },
-  },
-  {
-    id: "demo-chat-15",
-    name: "Competitor Analysis Report",
-    time: "1 week ago",
-    isStarred: false,
-    pinCount: 5,
-    metadata: { messageCount: 39, pinCount: 5 },
-  },
-];
 
 export function LeftSidebar({
   isCollapsed,
@@ -203,21 +79,14 @@ export function LeftSidebar({
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   
   // Determine if user is on chat board route
   const isOnChatBoard = pathname === "/" || pathname?.startsWith("/chat");
   const chatBoardButtonText = isOnChatBoard ? "New Chat Board" : "Chat Board";
-  const [dummyBoards, setDummyBoards] = useState<ChatBoard[]>(() =>
-    dummyChatBoards.map((board) => ({ ...board }))
-  );
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
-  const hasRealBoards = chatBoards.length > 0;
-  const usingDummyBoards = !hasRealBoards;
-  const sourceBoards = hasRealBoards ? chatBoards : dummyBoards;
-  const boardsToDisplay = sourceBoards.filter((board) => {
+  const boardsToDisplay = chatBoards.filter((board) => {
     if (!normalizedSearch) return true;
     const haystack = `${board.name} ${board.time ?? ""}`.toLowerCase();
     return haystack.includes(normalizedSearch);
@@ -485,15 +354,15 @@ export function LeftSidebar({
             {boardsToDisplay.length > 0 ? (
               <div className="mt-4 flex-1 space-y-2 overflow-y-auto pr-1 scrollbar-hidden">
                 {boardsToDisplay.map((board) => {
-                  const isDummy = usingDummyBoards;
-                  const isActive = !isDummy && activeChatId === board.id;
+                  const isActive = activeChatId === board.id;
                   const pinTotal =
-                    board.pinCount ?? board.metadata?.pinCount ?? 0;
+                    board.metadata?.pinCount ??
+                    board.pinCount ??
+                    0;
                   const isRenamingBoard =
-                    !isDummy && renamingChatId === board.id;
+                    renamingChatId === board.id;
 
                   const handleSelect = () => {
-                    if (isDummy) return;
                     if (renamingChatId) {
                       onRenameCancel();
                     }
@@ -502,23 +371,6 @@ export function LeftSidebar({
                   };
 
                   const handleToggleStar = () => {
-                    if (isDummy) {
-                      const willStar = !board.isStarred;
-                      setDummyBoards((prev) =>
-                        prev.map((item) =>
-                          item.id === board.id
-                            ? { ...item, isStarred: !item.isStarred }
-                            : item
-                        )
-                      );
-                      toast({
-                        title: willStar ? "Chat starred" : "Star removed",
-                        description: willStar
-                          ? "Added to your favorites."
-                          : "Removed from favorites.",
-                      });
-                      return;
-                    }
                     void onToggleStar(board);
                   };
 
@@ -532,31 +384,12 @@ export function LeftSidebar({
                   };
 
                   const handleDelete = () => {
-                    if (isDummy) {
-                      setDummyBoards((prev) =>
-                        prev.filter((item) => item.id !== board.id)
-                      );
-                      return;
-                    }
                     handleDeleteClick(board);
                   };
 
                   const handleRenameSubmit = () => {
                     const trimmed = renamingText.trim();
                     if (!trimmed) return;
-                    if (isDummy) {
-                      setDummyBoards((prev) =>
-                        prev.map((item) =>
-                          item.id === board.id ? { ...item, name: trimmed } : item
-                        )
-                      );
-                      onRenameCancel();
-                      toast({
-                        title: "Chat renamed",
-                        description: "Name updated successfully.",
-                      });
-                      return;
-                    }
                     void onRenameConfirm();
                   };
 
@@ -591,7 +424,7 @@ export function LeftSidebar({
                         isRenamingBoard ? isRenamingPending : false
                       }
                       isStarPending={
-                        !isDummy && starUpdatingChatId === board.id
+                        starUpdatingChatId === board.id
                       }
                     />
                   );
