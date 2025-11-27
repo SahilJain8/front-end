@@ -544,25 +544,25 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
   })();
 
   const AvatarComponent = (
-    <Avatar
-      className={cn(
-        "h-9 w-9 text-xs font-semibold",
-        isUser
-          ? "border border-[#111827] bg-transparent text-[#111827]"
-          : "border border-transparent bg-transparent text-[#111827]"
-      )}
-    >
-      {message.avatarUrl && (
-        <AvatarImage
-          src={message.avatarUrl}
-          alt={isUser ? "User" : "AI"}
-          data-ai-hint={message.avatarHint}
-        />
-      )}
-      <AvatarFallback className="bg-transparent text-xs font-semibold text-[#111827]">
-        {fallbackText}
-      </AvatarFallback>
-    </Avatar>
+    !isUser && (
+      <Avatar
+        className={cn(
+          "h-9 w-9 text-xs font-semibold",
+          "border border-transparent bg-transparent text-[#111827]"
+        )}
+      >
+        {message.avatarUrl && (
+          <AvatarImage
+            src={message.avatarUrl}
+            alt={"AI"}
+            data-ai-hint={message.avatarHint}
+          />
+        )}
+        <AvatarFallback className="bg-transparent text-xs font-semibold text-[#111827]">
+          {fallbackText}
+        </AvatarFallback>
+      </Avatar>
+    )
   );
 
   const renderActions = (className?: string) => (
@@ -577,7 +577,8 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
           isUser ? "flex-row-reverse" : "flex-row"
         )}
       >
-        <div className="mt-1 shrink-0">{AvatarComponent}</div>
+        {/* Only show avatar for AI, not user */}
+        {!isUser && <div className="mt-1 shrink-0">{AvatarComponent}</div>}
         <div
           className={cn(
             "flex flex-1 flex-col gap-2",
@@ -592,11 +593,21 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
           >
             <div
               className={cn(
-                "group/bubble chat-message-bubble relative rounded-[28px] px-6 py-5 leading-relaxed",
+                "group/bubble chat-message-bubble relative",
                 isUser
-                  ? "chat-message-bubble--user bg-white text-[#111827] border border-[#E4E4E7]"
-                  : "chat-message-bubble--ai bg-[#F7F7F8] text-[#111827]"
+                  ? "chat-message-bubble--user bg-white text-[#111827] border border-[#E4E4E7] px-4 py-2"
+                  : "chat-message-bubble--ai bg-[#F7F7F8] text-[#111827] px-6 py-5"
               )}
+              style={isUser ? {
+                borderTopLeftRadius: '25px', // Radius/400
+                borderTopRightRadius: '12px', // Radius/200
+                borderBottomRightRadius: '25px', // Radius/400
+                borderBottomLeftRadius: '25px', // Radius/400
+                paddingTop: '8px',
+                paddingBottom: '8px',
+                paddingLeft: '16px',
+                paddingRight: '16px',
+              } : {}}
             >
               {message.referencedMessageId && referencedMessage && (
                 <div className="mb-3 border-b border-slate-200 pb-3">
@@ -659,7 +670,7 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
                   {contentSegments.map((segment, index) => {
                 if (segment.type === "code") {
                   return (
-                    <div key={`code-${message.id}-${index}`} className="relative rounded-2xl bg-slate-900 text-slate-50">
+                    <div key={`code-${message.id}-${index}`} className="relative rounded-2xl bg-[#f9f9f9] text-[#222]">
                       <div className="absolute right-3 top-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-white/70">
                         {segment.language && (
                           <span>{segment.language}</span>
@@ -711,10 +722,11 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
               {renderActions("flex items-center gap-1 rounded-full bg-[#F5F5F5]/80 px-1.5 py-1 text-xs backdrop-blur-sm")}
             </div>
           </div>
-          {taggedPins.length > 0 && (
+          {/* Show tagged pins above user chat bubble only */}
+          {isUser && taggedPins.length > 0 && (
             <div
               className={cn(
-                "flex flex-wrap gap-2",
+                "mb-1 flex flex-wrap gap-2",
                 isUser ? "justify-end" : "justify-start"
               )}
             >

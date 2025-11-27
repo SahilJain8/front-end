@@ -489,12 +489,14 @@ export function RightSidebar({
               );
             })
           ) : (
-            <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-[#dcdcdc] px-6 py-8 text-center text-sm text-[#5a5a5a]">
-              <Pin className="h-8 w-8 text-[#1e1e1e]" />
-              <p className="text-base font-semibold text-[#1e1e1e]">No pins yet</p>
-              <p className="text-sm text-[#5a5a5a]">
-                Pin useful answers or references from your chats to keep them handy for later.
-              </p>
+            <div className="flex flex-1 min-h-[320px] items-center justify-center">
+              <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-[#dcdcdc] px-6 py-8 text-center text-sm text-[#5a5a5a] max-w-[320px] w-full">
+                <Pin className="h-8 w-8 text-[#1e1e1e]" />
+                <p className="text-base font-semibold text-[#1e1e1e]">No pins yet</p>
+                <p className="text-sm text-[#5a5a5a]">
+                  Pin useful answers or references from your chats to keep them handy for later.
+                </p>
+              </div>
             </div>
           )}
         </div>

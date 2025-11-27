@@ -171,8 +171,8 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
     };
 
     return (
-            <Card className="border border-[#e6e6e6] bg-white" style={{ width: '235px', minHeight: compact ? 'auto' : '180.72px', borderRadius: '8px' }}>
-            <CardContent className="flex flex-col p-3" style={{ gap: '8px' }}>
+            <Card className="border border-[#e6e6e6] bg-white font-[var(--font-geist)]" style={{ width: '235px', minHeight: compact ? 'auto' : '180.72px', borderRadius: '8px', fontFamily: 'var(--font-geist)' }}>
+            <CardContent className="flex flex-col p-3 font-[var(--font-geist)]" style={{ gap: '8px', fontFamily: 'var(--font-geist)' }}>
                 {/* Title with dropdown menu */}
                 <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -180,12 +180,12 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                             <div className="space-y-2">
                                 <Textarea 
                                     ref={titleTextareaRef}
-                                    className="min-h-[60px] resize-none rounded-md border border-[#dcdcdc] bg-white p-2 text-[#1e1e1e] scrollbar-transparent"
+                                    className="min-h-[60px] resize-none rounded-md border border-[#dcdcdc] bg-white p-2 text-[#1e1e1e] scrollbar-transparent font-[var(--font-geist)]"
                                     value={titleInput}
                                     onChange={(e) => setTitleInput(e.target.value)}
                                     onKeyDown={handleTitleKeyDown}
                                     rows={2}
-                                    style={{ fontFamily: 'Inter', fontWeight: 500, fontSize: '16px', lineHeight: '140%' }}
+                                    style={{ fontFamily: 'var(--font-geist)', fontWeight: 500, fontSize: '16px', lineHeight: '140%' }}
                                 />
                                 <div className="flex gap-2">
                                     <Button 
@@ -209,7 +209,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                                 </div>
                             </div>
                         ) : (
-                            <p className="text-[#1e1e1e]" style={{ fontFamily: 'Inter', fontWeight: 500, fontSize: '16px', lineHeight: '140%' }}>
+                            <p className="text-[#1e1e1e] font-[var(--font-geist)]" style={{ fontFamily: 'var(--font-geist)', fontWeight: 500, fontSize: '16px', lineHeight: '140%' }}>
                                 {isExpanded || pin.text.length <= 50 ? pin.text : `${pin.text.substring(0, 50)}...`}
                                 {pin.text.length > 50 && (
                                     <Button variant="link" className="h-auto p-0 ml-1 text-xs text-[#3b82f6] hover:text-[#2563eb]" onClick={() => setIsExpanded(!isExpanded)}>
@@ -250,7 +250,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                             <input
                                 type="text"
                                 placeholder="Add Tag"
-                                className="border border-[#d4d4d4] bg-transparent text-[#1e1e1e] placeholder:text-[#9F9F9F] focus:outline-none focus:ring-0"
+                                className="border border-[#d4d4d4] bg-transparent text-[#1e1e1e] placeholder:text-[#9F9F9F] focus:outline-none focus:ring-0 font-[var(--font-geist)]"
                                 value={tagInput}
                                 onChange={(e) => setTagInput(e.target.value)}
                                 onKeyDown={handleTagKeyDown}
@@ -287,7 +287,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                             >
                                 <Badge
                                     variant="secondary"
-                                    className="rounded-md px-2 text-[10px] font-normal text-white border-0"
+                                    className="rounded-md px-2 text-[10px] font-normal text-white border-0 font-[var(--font-geist)]"
                                     style={{ backgroundColor: getTagColor(tag), height: '17.85px', display: 'flex', alignItems: 'center' }}
                                 >
                                     {tag}
@@ -307,7 +307,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
 
                 {/* Chat name and time */}
                 <div className="flex justify-between items-center">
-                    <span className="text-[#1e1e1e]" style={{ fontFamily: 'Inter', fontWeight: 400, fontSize: '10px', lineHeight: '130%', letterSpacing: '0.015em' }}>
+                    <span className="text-[#1e1e1e] font-[var(--font-geist)]" style={{ fontFamily: 'var(--font-geist)', fontWeight: 400, fontSize: '10px', lineHeight: '130%', letterSpacing: '0.015em' }}>
                         {chatName || 'Untitled Chat'}
                     </span>
                     <span className="text-xs text-[#7a7a7a]">{formatTimestamp(pin.time)}</span>
@@ -335,8 +335,25 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                                         variant="outline"
                                         size="sm"
                                         onClick={handleGoToChat}
-                                        className="bg-[#F5F5F5] border border-[#D4D4D4] text-[#1e1e1e] hover:bg-[#E5E5E5] hover:text-[#1e1e1e] font-bold"
-                                        style={{ width: '76px', height: '24px', minHeight: '24px', borderRadius: '4px', paddingTop: '3px', paddingBottom: '3px', paddingLeft: '8px', paddingRight: '8px', fontFamily: 'Geist', fontWeight: 500, fontSize: '12px', lineHeight: '150%', letterSpacing: '1.5%', textAlign: 'center' }}
+                                        className="bg-[#F5F5F5] border border-[#D4D4D4] text-[#1e1e1e] hover:bg-[#E5E5E5] hover:text-[#1e1e1e] font-medium"
+                                        style={{
+                                            width: '76px',
+                                            height: '24px',
+                                            minHeight: '24px',
+                                            borderRadius: '4px',
+                                            paddingTop: '3px',
+                                            paddingBottom: '3px',
+                                            paddingLeft: '8px',
+                                            paddingRight: '8px',
+                                            fontFamily: 'Geist',
+                                            fontWeight: 500,
+                                            fontStyle: 'normal',
+                                            fontSize: '12px',
+                                            lineHeight: '150%',
+                                            letterSpacing: '0.018em',
+                                            textAlign: 'center',
+                                            verticalAlign: 'middle',
+                                        }}
                                     >
                                         Go to chat
                                     </Button>
@@ -373,7 +390,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                                 {comments.map((comment, index) => (
                                     <div 
                                         key={index}
-                                        className="group relative rounded-lg bg-[#F9F9F9] p-2 text-xs text-[#1e1e1e]"
+                                        className="group relative rounded-lg bg-[#F9F9F9] p-2 text-xs text-[#1e1e1e] font-[var(--font-geist)]"
                                     >
                                         {comment}
                                         <button
@@ -396,7 +413,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                         <div className="relative flex items-center" style={{ width: '211px' }}>
                             <Input 
                                 placeholder="Add your comment..." 
-                                className="w-full rounded-[8px] border border-[#dcdcdc] bg-white pr-9 text-xs text-[#1e1e1e]"
+                                className="w-full rounded-[8px] border border-[#dcdcdc] bg-white pr-9 text-xs text-[#1e1e1e] font-[var(--font-geist)]"
                                 style={{ height: '36px', minHeight: '36px', paddingTop: '7.5px', paddingBottom: '7.5px', paddingLeft: '12px', paddingRight: '6px' }}
                                 value={commentInput}
                                 onChange={(e) => setCommentInput(e.target.value)}
