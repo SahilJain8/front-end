@@ -417,11 +417,11 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(actionButtonClasses, isPinned && "bg-[#4A4A4A] text-white hover:bg-[#4A4A4A]")}
+                className={actionButtonClasses}
                 onClick={() => onPin(message)}
                 aria-pressed={isPinned}
               >
-                <Pin className={cn("h-4 w-4", isPinned && "fill-white")} />
+                <Pin className={cn("h-4 w-4 stroke-2", isPinned ? "fill-black text-black" : "fill-none text-[#4A4A4A]")} />
               </Button>
             </TooltipTrigger>
             <TooltipContent><p>{isPinned ? "Unpin" : "Pin"} message</p></TooltipContent>
@@ -468,7 +468,7 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={cn(actionButtonClasses, message.metadata?.userReaction === "like" && "bg-[#E4E4E7] text-[#111827]")}
+                  className={actionButtonClasses}
                   onClick={() =>
                     onReact(
                       message,
@@ -477,7 +477,7 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
                   }
                   aria-pressed={message.metadata?.userReaction === "like"}
                 >
-                  <ThumbsUp className="h-4 w-4" />
+                  <ThumbsUp className={cn("h-4 w-4 stroke-2", message.metadata?.userReaction === "like" ? "fill-black text-black" : "fill-none text-[#111827]")} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent><p>Good response</p></TooltipContent>
@@ -489,7 +489,7 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={cn(actionButtonClasses, message.metadata?.userReaction === "dislike" && "bg-[#E4E4E7] text-[#111827]")}
+                  className={actionButtonClasses}
                   onClick={() =>
                     onReact(
                       message,
@@ -498,7 +498,7 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
                   }
                   aria-pressed={message.metadata?.userReaction === "dislike"}
                 >
-                  <ThumbsDown className="h-4 w-4" />
+                  <ThumbsDown className={cn("h-4 w-4 stroke-2", message.metadata?.userReaction === "dislike" ? "fill-black text-black" : "fill-none text-[#111827]")} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent><p>Needs improvement</p></TooltipContent>
@@ -506,7 +506,19 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
           )}
         </div>
         {message.metadata?.modelName && (
-          <span className="text-xs text-[#8a8a8a] font-medium pr-[5px]">
+          <span
+            className="text-xs font-medium pr-[5px]"
+            style={{
+              background: '#F5F5F5',
+              border: '1px solid #E5E5E5',
+              borderRadius: '8px',
+              padding: '2px 8px',
+              color: '#222',
+              display: 'inline-block',
+              marginLeft: '4px',
+              marginTop: '2px',
+            }}
+          >
             {message.metadata.modelName}
           </span>
         )}
@@ -591,22 +603,13 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
             )}
           >
             <div
-              className={cn(
-                "group/bubble chat-message-bubble relative px-4 py-2 leading-relaxed",
+              className={cn( //user chat input area input field box
+                "group/bubble chat-message-bubble relative px-4 py-2 leading-relaxed overflow-wrap break-words overflow-hidden rounded-2xl",
                 isUser
-                  ? "chat-message-bubble--user bg-white text-[#111827] border border-[#E4E4E7]"
+                  ? "chat-message-bubble--user bg-[#F7F7F8] text-[#111827] border border-[#E4E4E7]"
                   : "chat-message-bubble--ai bg-[#F7F7F8] text-[#111827]"
               )}
-              style={
-                isUser
-                  ? {
-                      borderTopLeftRadius: '400px',
-                      borderTopRightRadius: '200px',
-                      borderBottomRightRadius: '400px',
-                      borderBottomLeftRadius: '400px',
-                    }
-                  : undefined
-              }
+              style={{ borderRadius: '1rem' }}
             >
               {message.referencedMessageId && referencedMessage && (
                 <div className="mb-3 border-b border-slate-200 pb-3">
@@ -621,8 +624,8 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
                   </div>
                 </div>
               )}
-              {message.thinkingContent && (
-                <div className="mb-3 rounded-2xl border border-dashed border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              {message.thinkingContent && ( //show reasoning toggle for AI messages
+                <div className="mb-3 rounded-2xl border border border-[#D4D4D8] bg-[#F2F2F2F2] px-3 py-2 text-xs text-[#44404D]">
                   <button
                     type="button"
                     className="flex w-full items-center justify-between text-left font-semibold"
@@ -636,7 +639,7 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
                     )}
                   </button>
                   {showThinking && (
-                    <pre className="mt-2 whitespace-pre-wrap text-[11px] leading-relaxed text-amber-900/90">
+                    <pre className="mt-2 whitespace-pre-wrap text-[12px] leading-relaxed text-[#000000]">
                       {message.thinkingContent}
                     </pre>
                   )}
@@ -669,15 +672,16 @@ export function ChatMessage({ message, isPinned, taggedPins = [], onPin, onCopy,
                   {contentSegments.map((segment, index) => {
                 if (segment.type === "code") {
                   return (
-                    <div key={`code-${message.id}-${index}`} className="relative rounded-2xl bg-slate-900 text-slate-50">
-                      <div className="absolute right-3 top-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-white/70">
+                    // Changed code block styles for better readability - code block
+                    <div key={`code-${message.id}-${index}`} className="relative rounded-2xl bg-gray-100 text-black">
+                      <div className="absolute right-3 top-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-black/70">
                         {segment.language && (
                           <span>{segment.language}</span>
                         )}
                         <button
                           type="button"
-                          onClick={() => onCopy(segment.value)}
-                          className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                          onClick={() => onCopy(segment.value)} // copy button in code block
+                          className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2.5 py-1 text-[11px] font-medium text-black transition hover:bg-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                         >
                           <Copy className="h-3 w-3" />
                           Copy
