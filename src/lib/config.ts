@@ -1,7 +1,7 @@
 "use client";
 
-// Default to local backend over HTTP; override with NEXT_PUBLIC_BACKEND_URL when needed.
-const DEFAULT_API_BASE_URL = "http://localhost:8000";
+// Default to hosted backend; override with NEXT_PUBLIC_BACKEND_URL when needed.
+const DEFAULT_API_BASE_URL = "https://jellyfish-app-7brqd.ondigitalocean.app";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ?? DEFAULT_API_BASE_URL;
