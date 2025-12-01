@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Pin, X, MoreVertical, Trash2, Edit, MessageSquareText, Tag, ArrowUp } from "lucide-react";
+import { Pin, X, MoreVertical, Trash2, Edit, MessageSquareText, Tag, ArrowUp, Info } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Textarea } from "../ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -46,7 +46,9 @@ const formatTimestamp = (time: Date) => {
 
 export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, onInsertToChat, compact = false }: PinItemProps) => {
     const router = useRouter();
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [showInfo, setShowInfo] = useState(false);
+    const [isTitleExpanded, setIsTitleExpanded] = useState(false);
+    const TRUNCATE_TITLE_LEN = 50;
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>(pin.tags);
     const [noteInput, setNoteInput] = useState(pin.notes);
@@ -178,6 +180,8 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
     };
 
     const bodyContent = cleanContent(pin.formattedContent ?? pin.text);
+    // If the pin has a title that repeats at the start of the content, strip it for previews
+    const previewContent = (pin.title && bodyContent.startsWith((pin.title))) ? bodyContent.substring((pin.title).length).trim() : bodyContent;
     const handleInsertToChat = () => {
         if (onInsertToChat) {
             onInsertToChat(bodyContent);
@@ -185,9 +189,9 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
         }
     };
 
-    return (
-            <Card className="border border-[#e6e6e6] bg-white" style={{ width: '235px', minHeight: compact ? 'auto' : '180.72px', borderRadius: '8px' }}>
-            <CardContent className="flex flex-col p-3" style={{ gap: '8px' }}>
+        return (
+            <Card className="border border-[#e6e6e6] bg-white" style={{ width: '100%', minHeight: compact ? 'auto' : '160px', borderRadius: '8px', marginRight: '6px' }}>
+            <CardContent className="flex flex-col p-3" style={{ gap: '10px' }}>
                 {/* Title with dropdown menu */}
                 <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -224,9 +228,19 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                                 </div>
                             </div>
                         ) : (
-                            <p className="text-[#1e1e1e]" style={{ fontFamily: 'Inter', fontWeight: 500, fontSize: '16px', lineHeight: '140%' }}>
-                                {pin.title ?? pin.text}
-                            </p>
+                            <div>
+                                <div title={pin.title ?? pin.text}>
+                                    <p
+                                        className="text-[#1e1e1e]"
+                                        style={isTitleExpanded ? { fontFamily: 'Inter', fontWeight: 500, fontSize: '16px', lineHeight: '140%' } : { fontFamily: 'Inter', fontWeight: 500, fontSize: '16px', lineHeight: '140%', display: '-webkit-box', WebkitLineClamp: 2 as any, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}
+                                    >
+                                        {pin.title ?? pin.text}
+                                    </p>
+                                </div>
+                                {(pin.title && (pin.title.length > TRUNCATE_TITLE_LEN)) || (!pin.title && pin.text.length > TRUNCATE_TITLE_LEN) ? (
+                                    <button className="text-xs text-[#3b82f6] mt-1 p-0" onClick={() => setIsTitleExpanded(prev => !prev)}>{isTitleExpanded ? 'show less' : 'read more...'}</button>
+                                ) : null}
+                            </div>
                         )}
                     </div>
                     <DropdownMenu>
@@ -252,21 +266,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                     </DropdownMenu>
                 </div>
 
-                {/* Body snippet */}
-                <div className="text-sm text-[#3f3f3f]" style={{ lineHeight: '150%' }}>
-                    {isExpanded || bodyContent.length <= 120
-                      ? bodyContent
-                      : `${bodyContent.substring(0, 120)}...`}
-                    {bodyContent.length > 120 && (
-                      <Button
-                        variant="link"
-                        className="h-auto p-0 ml-1 text-xs text-[#3b82f6] hover:text-[#2563eb]"
-                        onClick={() => setIsExpanded(!isExpanded)}
-                      >
-                        {isExpanded ? "Show less" : "Show more"}
-                      </Button>
-                    )}
-                </div>
+                                {/* Inline preview removed to avoid duplicated title/content */}
 
                 {/* Tags section */}
                 <div className="flex flex-wrap items-center gap-2" style={{ maxHeight: '44px', overflow: 'hidden', alignContent: 'flex-start' }}>
@@ -353,6 +353,14 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                             </span>
                         )}
                     </button>
+                    <button
+                        onClick={() => setShowInfo(!showInfo)}
+                        className="flex items-center justify-center border border-[#D4D4D4] hover:bg-[#f5f5f5] transition-colors"
+                        style={{ width: '24px', height: '24px', minHeight: '24px', borderRadius: '9999px', padding: '4px' }}
+                        title={showInfo ? 'Hide details' : 'Show details'}
+                    >
+                        <Info className="text-[#666666]" style={{ width: '16px', height: '16px' }} />
+                    </button>
                     <TooltipProvider delayDuration={300}>
                         <div className="flex items-center gap-2">
                             <Tooltip>
@@ -395,7 +403,7 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                     <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
                         {/* Display existing comments */}
                         {comments.length > 0 && (
-                            <div className="space-y-2 max-h-[120px] overflow-y-auto">
+                            <div className="space-y-2 max-h-[120px] overflow-y-auto scrollbar-hidden">
                                 {comments.map((comment, index) => (
                                     <div 
                                         key={index}
@@ -419,11 +427,11 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                         )}
                         
                         {/* Comment input area */}
-                        <div className="relative flex items-center" style={{ width: '211px' }}>
+                        <div className="relative flex items-center" style={{ width: '100%' }}>
                             <Input 
                                 placeholder="Add your comment..." 
-                                className="w-full rounded-[8px] border border-[#dcdcdc] bg-white pr-9 text-xs text-[#1e1e1e]"
-                                style={{ height: '36px', minHeight: '36px', paddingTop: '7.5px', paddingBottom: '7.5px', paddingLeft: '12px', paddingRight: '6px' }}
+                                className="w-full rounded-[8px] border border-[#dcdcdc] bg-white pr-12 text-xs text-[#1e1e1e]"
+                                style={{ height: '36px', minHeight: '36px', paddingTop: '7.5px', paddingBottom: '7.5px', paddingLeft: '12px' }}
                                 value={commentInput}
                                 onChange={(e) => setCommentInput(e.target.value)}
                                 onKeyDown={(e) => {
@@ -440,12 +448,30 @@ export const PinItem = ({ pin, onUpdatePin, onRemoveTag, onDeletePin, chatName, 
                                 onClick={handleAddComment}
                                 disabled={!commentInput.trim()}
                                 className="absolute right-2 flex h-6 w-6 items-center justify-center rounded-full border border-[#1e1e1e] hover:bg-[#f5f5f5] disabled:opacity-40 disabled:cursor-not-allowed"
+                                style={{ top: '50%', transform: 'translateY(-50%)' }}
                             >
                                 <ArrowUp className="h-3.5 w-3.5 text-[#1e1e1e]" />
                             </button>
                         </div>
                     </div>
                 )}
+                {/* Info panel: toggled by Info button */}
+                {showInfo && (
+                    <div className="relative space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <button
+                            onClick={() => setShowInfo(false)}
+                            className="absolute top-1 right-1 rounded-md p-1 hover:bg-[#f0f0f0]"
+                            aria-label="Close summary"
+                        >
+                            <X className="h-3.5 w-3.5 text-[#666666]" />
+                        </button>
+                        <div className="text-xs text-[#6b6b6b]">Summary</div>
+                        <div className="rounded-lg bg-[#fafafa] p-2 text-sm text-[#1e1e1e]">
+                            {previewContent.length > 200 ? `${previewContent.substring(0, 200)}...` : previewContent}
+                        </div>
+                    </div>
+                )}
+                {/* Removed inline expansion — 'read more' now opens the Info summary panel */}
             </CardContent>
         </Card>
     );

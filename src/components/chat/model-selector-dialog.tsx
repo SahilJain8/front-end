@@ -43,213 +43,213 @@ export function ModelSelectorDialog({ open, onOpenChange, onModelSelect }: Model
   const [bookmarkedModels, setBookmarkedModels] = useState<Set<string>>(new Set());
   const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);
-useEffect(() => {
-  if (!open) return;
+  useEffect(() => {
+    if (!open) return;
 
-  // ✅ If we already have models in state, don't re-fetch
-  if (models.length > 0) {
-    setIsLoading(false);
-    return;
-  }
-
-  // ✅ Try sessionStorage first
-  const cached = sessionStorage.getItem("aiModels");
-  if (cached) {
-    try {
-      const parsed = JSON.parse(cached) as AIModel[];
-      setModels(parsed);
+    // ✅ If we already have models in state, don't re-fetch
+    if (models.length > 0) {
       setIsLoading(false);
       return;
-    } catch {
-      // ignore parse errors and fall through to fetch
     }
-  }
 
-  const fetchModels = async () => {
-    setIsLoading(true);
-    
-    let raw: AIModel[] = [];
-    try {
-      const response = await fetch(MODELS_ENDPOINT, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        console.warn(`Backend not available: ${response.status} ${response.statusText}`);
-      } else {
-        raw = await response.json();
-        console.log("Raw models from backend:", raw);
+    // ✅ Try sessionStorage first
+    const cached = sessionStorage.getItem("aiModels");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as AIModel[];
+        setModels(parsed);
+        setIsLoading(false);
+        return;
+      } catch {
+        // ignore parse errors and fall through to fetch
       }
-    } catch (fetchError) {
-      console.warn("Failed to fetch models from backend, using dummy data:", fetchError);
     }
-    
-    try {
 
-      // Add 9 dummy models for testing (3 paid + 6 new: 2 paid + 4 free)
-      const dummyModels: AIModel[] = [
-        {
-          companyName: "OpenAI",
-          modelName: "GPT-4",
-          version: "turbo",
-          modelType: "paid",
-          inputLimit: 128000,
-          outputLimit: 4096,
-        },
-        {
-          companyName: "Anthropic",
-          modelName: "Claude 3.5 Sonnet",
-          version: "latest",
-          modelType: "paid",
-          inputLimit: 200000,
-          outputLimit: 8192,
-        },
-        {
-          companyName: "Google",
-          modelName: "Gemini Pro",
-          version: "1.5",
-          modelType: "free",
-          inputLimit: 32000,
-          outputLimit: 2048,
-        },
-        {
-          companyName: "Meta",
-          modelName: "Llama 3.1",
-          version: "70B",
-          modelType: "free",
-          inputLimit: 128000,
-          outputLimit: 4096,
-        },
-        {
-          companyName: "Mistral AI",
-          modelName: "Mistral Large",
-          version: "2",
-          modelType: "paid",
-          inputLimit: 32000,
-          outputLimit: 8192,
-        },
-        {
-          companyName: "Cohere",
-          modelName: "Command R+",
-          version: "latest",
-          modelType: "paid",
-          inputLimit: 128000,
-          outputLimit: 4096,
-        },
-        {
-          companyName: "OpenAI",
-          modelName: "GPT-3.5 Turbo",
-          version: "latest",
-          modelType: "free",
-          inputLimit: 16000,
-          outputLimit: 4096,
-        },
-        {
-          companyName: "Google",
-          modelName: "PaLM 2",
-          version: "bison",
-          modelType: "free",
-          inputLimit: 8000,
-          outputLimit: 1024,
-        },
-        {
-          companyName: "Anthropic",
-          modelName: "Claude 3 Haiku",
-          version: "latest",
-          modelType: "free",
-          inputLimit: 200000,
-          outputLimit: 4096,
-        },
-      ];
+    const fetchModels = async () => {
+      setIsLoading(true);
 
-      const combinedModels = [...raw];
-      setModels(raw);
-      // ✅ cache in sessionStorage
-      sessionStorage.setItem("aiModels", JSON.stringify(combinedModels));
-    } catch (error) {
-      console.error("Error fetching models:", error);
-      // If fetch fails, at least show dummy models
-      const dummyModels: AIModel[] = [
-        {
-          companyName: "OpenAI",
-          modelName: "GPT-4",
-          version: "turbo",
-          modelType: "paid",
-          inputLimit: 128000,
-          outputLimit: 4096,
-        },
-        {
-          companyName: "Anthropic",
-          modelName: "Claude 3.5 Sonnet",
-          version: "latest",
-          modelType: "paid",
-          inputLimit: 200000,
-          outputLimit: 8192,
-        },
-        {
-          companyName: "Google",
-          modelName: "Gemini Pro",
-          version: "1.5",
-          modelType: "free",
-          inputLimit: 32000,
-          outputLimit: 2048,
-        },
-        {
-          companyName: "Meta",
-          modelName: "Llama 3.1",
-          version: "70B",
-          modelType: "free",
-          inputLimit: 128000,
-          outputLimit: 4096,
-        },
-        {
-          companyName: "Mistral AI",
-          modelName: "Mistral Large",
-          version: "2",
-          modelType: "paid",
-          inputLimit: 32000,
-          outputLimit: 8192,
-        },
-        {
-          companyName: "Cohere",
-          modelName: "Command R+",
-          version: "latest",
-          modelType: "paid",
-          inputLimit: 128000,
-          outputLimit: 4096,
-        },
-        {
-          companyName: "OpenAI",
-          modelName: "GPT-3.5 Turbo",
-          version: "latest",
-          modelType: "free",
-          inputLimit: 16000,
-          outputLimit: 4096,
-        },
-        {
-          companyName: "Google",
-          modelName: "PaLM 2",
-          version: "bison",
-          modelType: "free",
-          inputLimit: 8000,
-          outputLimit: 1024,
-        },
-        {
-          companyName: "Anthropic",
-          modelName: "Claude 3 Haiku",
-          version: "latest",
-          modelType: "free",
-          inputLimit: 200000,
-          outputLimit: 4096,
-        },
-      ];
-      setModels([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      let raw: AIModel[] = [];
+      try {
+        const response = await fetch(MODELS_ENDPOINT, {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          console.warn(`Backend not available: ${response.status} ${response.statusText}`);
+        } else {
+          raw = await response.json();
+          console.log("Raw models from backend:", raw);
+        }
+      } catch (fetchError) {
+        console.warn("Failed to fetch models from backend, using dummy data:", fetchError);
+      }
 
-  fetchModels();
-}, [open, models.length]);
+      try {
+
+        // Add 9 dummy models for testing (3 paid + 6 new: 2 paid + 4 free)
+        const dummyModels: AIModel[] = [
+          {
+            companyName: "OpenAI",
+            modelName: "GPT-4",
+            version: "turbo",
+            modelType: "paid",
+            inputLimit: 128000,
+            outputLimit: 4096,
+          },
+          {
+            companyName: "Anthropic",
+            modelName: "Claude 3.5 Sonnet",
+            version: "latest",
+            modelType: "paid",
+            inputLimit: 200000,
+            outputLimit: 8192,
+          },
+          {
+            companyName: "Google",
+            modelName: "Gemini Pro",
+            version: "1.5",
+            modelType: "free",
+            inputLimit: 32000,
+            outputLimit: 2048,
+          },
+          {
+            companyName: "Meta",
+            modelName: "Llama 3.1",
+            version: "70B",
+            modelType: "free",
+            inputLimit: 128000,
+            outputLimit: 4096,
+          },
+          {
+            companyName: "Mistral AI",
+            modelName: "Mistral Large",
+            version: "2",
+            modelType: "paid",
+            inputLimit: 32000,
+            outputLimit: 8192,
+          },
+          {
+            companyName: "Cohere",
+            modelName: "Command R+",
+            version: "latest",
+            modelType: "paid",
+            inputLimit: 128000,
+            outputLimit: 4096,
+          },
+          {
+            companyName: "OpenAI",
+            modelName: "GPT-3.5 Turbo",
+            version: "latest",
+            modelType: "free",
+            inputLimit: 16000,
+            outputLimit: 4096,
+          },
+          {
+            companyName: "Google",
+            modelName: "PaLM 2",
+            version: "bison",
+            modelType: "free",
+            inputLimit: 8000,
+            outputLimit: 1024,
+          },
+          {
+            companyName: "Anthropic",
+            modelName: "Claude 3 Haiku",
+            version: "latest",
+            modelType: "free",
+            inputLimit: 200000,
+            outputLimit: 4096,
+          },
+        ];
+
+        const combinedModels = [...raw];
+        setModels(raw);
+        // ✅ cache in sessionStorage
+        sessionStorage.setItem("aiModels", JSON.stringify(combinedModels));
+      } catch (error) {
+        console.error("Error fetching models:", error);
+        // If fetch fails, at least show dummy models
+        const dummyModels: AIModel[] = [
+          {
+            companyName: "OpenAI",
+            modelName: "GPT-4",
+            version: "turbo",
+            modelType: "paid",
+            inputLimit: 128000,
+            outputLimit: 4096,
+          },
+          {
+            companyName: "Anthropic",
+            modelName: "Claude 3.5 Sonnet",
+            version: "latest",
+            modelType: "paid",
+            inputLimit: 200000,
+            outputLimit: 8192,
+          },
+          {
+            companyName: "Google",
+            modelName: "Gemini Pro",
+            version: "1.5",
+            modelType: "free",
+            inputLimit: 32000,
+            outputLimit: 2048,
+          },
+          {
+            companyName: "Meta",
+            modelName: "Llama 3.1",
+            version: "70B",
+            modelType: "free",
+            inputLimit: 128000,
+            outputLimit: 4096,
+          },
+          {
+            companyName: "Mistral AI",
+            modelName: "Mistral Large",
+            version: "2",
+            modelType: "paid",
+            inputLimit: 32000,
+            outputLimit: 8192,
+          },
+          {
+            companyName: "Cohere",
+            modelName: "Command R+",
+            version: "latest",
+            modelType: "paid",
+            inputLimit: 128000,
+            outputLimit: 4096,
+          },
+          {
+            companyName: "OpenAI",
+            modelName: "GPT-3.5 Turbo",
+            version: "latest",
+            modelType: "free",
+            inputLimit: 16000,
+            outputLimit: 4096,
+          },
+          {
+            companyName: "Google",
+            modelName: "PaLM 2",
+            version: "bison",
+            modelType: "free",
+            inputLimit: 8000,
+            outputLimit: 1024,
+          },
+          {
+            companyName: "Anthropic",
+            modelName: "Claude 3 Haiku",
+            version: "latest",
+            modelType: "free",
+            inputLimit: 200000,
+            outputLimit: 4096,
+          },
+        ];
+        setModels([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchModels();
+  }, [open, models.length]);
 
 
   const toggleBookmark = (modelName: string, e: React.MouseEvent) => {
@@ -267,24 +267,24 @@ useEffect(() => {
 
   const filteredModels = models.filter((model) => {
     // Filter by free/paid checkboxes
-    const matchesType = 
-      (showFree && model.modelType === "free") || 
+    const matchesType =
+      (showFree && model.modelType === "free") ||
       (showPaid && model.modelType === "paid");
-    
+
     if (!matchesType) return false;
 
     // Filter by search term
-    const matchesSearch = 
+    const matchesSearch =
       model.modelName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       model.companyName.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     if (!matchesSearch) return false;
 
     // Filter by category (assuming we categorize based on model name or type)
     // This is a placeholder - adjust based on your actual data structure
     if (category !== "all") {
       const modelCategory = model.modelName.toLowerCase().includes("image") ? "image" :
-                           model.modelName.toLowerCase().includes("video") ? "video" : "text";
+        model.modelName.toLowerCase().includes("video") ? "video" : "text";
       if (modelCategory !== category) return false;
     }
 
@@ -310,10 +310,10 @@ useEffect(() => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
+      <DialogContent
         className="bg-white text-[#171717] p-2 gap-1"
-        style={{ 
-          width: "580px", 
+        style={{
+          width: "580px",
           maxWidth: "580px",
           height: "420px",
           borderRadius: "10px",
@@ -352,8 +352,8 @@ useEffect(() => {
           </div>
           <div className="filter-checkboxes">
             <div className="checkbox-item">
-              <Checkbox 
-                id="free" 
+              <Checkbox
+                id="free"
                 checked={showFree}
                 onCheckedChange={(checked) => setShowFree(checked as boolean)}
                 className="checkbox-square"
@@ -363,8 +363,8 @@ useEffect(() => {
               </Label>
             </div>
             <div className="checkbox-item">
-              <Checkbox 
-                id="paid" 
+              <Checkbox
+                id="paid"
                 checked={showPaid}
                 onCheckedChange={(checked) => setShowPaid(checked as boolean)}
                 className="checkbox-square"
@@ -400,7 +400,7 @@ useEffect(() => {
                 const isBookmarked = bookmarkedModels.has(model.modelName);
                 const isSelected = selectedModel?.modelName === model.modelName;
                 const isHovered = hoveredModel === model.modelName;
-                
+
                 return (
                   <TooltipProvider key={index}>
                     <div
@@ -459,8 +459,8 @@ useEffect(() => {
                           className="action-button"
                           onClick={(e) => toggleBookmark(model.modelName, e)}
                         >
-                          <Bookmark 
-                            className="h-3.5 w-3.5 text-[#666666]" 
+                          <Bookmark
+                            className="h-3.5 w-3.5 text-[#666666]"
                             fill={isBookmarked ? "#000000" : "none"}
                             stroke={isBookmarked ? "#000000" : "currentColor"}
                           />

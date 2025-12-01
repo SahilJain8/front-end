@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useContext, useMemo } from "react";
+import chatStyles from "./chat-interface.module.css";
 import { Button } from "@/components/ui/button";
+
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -283,6 +286,14 @@ export function ChatInterface({
       viewport.scrollTop = viewport.scrollHeight;
     }
   }, [messages, isScrolledToBottom]);
+
+  // Show scroll-to-bottom button when not at bottom
+  const handleScrollToBottom = () => {
+    const viewport = scrollViewportRef.current;
+    if (viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+  };
 
   const fetchAiResponse = async (
     userMessage: string,
@@ -1165,7 +1176,7 @@ export function ChatInterface({
         </section>
       ) : (
         <div
-          className="flex-1 min-h-0 overflow-y-auto scrollbar-hidden"
+          className={`relative flex-1 min-h-0 overflow-y-auto ${chatStyles.customScrollbar}`}
           ref={scrollViewportRef}
           onScroll={handleScroll}
         >
@@ -1230,6 +1241,28 @@ export function ChatInterface({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+
+      {/* Scroll to bottom button - floating inside scrollable chat window */}
+      {!isScrolledToBottom && (
+        <div className="pointer-events-none">
+          <button
+            type="button"
+            onClick={handleScrollToBottom}
+            className="absolute left-1/2 -translate-x-1/2 z-30 flex items-center justify-center rounded-full bg-white border border-[#D9D9D9] shadow-md hover:bg-[#F5F5F5] transition-colors h-10 w-10"
+            aria-label="Scroll to bottom"
+            style={{ bottom: '140px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', pointerEvents: 'auto' }}
+          >
+            {/* Down arrow with vertical line icon, perfectly centered */}
+            <span className="flex items-center justify-center h-full w-full">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                <line x1="12" y1="5" x2="12" y2="17" />
+                <polyline points="6 13 12 19 18 13" />
+              </svg>
+            </span>
+          </button>
         </div>
       )}
 

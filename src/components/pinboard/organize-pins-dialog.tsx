@@ -133,7 +133,7 @@ export function OrganizePinsDialog({
   const [isEditingFolder, setIsEditingFolder] = useState<boolean>(false);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState<string>("");
-  const [selectedFolderId, setSelectedFolderId] = useState<string>("unorganized");
+  const [selectedFolderIds, setSelectedFolderIds] = useState<string[]>(["unorganized"]);
   
   // Use dummy pins if no real pins exist
   const pinsToDisplay = initialPins.length > 0 ? initialPins : dummyPins;
@@ -157,7 +157,15 @@ export function OrganizePinsDialog({
   }, [pinsToDisplay, folders]);
 
   const unorganizedPins = pinsByFolder["unorganized"] || [];
-  const selectedFolderPins = pinsByFolder[selectedFolderId] || [];
+  const selectedFolderPins = useMemo(() => {
+    // Aggregate pins from all selected folders
+    const pins: PinType[] = [];
+    selectedFolderIds.forEach(id => {
+      const list = pinsByFolder[id] || [];
+      list.forEach(p => pins.push(p));
+    });
+    return pins;
+  }, [pinsByFolder, selectedFolderIds]);
 
   const handlePinUpdate = (updatedPin: PinType) => {
     if (initialPins.length > 0) {
@@ -316,15 +324,13 @@ export function OrganizePinsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent
-        style={{ width: "min(750px, 95vw)", maxWidth: "750px", height: "min(692px, 90vh)", maxHeight: "692px", borderRadius: "10px", border: "1px solid #e6e6e6", paddingLeft: "18px", paddingRight: "18px" }}
-        className="flex flex-col bg-white p-0 text-[#171717] gap-0"
-      >
-        <DialogHeader className="border-b bg-white py-4 text-[#171717] space-y-3">
-          <DialogTitle className="text-left text-[#171717] font-semibold text-base">Organize Pins</DialogTitle>
+      <DialogContent className="organize-dialog flex flex-col bg-transparent p-0 text-[#171717] gap-0">
+        <div className="organize-dialog-inner flex flex-col">
+        <DialogHeader className="border-b bg-white py-6 px-6 text-[#171717] space-y-4">
+          <DialogTitle className="text-left text-[#171717] font-semibold text-lg">Organize Pins</DialogTitle>
           
           {/* Search Input */}
-          <div className="relative w-full max-w-[331px]">
+          <div className="relative w-full max-w-[420px] mt-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#9a9a9a]" />
             <input
               type="text"
@@ -341,7 +347,7 @@ export function OrganizePinsDialog({
                 paddingTop: "7.5px",
                 paddingBottom: "7.5px",
                 paddingLeft: "40px",
-                paddingRight: "12px",
+                paddingRight: "20px",
                 gap: "8px"
               }}
             />
@@ -356,11 +362,11 @@ export function OrganizePinsDialog({
           </div>
         </DialogHeader>
         
-        <div className="flex-1 flex overflow-hidden py-4" style={{ gap: "2px" }}>
+        <div className="flex-1 flex overflow-hidden py-4 min-h-0" style={{ gap: "6px" }}>
           {/* Left Section (Folders) */}
-          <div className="flex flex-col bg-[#F5F5F5] flex-shrink-0" style={{ width: "min(332px, 45%)", minWidth: "200px", height: "541px", maxHeight: "100%", borderRadius: "10px", padding: "16px", gap: "16px" }}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#171717]">Folders</h3>
+          <div className="flex flex-col bg-[#F5F5F5] flex-shrink-0" style={{ width: "min(380px, 46%)", minWidth: "220px", height: "541px", maxHeight: "100%", borderRadius: "10px", padding: "12px 12px 12px 20px", gap: "12px" }}>
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-sm font-semibold text-[#171717]">Folders</h3>
               {folders.length > 1 && (
                 <Button
                   onClick={handleCreateFolder}
@@ -374,18 +380,28 @@ export function OrganizePinsDialog({
               )}
             </div>
             
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 scrollbar-grey">
               <div className="space-y-1">
                 {folders.map(folder => (
                   <div
                     key={folder.id}
-                    className={`w-full flex items-center justify-between p-2 rounded-lg text-sm cursor-pointer ${
-                      selectedFolderId === folder.id ? 'bg-[#e5e5e5]' : 'hover:bg-[#f5f5f5]'
+                    className={`w-full flex items-center justify-between p-3 sm:p-2 rounded-lg text-sm cursor-pointer transition-colors duration-150 ${
+                      selectedFolderIds.includes(folder.id) ? 'bg-white border border-[#e6e6e6] shadow-sm' : 'bg-white hover:bg-[#fbfbfb] border border-transparent'
                     }`}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if ((e as React.KeyboardEvent).ctrlKey || (e as React.KeyboardEvent).metaKey || (e as React.KeyboardEvent).shiftKey) { setSelectedFolderIds(prev => prev.includes(folder.id) ? prev.filter(id => id !== folder.id) : [...prev, folder.id]); } else { setSelectedFolderIds([folder.id]); } } }}
                   >
                     <div 
                       className="flex items-center gap-2 flex-1 min-w-0"
-                      onClick={() => setSelectedFolderId(folder.id)}
+                      onClick={(e) => {
+                        const ev = e as React.MouseEvent;
+                        if (ev.ctrlKey || ev.metaKey || ev.shiftKey) {
+                          setSelectedFolderIds(prev => prev.includes(folder.id) ? prev.filter(id => id !== folder.id) : [...prev, folder.id]);
+                        } else {
+                          setSelectedFolderIds([folder.id]);
+                        }
+                      }}
                     >
                       {folder.id === 'unorganized' ? <Unlink className="h-4 w-4 text-[#666666] flex-shrink-0" /> : <Folder className="h-4 w-4 text-[#666666] flex-shrink-0" />}
                       <span className="text-[#171717] truncate" title={folder.name}>
@@ -434,10 +450,10 @@ export function OrganizePinsDialog({
           </div>
 
           {/* Right Section (Selected Folder Pins) */}
-          <div className="flex-1 flex flex-col bg-white" style={{ borderRadius: "10px", padding: "16px" }}>
+          <div className="flex-1 flex flex-col bg-white" style={{ borderRadius: "10px", padding: "8px 20px 8px 8px" }}>
             <div className="pb-3 flex items-center justify-between gap-2">
               <h3 className="text-xs font-semibold text-[#171717] truncate flex-shrink-0" style={{ maxWidth: selectedPinIds.length > 0 ? "120px" : "100%" }}>
-                {folders.find(f => f.id === selectedFolderId)?.name || "Unorganised pins"}
+                {folders.find(f => f.id === selectedFolderIds[0])?.name || "Unorganised pins"}
               </h3>
               {selectedPinIds.length > 0 && (
                 <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -471,24 +487,24 @@ export function OrganizePinsDialog({
                       <ScrollArea className="max-h-[200px]">
                         <div className="space-y-0.5">
                           {folders
-                            .filter(f => f.id !== selectedFolderId)
-                            .slice(0, 5)
-                            .map(f => (
-                            <DropdownMenuItem 
-                              key={f.id} 
-                              onClick={() => handleMovePins(f.id)} 
-                              className="text-[#171717] hover:bg-[#E5E5E5] text-sm cursor-pointer rounded-md"
-                              data-folder-item
-                              data-folder-name={f.name}
-                            >
-                              {f.id === 'unorganized' ? <Unlink className="h-3.5 w-3.5 mr-2 text-[#666666]" /> : <Folder className="h-3.5 w-3.5 mr-2 text-[#666666]" />}
-                              <span className="truncate">{f.name}</span>
-                            </DropdownMenuItem>
-                          ))}
-                          {folders.filter(f => f.id !== selectedFolderId).length > 5 && (
+                                .filter(f => !selectedFolderIds.includes(f.id))
+                                .slice(0, 5)
+                                .map(f => (
+                                <DropdownMenuItem 
+                                  key={f.id} 
+                                  onClick={() => handleMovePins(f.id)} 
+                                  className="text-[#171717] hover:bg-[#E5E5E5] text-sm cursor-pointer rounded-md"
+                                  data-folder-item
+                                  data-folder-name={f.name}
+                                >
+                                  {f.id === 'unorganized' ? <Unlink className="h-3.5 w-3.5 mr-2 text-[#666666]" /> : <Folder className="h-3.5 w-3.5 mr-2 text-[#666666]" />}
+                                  <span className="truncate">{f.name}</span>
+                                </DropdownMenuItem>
+                              ))}
+                              {folders.filter(f => !selectedFolderIds.includes(f.id)).length > 5 && (
                             <>
                               {folders
-                                .filter(f => f.id !== selectedFolderId)
+                                .filter(f => !selectedFolderIds.includes(f.id))
                                 .slice(5)
                                 .map(f => (
                                 <DropdownMenuItem 
@@ -526,14 +542,14 @@ export function OrganizePinsDialog({
                 <Checkbox 
                   checked={selectedPinIds.length === selectedFolderPins.length}
                   onCheckedChange={handleSelectAll}
-                  className="rounded-[4px] border-[#1e1e1e] h-3.5 w-3.5"
+                  className="rounded-[4px] border-[#1e1e1e] h-4 w-4"
                 />
                 <span className="text-sm text-[#666666]">Select All</span>
               </div>
             )}
             
-            <ScrollArea className="flex-1">
-              <div className="space-y-2.5">
+            <ScrollArea className="flex-1 scrollbar-grey">
+              <div className="space-y-2 pb-24 pr-4">
                 {selectedFolderPins.length > 0 ? (
                   selectedFolderPins
                     .filter(pin => 
@@ -545,11 +561,11 @@ export function OrganizePinsDialog({
                     const chatBoard = chatBoards.find(board => board.id === pin.chatId);
                     const isSelected = selectedPinIds.includes(pin.id);
                     return (
-                      <div key={pin.id} className="flex items-start gap-2">
+                      <div key={pin.id} className="flex items-center gap-2">
                         <Checkbox 
                           checked={isSelected}
                           onCheckedChange={() => handleTogglePinSelection(pin.id)}
-                          className="mt-1 rounded-[4px] border-[#1e1e1e] h-3.5 w-3.5"
+                          className="rounded-[4px] border-[#1e1e1e] h-4 w-4"
                         />
                         <div className="flex-1">
                           <PinItem
@@ -574,11 +590,12 @@ export function OrganizePinsDialog({
           </div>
         </div>
 
-        <DialogFooter className="justify-end gap-2 bg-white pt-2 pb-6">
-          <Button onClick={onClose} className="rounded-lg bg-[#2c2c2c] text-white hover:bg-[#1f1f1f]">
+        <DialogFooter className="justify-end gap-4 bg-white pt-4 pb-4 px-6 z-20 mt-auto">
+          <Button onClick={onClose} className="rounded-lg bg-[#2c2c2c] text-white hover:bg-[#1f1f1f] pl-4 pr-4 py-2 min-w-[92px] z-30">
             Done
           </Button>
         </DialogFooter>
+        </div>
       </DialogContent>
       
       {/* Folder Creation Dialog */}

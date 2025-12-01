@@ -201,9 +201,14 @@ export function RightSidebar({
   }, [allTags, tagSearch]);
 
   const handleTagToggle = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    setSelectedTags((prev) => {
+      const next = prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag];
+      // When any tag is selected, switch to global view so tags filter across all chats
+      if (next.length > 0) {
+        setFilterMode("all");
+      }
+      return next;
+    });
   };
 
   const handleCreateFolder = useCallback(
@@ -422,11 +427,12 @@ export function RightSidebar({
                   <ScrollArea className="max-h-48">
                     <div className="space-y-1">
                       {filteredTags.length > 0 ? (
-                        filteredTags.map((tag) => (
+                      filteredTags.map((tag) => (
                           <DropdownMenuCheckboxItem
                             key={tag}
                             className="rounded-md px-2 py-1.5 text-[#171717] data-[state=checked]:bg-[#f0f0f0]"
                             checked={selectedTags.includes(tag)}
+                            indicatorRight
                             onCheckedChange={() => handleTagToggle(tag)}
                             onSelect={(event) => event.preventDefault()}
                           >
@@ -456,7 +462,7 @@ export function RightSidebar({
         </div>
       </div>
       <ScrollArea className="flex-1">
-        <div className="space-y-2.5 pt-2 pb-4 flex flex-col items-center" style={{ paddingLeft: '21.5px', paddingRight: '21.5px' }}>
+        <div className="space-y-2.5 pt-2 pb-24 flex flex-col items-center" style={{ paddingLeft: '21.5px', paddingRight: '21.5px' }}>
           {sortedAndFilteredPins.length > 0 ? (
             sortedAndFilteredPins.map((pin) => {
               const chatBoard = chatBoards.find((board) => board.id.toString() === pin.chatId);

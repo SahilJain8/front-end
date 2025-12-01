@@ -6,8 +6,8 @@
 @font-face {
   font-family: 'Clash Grotesk Variable';
   src: url('/fonts/ClashGrotesk-Variable.woff2') format('woff2'),
-       url('/fonts/ClashGrotesk-Variable.woff') format('woff'),
-       url('/fonts/ClashGrotesk-Variable.ttf') format('truetype');
+    url('/fonts/ClashGrotesk-Variable.woff') format('woff'),
+    url('/fonts/ClashGrotesk-Variable.ttf') format('truetype');
   font-weight: 200 700;
   font-style: normal;
   font-display: swap;
@@ -16,7 +16,7 @@
 @font-face {
   font-family: 'Clash Grotesk';
   src: local('Clash Grotesk Variable'),
-       local('ClashGrotesk-Variable');
+    local('ClashGrotesk-Variable');
   font-weight: 200 700;
   font-style: normal;
   font-display: swap;
@@ -26,50 +26,65 @@
   :root {
     --font-body: "Clash Grotesk Variable", "Clash Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
     --font-display: "Clash Grotesk Variable", "Clash Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
-    
-    /* FlowtingAI Color Scheme - Light Grey Background with White Cards */
-    --background: 0 0% 96%; /* #F5F5F5 light grey */
-    --foreground: 0 0% 12%; /* #1E1E1E dark text */
 
-    --card: 0 0% 100%; /* Pure white for cards */
+    /* FlowtingAI Color Scheme - Light Grey Background with White Cards */
+    --background: 0 0% 96%;
+    /* #F5F5F5 light grey */
+    --foreground: 0 0% 12%;
+    /* #1E1E1E dark text */
+
+    --card: 0 0% 100%;
+    /* Pure white for cards */
     --card-foreground: 0 0% 12%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 12%;
 
-    --primary: 0 0% 17%; /* #2C2C2C dark primary */
-    --primary-foreground: 0 0% 96%; /* #F5F5F5 */
+    --primary: 0 0% 17%;
+    /* #2C2C2C dark primary */
+    --primary-foreground: 0 0% 96%;
+    /* #F5F5F5 */
 
-    --secondary: 0 0% 96%; /* #F5F5F5 */
+    --secondary: 0 0% 96%;
+    /* #F5F5F5 */
     --secondary-foreground: 0 0% 12%;
 
-    --muted: 0 0% 96%; /* #F5F5F5 */
-    --muted-foreground: 0 0% 46%; /* #757575 */
+    --muted: 0 0% 96%;
+    /* #F5F5F5 */
+    --muted-foreground: 0 0% 46%;
+    /* #757575 */
 
-    --accent: 0 0% 90%; /* #E5E5E5 */
+    --accent: 0 0% 90%;
+    /* #E5E5E5 */
     --accent-foreground: 0 0% 12%;
 
     --destructive: 0 84% 63%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 85%; /* #D9D9D9 */
+    --border: 0 0% 85%;
+    /* #D9D9D9 */
     --input: 0 0% 100%;
     --ring: 0 0% 85%;
 
-    --radius: 1.125rem; /* 18px rounded corners */
+    --radius: 1.125rem;
+    /* 18px rounded corners */
 
     --sidebar-width: 240px;
     --sidebar-collapsed-width: 62px;
     --topbar-height: 57px;
-    --sidebar-background: 0 0% 96%; /* #F5F5F5 */
+    --sidebar-background: 0 0% 96%;
+    /* #F5F5F5 */
     --sidebar-foreground: 0 0% 12%;
-    --sidebar-primary: 0 0% 17%; /* #2C2C2C */
+    --sidebar-primary: 0 0% 17%;
+    /* #2C2C2C */
     --sidebar-primary-foreground: 0 0% 96%;
     --sidebar-accent: 0 0% 90%;
     --sidebar-accent-foreground: 0 0% 12%;
-    --sidebar-border: 0 0% 85%; /* #D9D9D9 */
+    --sidebar-border: 0 0% 85%;
+    /* #D9D9D9 */
     --sidebar-ring: 0 0% 85%;
-    --right-sidebar-background: 0 0% 100%; /* Pure white right sidebar */
+    --right-sidebar-background: 0 0% 100%;
+    /* Pure white right sidebar */
     --sds-size-radius-400: 18px;
     --sds-size-stroke-border: 1px;
     --sds-color-icon-danger-on-danger: #000000;
@@ -77,32 +92,32 @@
     --sds-size-space-200: 0.5rem;
     --sds-size-space-300: 0.75rem;
   }
- 
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
- 
+
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
- 
+
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
- 
+
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
- 
+
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
- 
+
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
- 
+
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
- 
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
- 
+
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
@@ -118,15 +133,17 @@
     --right-sidebar-background: 217.2 32.6% 17.5%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-[#F5F5F5] text-foreground;
     font-family: var(--font-body);
   }
+
   .font-display {
     font-family: var(--font-display);
   }
@@ -134,54 +151,65 @@
 
 /* Remove focus ring for all elements */
 * {
-    -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent;
 }
 
 *:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .prompt-input:focus {
-    outline: none !important;
-    box-shadow: none !important;
-    border-color: hsl(var(--input)) !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: hsl(var(--input)) !important;
 }
 
 .scrollbar-hidden {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
 }
 
 .scrollbar-hidden::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
+  /* Chrome, Safari, Opera */
 }
 
 .scrollbar-transparent {
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: transparent transparent; /* Firefox */
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: transparent transparent;
+  /* Firefox */
 }
 
 .scrollbar-transparent::-webkit-scrollbar {
-  width: 8px; /* Chrome, Safari, Opera */
-  height: 8px; /* For horizontal scrollbars */
+  width: 8px;
+  /* Chrome, Safari, Opera */
+  height: 8px;
+  /* For horizontal scrollbars */
 }
 
 .scrollbar-transparent::-webkit-scrollbar-track {
-  background: transparent; /* Chrome, Safari, Opera */
+  background: transparent;
+  /* Chrome, Safari, Opera */
 }
 
 .scrollbar-transparent::-webkit-scrollbar-thumb {
-  background: transparent; /* Chrome, Safari, Opera */
+  background: transparent;
+  /* Chrome, Safari, Opera */
   border-radius: 4px;
 }
 
 .scrollbar-transparent:hover {
-  scrollbar-color: rgba(0, 0, 0, 0.1) transparent; /* Firefox */
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+  /* Firefox */
 }
 
 .scrollbar-transparent:hover::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1); /* Chrome, Safari, Opera */
+  background: rgba(0, 0, 0, 0.1);
+  /* Chrome, Safari, Opera */
 }
 
 /* Toast progress bar animation */
@@ -189,12 +217,14 @@
   from {
     width: 0;
   }
+
   to {
     width: 100%;
   }
 }
 
 @layer components {
+
   /* Chat layout */
   .chat-layout-shell--full {
     display: flex;
@@ -369,6 +399,57 @@
     background-color: #d9d9d9;
   }
 
+  /* Organize Pins Dialog layout and responsiveness */
+  .organize-dialog {
+    position: fixed;
+    width: 619px;
+    height: 692px;
+    top: 166px;
+    left: 411px;
+    transform: rotate(0deg);
+    opacity: 1;
+    border-radius: 10px;
+    border: 1px solid #e6e6e6;
+    padding-left: 18px;
+    padding-right: 18px;
+    z-index: 60;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+    background-color: #ffffff;
+     overflow: hidden;
+     overflow: visible; /* Allow dialog tooltips to escape */
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Responsive rules: center and adapt on smaller screens */
+  @media (max-width: 900px) {
+    .organize-dialog {
+      position: fixed;
+      left: 50%;
+      top: 12vh;
+      transform: translateX(-50%);
+      width: min(95vw, 680px);
+      height: auto;
+      max-height: 88vh;
+      border-radius: 10px;
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .organize-dialog {
+      left: 50%;
+      top: 6vh;
+      transform: translateX(-50%);
+      width: 95vw;
+      height: calc(100vh - 12vh);
+      padding-left: 10px;
+      padding-right: 10px;
+      border-radius: 8px;
+    }
+  }
+
   .sidebar-layout-primary-actions {
     display: flex;
     flex-direction: column;
@@ -384,7 +465,8 @@
     width: 210px;
     height: 45px;
     padding-left: 0 !important;
-    padding-right: 60px !important; /* to keep it aligned with the rest of the sidebar items */
+    padding-right: 60px !important;
+    /* to keep it aligned with the rest of the sidebar items */
     padding-top: 0 !important;
     padding-bottom: 0 !important;
     align-items: center;
@@ -414,8 +496,8 @@
     flex-shrink: 0;
   }
 
-  .sidebar-primary-action-icon > img,
-  .sidebar-primary-action-icon > svg {
+  .sidebar-primary-action-icon>img,
+  .sidebar-primary-action-icon>svg {
     height: 100%;
     width: 100%;
   }
@@ -1045,3 +1127,40 @@
     z-index: 10;
   }
 }
+
+/* Organize Pins Dialog outer wrapper */
+.organize-dialog {
+  /* keep outer wrapper flexible and allow tooltips to escape */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  overflow: visible; /* allow tooltips to escape outer bounds */
+}
+
+.organize-dialog-inner {
+  width: 619px;
+  height: 692px;
+  border-radius: 10px;
+  overflow: hidden; /* keep inner corners crisp */
+  background-color: #ffffff;
+  box-shadow: 0 6px 20px rgba(26, 26, 26, 0.08);
+  border: 1px solid #E6E6E6;
+}
+
+/* Grey scrollbar for dialog lists */
+.scrollbar-grey {
+  scrollbar-color: rgba(0,0,0,0.2) transparent;
+}
+.scrollbar-grey::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-grey::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-grey::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12);
+  border-radius: 6px;
+}
+
