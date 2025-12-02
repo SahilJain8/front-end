@@ -822,11 +822,6 @@ export function ChatInterface({
     }
   };
 
-  const handleReference = (message: Message) => {
-    setReferencedMessage(message);
-    textareaRef.current?.focus();
-  };
-
   const handleClearReference = () => {
     setReferencedMessage(null);
   };
@@ -932,23 +927,29 @@ export function ChatInterface({
       aiMessage,
       userMessage: linkedUser,
     });
+    handleConfirmRegenerate({
+      aiMessage,
+      userMessage: linkedUser,
+      prompt: linkedUser.content,
+    });
   };
 
-  const handleCancelRegenerate = () => {
-    if (isRegeneratingResponse) return;
-    setRegenerationState(null);
-    setRegeneratePrompt("");
-  };
-
-  const handleConfirmRegenerate = () => {
-    if (!regenerationState) return;
-    const trimmedPrompt = regeneratePrompt.trim();
+  const handleConfirmRegenerate = (override?: {
+    aiMessage: Message;
+    userMessage: Message;
+    prompt: string;
+  }) => {
+    const regen = override ?? regenerationState;
+    if (!regen) return;
+    const trimmedPrompt = (override?.prompt ?? regeneratePrompt).trim();
     if (!selectedModel) {
       toast({
         title: "Select a model",
         description: "Choose a model before regenerating a response.",
         variant: "destructive",
       });
+      setRegenerationState(null);
+      setRegeneratePrompt("");
       return;
     }
     if (trimmedPrompt === "") {
@@ -957,6 +958,8 @@ export function ChatInterface({
         description: "Update the prompt before regenerating.",
         variant: "destructive",
       });
+      setRegenerationState(null);
+      setRegeneratePrompt("");
       return;
     }
     const chatId = layoutContext?.activeChatId;
@@ -966,13 +969,15 @@ export function ChatInterface({
         description: "Pick a chat before regenerating a response.",
         variant: "destructive",
       });
+      setRegenerationState(null);
+      setRegeneratePrompt("");
       return;
     }
 
     const backendAiMessageId =
-      regenerationState.aiMessage.chatMessageId ?? regenerationState.aiMessage.id;
+      regen.aiMessage.chatMessageId ?? regen.aiMessage.id;
     const backendUserMessageId =
-      regenerationState.userMessage.chatMessageId ?? regenerationState.userMessage.id;
+      regen.userMessage.chatMessageId ?? regen.userMessage.id;
 
     if (!backendAiMessageId || !backendUserMessageId) {
       toast({
@@ -980,6 +985,8 @@ export function ChatInterface({
         description: "We could not determine which messages to regenerate.",
         variant: "destructive",
       });
+      setRegenerationState(null);
+      setRegeneratePrompt("");
       return;
     }
 
@@ -991,26 +998,26 @@ export function ChatInterface({
     setMessages(
       (prev = []) =>
         prev.map((msg) => {
-          if (msg.id === regenerationState.userMessage.id) {
+          if (msg.id === regen.userMessage.id) {
             return { ...msg, content: trimmedPrompt };
           }
-          if (msg.id === regenerationState.aiMessage.id) {
+          if (msg.id === regen.aiMessage.id) {
             return { ...msg, content: "", isLoading: true, thinkingContent: null };
           }
           return msg;
         }),
       chatId
     );
-    setLastMessageId(regenerationState.aiMessage.id);
+    setLastMessageId(regen.aiMessage.id);
 
     fetchAiResponse(
       trimmedPrompt,
-      regenerationState.aiMessage.id,
+      regen.aiMessage.id,
       chatId,
-      regenerationState.userMessage.id,
+      regen.userMessage.id,
       selectedModel,
       avatar,
-      regenerationState.userMessage.referencedMessageId ?? null,
+      regen.userMessage.referencedMessageId ?? null,
       backendAiMessageId,
       backendUserMessageId
     )
@@ -1249,7 +1256,6 @@ export function ChatInterface({
                     onRegenerate={
                       msg.sender === "ai" ? handleRegenerateRequest : undefined
                     }
-                    onReference={msg.sender === "ai" ? handleReference : undefined}
                     onReact={msg.sender === "ai" ? handleReact : undefined}
                     referencedMessage={refMsg}
                     isNewMessage={msg.id === lastMessageId}
@@ -1694,53 +1700,6 @@ export function ChatInterface({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               {uploadingDocument ? "Uploading..." : "Upload"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={!!regenerationState}
-        onOpenChange={(open) => {
-          if (!open) {
-            handleCancelRegenerate();
-          }
-        }}
-      >
-        <DialogContent className="rounded-[25px]">
-          <DialogHeader>
-            <DialogTitle>Regenerate response</DialogTitle>
-            <DialogDescription>
-              Adjust the original prompt and the assistant will respond again.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Prompt
-            </label>
-            <Textarea
-              value={regeneratePrompt}
-              onChange={(e) => setRegeneratePrompt(e.target.value)}
-              rows={4}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              className="rounded-[25px]"
-              onClick={handleCancelRegenerate}
-              disabled={isRegeneratingResponse}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="rounded-[25px]"
-              onClick={handleConfirmRegenerate}
-              disabled={
-                isRegeneratingResponse || regeneratePrompt.trim() === ""
-              }
-            >
-              {isRegeneratingResponse ? "Regenerating..." : "Regenerate"}
             </Button>
           </DialogFooter>
         </DialogContent>

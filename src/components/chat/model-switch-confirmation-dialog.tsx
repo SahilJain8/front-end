@@ -3,14 +3,10 @@
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { AIModel } from "@/types/ai-model";
 import { getModelIcon } from "@/lib/model-icons";
-import { AlertCircle } from "lucide-react";
 
 interface ModelSwitchConfirmationDialogProps {
   open: boolean;
@@ -48,19 +44,9 @@ export function ModelSwitchConfirmationDialog({
           overflow: "hidden"
         }}
       >
-        {/* Header Section with Icon and Title */}
-        <div className="flex flex-col items-center gap-3 px-6 pt-6 pb-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FFF4E6]">
-            <AlertCircle className="h-6 w-6 text-[#F97316]" strokeWidth={2} />
-          </div>
-          <DialogHeader className="text-center space-y-2">
-            <DialogTitle className="text-[#171717] text-lg font-semibold">
-              Switch Model?
-            </DialogTitle>
-            <DialogDescription className="text-[#737373] text-sm leading-relaxed">
-              Switching models will start a new conversation. Your current chat history will not be carried over to the new model.
-            </DialogDescription>
-          </DialogHeader>
+        {/* Header Section without warning styling */}
+        <div className="px-6 pt-6 pb-2">
+          <h2 className="text-[#171717] text-lg font-semibold">Switch Model</h2>
         </div>
 
         {/* Model Comparison Section */}
