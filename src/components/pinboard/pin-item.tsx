@@ -571,7 +571,7 @@ export const PinItem = ({
                                 {comments.map((comment, index) => (
                                     <div 
                                         key={index}
-                                        className="group relative rounded-lg bg-[#F9F9F9] p-2 text-xs text-[#1e1e1e]"
+                                        className="group relative rounded-lg bg-[#F9F9F9] p-2 pr-10 text-xs text-[#1e1e1e]"
                                     >
                                         {editingCommentIndex === index ? (
                                             <div className="space-y-2">
@@ -609,7 +609,7 @@ export const PinItem = ({
                                         ) : (
                                             <>
                                                 {comment}
-                                                <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="absolute top-1 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-[#F9F9F9]">
                                                     <button
                                                         onClick={() => handleEditComment(index)}
                                                         className="rounded hover:bg-[#E5E5E5] p-1"
