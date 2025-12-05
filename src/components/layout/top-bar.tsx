@@ -35,6 +35,7 @@ export function Topbar({
     <header className="sticky top-0 z-40 w-full border-b border-[#D9D9D9] bg-white">
       <div className="flex h-[57px] w-full items-center justify-between gap-4 px-3 py-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4 lg:flex-nowrap">
+          {/* ...existing code... */}
           {children ? (
             <div className="flex-shrink-0 lg:hidden">{children}</div>
           ) : null}

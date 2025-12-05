@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MessageSquare } from "lucide-react";
 import type { AIModel } from "@/types/ai-model";
 import { getModelIcon } from "@/lib/model-icons";
 import { MODELS_ENDPOINT } from "@/lib/config";
@@ -55,7 +55,7 @@ export function ModelSwitchDialog({
   const [showPaid, setShowPaid] = useState(true);
   const [chatMemory, setChatMemory] = useState(50);
   const [selectedChats, setSelectedChats] = useState<string[]>([]);
-  const [includeFiles, setIncludeFiles] = useState(false);
+  const [includeFiles, setIncludeFiles] = useState(true);
 
   useEffect(() => {
     if (!open) return;
@@ -134,7 +134,7 @@ export function ModelSwitchDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white p-6" style={{ width: "min(500px, 95vw)", maxWidth: "500px", borderRadius: "12px", border: "1px solid #e6e6e6" }}>
+      <DialogContent className="bg-white p-6" style={{ width: "580px", maxWidth: "580px", height: "420px", borderRadius: "12px", border: "1px solid #e6e6e6" }}>
         <DialogHeader>
           <DialogTitle className="text-[#171717] text-lg font-semibold">Switch Model</DialogTitle>
         </DialogHeader>
@@ -227,9 +227,12 @@ export function ModelSwitchDialog({
 
           {/* Chat Memory Slider */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium text-[#171717]">Chat Memory</Label>
-              <span className="text-sm text-[#8a8a8a]">{chatMemory}%</span>
+            <div>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-[#171717]">Chat Memory</Label>
+                <span className="text-sm text-[#8a8a8a]">{chatMemory}%</span>
+              </div>
+              <div className="text-xs text-[#8a8a8a] mt-1">Select how many messages from the last chat to include as context.</div>
             </div>
             <Slider
               value={[chatMemory]}
@@ -244,17 +247,21 @@ export function ModelSwitchDialog({
           {/* Include Pins - Filter by Chats Dropdown */}
           <div className="space-y-3">
             <Label className="text-sm font-medium text-[#171717]">Include Pins</Label>
+            <div className="text-xs text-[#8a8a8a]">Keep your pinned messages accessible for model context.</div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   className="w-full justify-between h-10 px-3 rounded-lg border-[#d4d4d4] hover:bg-[#f5f5f5]"
                 >
-                  <span className="text-[#171717] text-sm">
-                    {selectedChats.length === 0
-                      ? "Filter by chats"
-                      : `${selectedChats.length} chat${selectedChats.length === 1 ? "" : "s"} selected`}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-[#8a8a8a]" />
+                    <span className="text-[#171717] text-sm">
+                      {selectedChats.length === 0
+                        ? "Filter by chats"
+                        : `${selectedChats.length} chat${selectedChats.length === 1 ? "" : "s"} selected`}
+                    </span>
+                  </div>
                   <ChevronDown className="h-4 w-4 text-[#8a8a8a]" />
                 </Button>
               </DropdownMenuTrigger>
@@ -298,18 +305,18 @@ export function ModelSwitchDialog({
           </div>
         </div>
 
-        <DialogFooter className="flex items-center justify-end gap-2 pt-2">
+          <DialogFooter className="flex items-center justify-end gap-2 pt-2">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="rounded-lg px-4 text-[#171717] hover:bg-[#f5f5f5]"
+              className="rounded-lg px-4 text-[#171717] hover:bg-[#f5f5f5]"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSelect}
             disabled={!selectedModel}
-            className="rounded-lg px-4 bg-[#2c2c2c] text-white hover:bg-[#1f1f1f] disabled:bg-[#d4d4d4] disabled:text-[#8a8a8a]"
+              className="rounded-lg px-4 bg-[#2563EB] text-white hover:bg-[#1e40af] disabled:bg-[#d4d4d4] disabled:text-[#8a8a8a]"
           >
             Select
           </Button>

@@ -534,7 +534,7 @@ export const PinItem = ({
                                         size="sm"
                                         onClick={handleGoToChat}
                                         className="bg-[#F5F5F5] border border-[#D4D4D4] text-[#1e1e1e] hover:bg-[#E5E5E5] hover:text-[#1e1e1e] font-bold"
-                                        style={{ width: '76px', height: '24px', minHeight: '24px', borderRadius: '4px', paddingTop: '3px', paddingBottom: '3px', paddingLeft: '8px', paddingRight: '8px', fontFamily: 'Geist', fontWeight: 500, fontSize: '12px', lineHeight: '150%', letterSpacing: '1.5%', textAlign: 'center' }}
+                                        style={{ width: '76px', height: '24px', minHeight: '24px', borderRadius: '4px', paddingTop: '3px', paddingBottom: '3px', paddingLeft: '8px', paddingRight: '8px', fontFamily: 'Inter, Clash Grotesk Variable, Clash Grotesk, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, sans-serif', fontWeight: 500, fontSize: '12px', lineHeight: '150%', letterSpacing: '1.5%', textAlign: 'center' }}
                                     >
                                         Go to chat
                                     </Button>
@@ -549,7 +549,7 @@ export const PinItem = ({
                                         size="sm"
                                         onClick={handleInsertToChat}
                                         className="bg-[#1e1e1e] border-0 text-white hover:bg-[#333333] hover:text-white font-bold"
-                                        style={{ width: '50px', height: '24px', minHeight: '24px', borderRadius: '4px', paddingTop: '3px', paddingBottom: '3px', paddingLeft: '8px', paddingRight: '8px', fontFamily: 'Geist', fontWeight: 500, fontSize: '12px', lineHeight: '150%', letterSpacing: '1.5%', textAlign: 'center' }}
+                                        style={{ width: '50px', height: '24px', minHeight: '24px', borderRadius: '4px', paddingTop: '3px', paddingBottom: '3px', paddingLeft: '8px', paddingRight: '8px', fontFamily: 'Inter, Clash Grotesk Variable, Clash Grotesk, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, sans-serif', fontWeight: 500, fontSize: '12px', lineHeight: '150%', letterSpacing: '1.5%', textAlign: 'center' }}
                                     >
                                         Insert
                                     </Button>

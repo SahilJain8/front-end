@@ -23,6 +23,8 @@
 The @font-face declaration is set up in `src/app/globals.css` with fallback fonts.
 The app will use the system fonts until the Clash Grotesk files are added.
 
+Note: `ClashGrotesk-Variable.ttf` is present in the repository root and should be moved/copied into this `public/fonts` folder for deployment. If you have the file here already, copy it to `public/fonts/ClashGrotesk-Variable.ttf` so the existing CSS `url('/fonts/ClashGrotesk-Variable.ttf')` will load correctly.
+
 ## Fallback chain:
 1. Clash Grotesk Variable (if font files present)
 2. Clash Grotesk (if installed locally)

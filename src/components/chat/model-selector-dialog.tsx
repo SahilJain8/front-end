@@ -10,11 +10,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, Info, Bookmark, Loader2, X } from "lucide-react";
+import { Search, Info, Bookmark, Loader2, X, Circle, FileSearch2, BookImage, Video } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Button } from "../ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+// Using Radix primitives directly for tight style control
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
 import {
   Tooltip,
   TooltipContent,
@@ -158,9 +160,9 @@ export function ModelSelectorDialog({ open, onOpenChange, onModelSelect }: Model
           border: "1px solid #E5E5E5"
         }}
       >
-        <DialogHeader className="sr-only">
-          <DialogTitle>Choose Your Model</DialogTitle>
-        </DialogHeader>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Choose Your Model</DialogTitle>
+          </DialogHeader>
         {/* Title */}
         <div className="dialog-title-wrapper">
           <h2 className="dialog-title">Choose Your Model</h2>
@@ -217,42 +219,82 @@ export function ModelSelectorDialog({ open, onOpenChange, onModelSelect }: Model
         {/* Category Tabs */}
         <div className="category-tabs-wrapper">
           <div
-            className="flex items-center"
+            className="flex items-center model-category-root"
             style={{
               background: '#F5F5F5',
-              width: 299,
-              height: 35,
-              borderRadius: 10,
-              padding: 3,
+              width: '299px',
+              height: '35px',
+              borderRadius: '10px',
+              padding: '2px',
               justifyContent: 'flex-start',
+              transform: 'rotate(0deg)',
+              opacity: 1,
+              boxShadow: 'none',
+              backgroundImage: 'none',
+              backgroundBlendMode: 'normal',
             }}
           >
-            <Tabs value={category} onValueChange={(v) => setCategory(v as ModelCategory)}>
-              <TabsList className="flex gap-2 h-full">
+            <style>{`
+              .model-category-root { background-color: #F5F5F5 !important; }
+              .model-category-root .model-category-list { background-color: #F5F5F5 !important; box-shadow: none !important; }
+              .model-category-root .tab-trigger { background-color: #F5F5F5 !important; border: none !important; box-shadow: none !important; }
+              .model-category-root .tab-trigger[data-state="active"], .model-category-root .tab-trigger[aria-selected="true"] { background-color: #FFFFFF !important; border: 1px solid #E5E5E5 !important; }
+              .model-category-root .tab-trigger[data-state="inactive"] { background-color: #F5F5F5 !important; border: none !important; }
+              .model-category-root .tab-trigger span { background: transparent !important; }
+            `}</style>
+            <TabsPrimitive.Root value={category} onValueChange={(v) => setCategory(v as ModelCategory)}>
+              <TabsPrimitive.List
+                className="flex h-full p-0 rounded-[10px] model-category-list"
+                style={{
+                  gap: 4,
+                  backgroundColor: '#F5F5F5',
+                  padding: 0,
+                  boxShadow: 'none',
+                  backgroundImage: 'none',
+                }}
+              >
                 {[
-                  { key: 'all', label: 'All', icon: <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#A3A3A3" strokeWidth="2"/></svg> },
-                  { key: 'text', label: 'Text', icon: <svg width="26" height="26" viewBox="0 0 18 18" fill="none"><rect x="3" y="5" width="12" height="8" rx="2" stroke="#A3A3A3" strokeWidth="2"/><line x1="5" y1="8" x2="13" y2="8" stroke="#A3A3A3" strokeWidth="1.5"/><line x1="5" y1="11" x2="10" y2="11" stroke="#A3A3A3" strokeWidth="1.5"/></svg> },
-                  { key: 'image', label: 'Image', icon: <svg width="26" height="26" viewBox="0 0 18 18" fill="none"><rect x="3" y="5" width="12" height="8" rx="2" stroke="#A3A3A3" strokeWidth="2"/><circle cx="7" cy="9" r="1.5" stroke="#A3A3A3" strokeWidth="1.5"/><path d="M6 13L10 9L13 12" stroke="#A3A3A3" strokeWidth="1.5"/></svg> },
-                  { key: 'video', label: 'Video', icon: <svg width="26" height="26" viewBox="0 0 18 18" fill="none"><rect x="3" y="5" width="12" height="8" rx="2" stroke="#A3A3A3" strokeWidth="2"/><polygon points="7,8 12,9.5 7,11" fill="#A3A3A3"/></svg> },
+                  { key: 'all', label: 'All', icon: <Circle className="h-5 w-5 text-[#A3A3A3]"/> },
+                  { key: 'text', label: 'Text', icon: <FileSearch2 className="h-5 w-5 text-[#A3A3A3]"/> },
+                  { key: 'image', label: 'Image', icon: <BookImage className="h-5 w-5 text-[#A3A3A3]"/> },
+                  { key: 'video', label: 'Video', icon: <Video className="h-5 w-5 text-[#A3A3A3]"/> },
                 ].map(({ key, label, icon }) => (
-                  <TabsTrigger
+                  <TabsPrimitive.Trigger
                     key={key}
                     value={key}
                     className={
-                      `flex items-center gap-2 justify-center px-4 h-[29px] rounded-[8px] text-sm font-medium transition-colors
-                      ${category === key
-                        ? 'bg-white border border-[#F5F5F5] text-black'
-                        : 'bg-[#F5F5F5] border-none text-black'}
-                      `
+                      `flex items-center justify-center rounded-[10px] text-sm font-medium transition-colors flex-shrink-0 text-[#171717] tab-trigger`
                     }
-                    style={{ minWidth: 50 }}
+                    style={{
+                      height: 29,
+                      minWidth: 29,
+                      minHeight: 29,
+                      gap: 4,
+                      paddingTop: 1,
+                      paddingRight: 5,
+                      paddingBottom: 1,
+                      paddingLeft: 6,
+                      transform: 'rotate(0deg)',
+                      opacity: 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      boxSizing: 'border-box',
+                      backgroundColor: category === key ? '#FFFFFF' : '#F5F5F5',
+                      background: category === key ? '#FFFFFF' : '#F5F5F5',
+                      border: category === key ? '1px solid #E5E5E5' : 'none',
+                      boxShadow: category === key ? '0 0 0 4px rgba(0,0,0,0.04)' : 'none',
+                      backgroundImage: 'none',
+                      outline: 'none',
+                      whiteSpace: 'nowrap',
+                    }}
                   >
-                    <span className="flex items-center" style={{ width: key === 'all' ? 15 : 26, height: key === 'all' ? 15 : 26 }}>{icon}</span>
-                    {label}
-                  </TabsTrigger>
+                    <span className="flex items-center" style={{ width: 20, height: 20, color: '#A3A3A3' }}>{icon}</span>
+                    <span style={{ marginLeft: 4, color: '#171717', whiteSpace: 'nowrap' }}>{label}</span>
+                  </TabsPrimitive.Trigger>
                 ))}
-              </TabsList>
-            </Tabs>
+              </TabsPrimitive.List>
+            </TabsPrimitive.Root>
           </div>
         </div>
 
@@ -347,22 +389,25 @@ export function ModelSelectorDialog({ open, onOpenChange, onModelSelect }: Model
         </ScrollArea>
 
         {/* Action Buttons */}
-        <div className="dialog-footer">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="footer-button"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSelectModel}
-            disabled={!selectedModel}
-            className="footer-button footer-button-select"
-          >
-            Select
-          </Button>
-        </div>
+          <div className="dialog-footer" style={{ padding: '0', margin: '0' }}>
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              className="footer-button"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSelectModel}
+              disabled={!selectedModel}
+              className={
+                `footer-button footer-button-select ${selectedModel ? 'bg-[#1E1E1E] text-white hover:bg-black' : ''}`
+              }
+              style={{ transition: 'background-color 120ms ease' }}
+            >
+              Select
+            </Button>
+          </div>
       </DialogContent>
     </Dialog>
   );
